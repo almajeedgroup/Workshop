@@ -62,6 +62,28 @@ export function formatTicketId(prefix, seq) {
 }
 
 /**
+ * The highest number already issued under `prefix` among these ticket IDs.
+ *
+ * Used to keep the workshop's counter above any ticket that arrives carrying
+ * its own number — re-entered from a printed ticket, say — so the next
+ * allocation cannot repeat one that is already in somebody's hand. IDs under
+ * a different prefix belong to another series and are ignored.
+ */
+export function highestTicketSeq(prefix, ticketIds = []) {
+  const want = String(prefix || '').toUpperCase();
+  let highest = 0;
+
+  for (const id of ticketIds) {
+    const m = String(id ?? '').trim().match(/^(.*)-(\d+)$/);
+    if (!m) continue;
+    if (want && m[1].toUpperCase() !== want) continue;
+    highest = Math.max(highest, Number(m[2]));
+  }
+
+  return highest;
+}
+
+/**
  * Register order for ticket IDs.
  *
  * IDs are padded to three digits, so a plain string sort puts `-1000` before
