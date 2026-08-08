@@ -306,8 +306,24 @@ export function emptyWorkshop() {
   return blank(WORKSHOP_FIELDS);
 }
 
+let rowCounter = 0;
+
+/**
+ * A stable identity for a row that has no Firestore ID yet.
+ *
+ * The editing grid needs one: keyed by array index instead, deleting a row
+ * makes React reuse the wrong inputs and the cursor jumps to another
+ * candidate mid-typing. `_key` is not a schema field, so the sanitisers in
+ * db.js — which copy only the fields declared above — never write it out.
+ */
+export function newRowKey() {
+  rowCounter += 1;
+  return `row-${Date.now().toString(36)}-${rowCounter}`;
+}
+
 export function emptyRegistration() {
   const r = blank(REGISTRATION_FIELDS);
   r.paymentStatus = 'Pending';
+  r._key = newRowKey();
   return r;
 }

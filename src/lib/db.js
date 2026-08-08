@@ -56,24 +56,32 @@ function sanitizeRegistration(p) {
  * Administrators
  * ------------------------------------------------------------------ */
 
-/**
- * Make sure the signed-in owner has a record in the `admins` collection.
- *
- * The owner already has access via the bootstrap e-mail check in
- * firestore.rules, so this changes no permissions — it just puts them in the
- * list, which is otherwise empty until someone hand-creates a document in the
- * Console. Only the owner can write their own record; the rules reject
- * everyone else.
- *
- * Never throws: failing to write the record must not block sign-in.
- */
-export async function ensureAdminRecord(user) {
-  if (!user) return false;
-  const ref = doc(db, 'admins', user.uid);
+/** Is this account on the allow-list? That is the whole of authorisation. */
+export async function isListedAdmin(uid) {
+  if (!uid) return false;
   try {
-    const snap = await getDoc(ref);
-    if (snap.exists()) return true;
-    await setDoc(ref, {
+    return (await getDoc(doc(db, 'admins', uid))).exists();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Put the signed-in owner on the allow-list.
+ *
+ * The rules let the permanent owner address create its own /admins record and
+ * nothing else, so this is how the very first sign-in gets access without
+ * anyone hand-creating a document in the Console. Everyone else is added from
+ * the Console.
+ *
+ * Access now genuinely depends on this succeeding — the rules consult the
+ * allow-list and nothing else — so the caller is told whether it worked
+ * rather than the failure being swallowed.
+ */
+export async function registerOwner(user) {
+  if (!user) return false;
+  try {
+    await setDoc(doc(db, 'admins', user.uid), {
       email: user.email || '',
       name: user.displayName || user.email || '',
       role: 'owner',
@@ -310,12 +318,36 @@ export async function deleteWorkshop(id) {
   await deleteDoc(doc(db, WORKSHOPS, id));
 }
 
-/** Used by the "everything" export. */
-export async function listAllWithRegistrations() {
-  const workshops = await listWorkshops();
+/**
+ * Pair each of the given workshops with its registrations.
+ *
+ * Takes the workshops the caller actually wants rather than reading every one
+ * and filtering afterwards — exporting a single filtered workshop used to read
+ * the whole database. Fetched in small parallel batches: a sequential loop was
+ * needlessly slow, and an unbounded one would open a connection per workshop.
+ */
+export async function withRegistrations(workshops, batchSize = 8) {
   const out = [];
-  for (const w of workshops) {
-    out.push({ workshop: w, registrations: await getRegistrations(w.id) });
+  for (let i = 0; i < workshops.length; i += batchSize) {
+    const batch = await Promise.all(
+      workshops.slice(i, i + batchSize).map(async (w) => ({
+        workshop: w,
+        registrations: await getRegistrations(w.id),
+      }))
+    );
+    out.push(...batch);
   }
   return out;
 }
+
+/** Every workshop with its registrations — the unfiltered export. */
+export async function listAllWithRegistrations() {
+  return withRegistrations(await listWorkshops());
+}
+
+/* Note on ticket-number gaps: if a batch write fails after
+ * allocateTicketIds() has already advanced `lastTicketSeq`, those numbers are
+ * spent and the register will show a gap. That is deliberate. The alternative
+ * — winding the counter back — risks handing a number to a second person
+ * after the first has been sent their ticket, and a gap is far easier to
+ * explain than a duplicate. */

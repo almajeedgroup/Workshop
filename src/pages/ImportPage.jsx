@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { parseText, SAMPLE_WORKSHOP_TEXT, SAMPLE_REGISTRATION_TEXT } from '../lib/parser.js';
 import { createWorkshop } from '../lib/db.js';
 import { splitDuplicates, describeDuplicate } from '../lib/dedupe.js';
@@ -108,7 +108,7 @@ export default function ImportPage() {
           <strong>Saved {saved.length} record{saved.length === 1 ? '' : 's'}.</strong>
           <ul>
             {saved.map((s) => (
-              <li key={s.id}><a href={`/w/${s.id}`}>{s.title || '(untitled)'}</a></li>
+              <li key={s.id}><Link to={`/w/${s.id}`}>{s.title || '(untitled)'}</Link></li>
             ))}
           </ul>
         </div>

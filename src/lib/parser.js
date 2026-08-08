@@ -145,10 +145,27 @@ const MONTHS = {
   dec: 12, december: 12,
 };
 
+const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+function daysIn(year, month) {
+  if (month !== 2) return DAYS_IN_MONTH[month - 1];
+  const leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+  return leap ? 29 : 28;
+}
+
+/**
+ * Build an ISO date, rejecting anything that is not a real calendar day.
+ *
+ * "31/04/2026" and "29/02/2025" used to be accepted verbatim and printed on
+ * tickets. A date that cannot exist is a misreading, so it is refused here and
+ * the caller reports that it could not read a date — which the operator can
+ * see and fix, unlike a silently wrong one.
+ */
 function iso(y, m, d) {
   if (!y || !m || !d) return '';
-  if (m < 1 || m > 12 || d < 1 || d > 31) return '';
+  if (m < 1 || m > 12 || d < 1) return '';
   if (y < 100) y += y < 50 ? 2000 : 1900;
+  if (d > daysIn(y, m)) return '';
   return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 
@@ -558,10 +575,10 @@ function looksLikeBlocks(lines) {
  * labelled-block shape or a table (with or without a header row).
  */
 export function parseRegistrations(text) {
-  const lines = cleanText(text)
+  const rawLines = cleanText(text)
     .split('\n')
-    .map((l) => l.trim())
-    .filter((l) => l && !/^[-=_*]{3,}$/.test(l));
+    .filter((l) => l.trim() && !/^[-=_*]{3,}$/.test(l.trim()));
+  const lines = rawLines.map((l) => l.trim());
 
   if (lines.length === 0) return [];
 
@@ -569,8 +586,13 @@ export function parseRegistrations(text) {
 
   // ---- table mode ----
   const delim = detectDelimiter(lines);
-  const rows = lines.map((l) =>
-    splitRow(stripBullet(stripMarkup(l)), delim).map((c) => c.trim())
+  // A tab-separated row can legitimately open with an empty cell ("\tAyesha"),
+  // and trimming the line would delete it and shift every column left. Only
+  // tabs carry that meaning, so other delimiters keep the tidied lines.
+  const sourceLines = delim === '\t' ? rawLines : lines;
+  const rows = sourceLines.map((l) =>
+    splitRow(l.replace(/[*_~`]/g, ''), delim)
+      .map((c, i) => (i === 0 ? stripBullet(c) : c).trim())
   );
 
   const numericFirst = rows.filter((r) => r.length > 1 && /^\d{1,3}$/.test(r[0])).length;
@@ -629,6 +651,33 @@ export function parseRegistrations(text) {
 
 const SEPARATOR_RE = /^\s*(?:[-=_~]{3,}|#{2,}.*)\s*$/;
 
+/**
+ * Could this block stand on its own as a workshop?
+ *
+ * A rule of dashes is used both to separate two workshops and to decorate one,
+ * so the divider alone cannot be trusted. A block counts as a record if it
+ * names a title outright, or carries enough workshop detail — two labelled
+ * fields, or two poster emoji — to be one in its own right.
+ */
+function looksLikeRecord(block) {
+  const fields = new Set();
+  let emoji = 0;
+
+  for (const line of block.split('\n')) {
+    if (!line.trim()) continue;
+
+    const kv = matchKeyValue(line);
+    const key = kv ? WORKSHOP_ALIAS.get(normalizeKey(kv.rawKey)) : undefined;
+    if (key === 'title') return true;
+    if (key) fields.add(key);
+
+    const hint = emojiHint(leadingEmoji(line));
+    if (hint) emoji++;
+  }
+
+  return fields.size >= 2 || emoji >= 2;
+}
+
 function splitRecords(text) {
   const lines = text.split('\n');
 
@@ -640,7 +689,12 @@ function splitRecords(text) {
       else cur.push(line);
     }
     blocks.push(cur);
-    return blocks.map((b) => b.join('\n')).filter((b) => b.trim());
+
+    const parts = blocks.map((b) => b.join('\n')).filter((b) => b.trim());
+    // Only honour the divider if what it separates really are separate
+    // records. Otherwise it was decoration inside one, and splitting there
+    // would tear a workshop in half.
+    if (parts.filter(looksLikeRecord).length >= 2) return parts;
   }
 
   const titleIdx = [];
@@ -691,6 +745,10 @@ function parseRecord(block) {
       else registrationsText += '\n';
       continue;
     }
+
+    // A rule that turned out to be decoration rather than a record separator.
+    // It is never content.
+    if (SEPARATOR_RE.test(line)) continue;
 
     const kv = matchKeyValue(line);
     const nk = kv ? normalizeKey(kv.rawKey) : null;

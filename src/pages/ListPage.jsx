@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { listWorkshops, listAllWithRegistrations, deleteWorkshop } from '../lib/db.js';
+import { listWorkshops, withRegistrations, deleteWorkshop } from '../lib/db.js';
 import { WORKSHOP_FIELDS, ISSUER } from '../lib/schema.js';
 import { formatDateRange } from '../lib/tickets.js';
 
@@ -53,11 +53,11 @@ export default function ListPage() {
   const doExport = async (kind) => {
     setBusy(kind);
     try {
-      // Loaded on demand — SheetJS is ~400 kB and most visits never export.
+      // Loaded on demand — most visits never export.
       const xl = await import('../lib/exporters.js');
-      const ids = new Set(filtered.map((r) => r.id));
-      const all = await listAllWithRegistrations();
-      const bundles = all.filter((b) => ids.has(b.workshop.id));
+      // Only the workshops actually on screen: reading every one and
+      // discarding the rest cost a query per workshop in the database.
+      const bundles = await withRegistrations(filtered);
       if (kind === 'xlsx') xl.exportAllXlsx(bundles);
       else xl.exportWorkshopsCsv(bundles);
     } catch (e) {

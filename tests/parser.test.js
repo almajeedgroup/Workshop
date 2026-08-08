@@ -59,6 +59,27 @@ test('several workshops separated by a rule', () => {
   assert.deepEqual(records.map((r) => r.workshop.title), ['Alpha', 'Beta']);
 });
 
+test('a rule used as decoration does not tear one workshop in half', () => {
+  // Regression: any line of dashes split the paste, so a poster with a
+  // divider in it became two half-records.
+  const records = parseText('Title: Alpha\nVenue: Hall A\n-----\nTopics: more about Alpha');
+  assert.equal(records.length, 1);
+  assert.equal(records[0].workshop.title, 'Alpha');
+  assert.match(records[0].workshop.topics, /more about Alpha/);
+});
+
+test('two posters separated by a rule are still two records', () => {
+  const records = parseText(`${SAMPLE_WORKSHOP_TEXT}\n---\n${SAMPLE_WORKSHOP_TEXT}`);
+  assert.equal(records.length, 2);
+});
+
+test('a decorative rule never becomes content', () => {
+  const [{ workshop }] = parseText('Title: Alpha\n-----\nVenue: Hall A');
+  assert.equal(workshop.title, 'Alpha');
+  assert.equal(workshop.venue, 'Hall A');
+  assert.doesNotMatch(JSON.stringify(workshop), /-----/);
+});
+
 test('missing required fields are reported, not silently accepted', () => {
   const [{ warnings }] = parseText('Venue: Hall A\nTime: 5pm');
   assert.ok(warnings.some((w) => /Workshop Title/.test(w)));
@@ -164,6 +185,18 @@ test('table: headerless rows find email, phone and date by shape', () => {
   assert.equal(row.dob, '2010-03-12');
 });
 
+test('table: an empty leading tab cell keeps the columns aligned', () => {
+  // Regression: lines were trimmed before splitting, so an empty first cell
+  // vanished and every later column shifted one to the left.
+  const rows = parseRegistrations(
+    'Qualification\tName\tArea\nClass 10\tAyesha\tJayanagar\n\tFaizan\tShivajinagar'
+  );
+  assert.equal(rows.length, 2);
+  assert.equal(rows[1].name, 'Faizan');
+  assert.equal(rows[1].area, 'Shivajinagar');
+  assert.equal(rows[1].qualification, '');
+});
+
 test('table: rows without a name are skipped', () => {
   const rows = parseRegistrations('Area\tName\nJayanagar\tAyesha\nShivajinagar\t');
   assert.equal(rows.length, 1);
@@ -197,6 +230,24 @@ test('dates: a range sharing one month and year fills both ends', () => {
 
 test('dates: prose with no date yields nothing', () => {
   assert.deepEqual(parseDateRange('to be announced'), { start: '', end: '' });
+});
+
+test('dates: a day that does not exist is refused, not stored', () => {
+  // Regression: these were accepted verbatim and printed onto tickets.
+  assert.equal(parseDateRange('31/04/2026').start, '');
+  assert.equal(parseDateRange('29/02/2025').start, '');
+  assert.equal(parseDateRange('32/01/2026').start, '');
+  assert.equal(parseDateRange('February 30, 2026').start, '');
+});
+
+test('dates: real leap days are kept', () => {
+  assert.equal(parseDateRange('29/02/2024').start, '2024-02-29');
+  assert.equal(parseDateRange('29/02/2000').start, '2000-02-29');
+});
+
+test('dates: an unreadable date is reported rather than guessed', () => {
+  const [{ warnings }] = parseText('Title: Alpha\nDate: 31/04/2026');
+  assert.ok(warnings.some((w) => /Could not read a date/.test(w)));
 });
 
 /* ------------------------------------------------------------------ *

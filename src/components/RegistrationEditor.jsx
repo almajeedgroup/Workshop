@@ -28,7 +28,7 @@ export default function RegistrationEditor({ rows, onChange }) {
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={r.id || i}>
+              <tr key={r.id || r._key || i}>
                 <td className="num">{i + 1}</td>
                 {REGISTRATION_FIELDS.map((f) => (
                   <td key={f.key}>

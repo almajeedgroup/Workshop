@@ -50,6 +50,8 @@ export default function EditPage({ mode }) {
   }, [id, isNew]);
 
   const missing = REQUIRED.filter((f) => !workshop[f.key]).map((f) => f.label);
+  const limit = Number(workshop.seatLimit) || 0;
+  const overSeats = limit ? regs.length - limit : 0;
 
   const save = async () => {
     if (missing.length || missingWorkshop) return;
@@ -163,6 +165,13 @@ export default function EditPage({ mode }) {
               </button>
               <span className="hint">Rows are appended; existing rows are kept.</span>
             </div>
+          </div>
+        )}
+
+        {overSeats > 0 && (
+          <div className="notice warn">
+            This list is {overSeats} over the seat limit of {workshop.seatLimit}. Saving is
+            allowed — adjust the limit above if the extra places were authorised.
           </div>
         )}
 

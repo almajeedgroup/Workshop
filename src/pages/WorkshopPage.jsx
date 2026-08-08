@@ -7,6 +7,7 @@ import {
 import RegistrationList from '../components/RegistrationList.jsx';
 import { parseRegistrations } from '../lib/parser.js';
 import { splitDuplicates, describeDuplicate } from '../lib/dedupe.js';
+import { amountCollected, paymentCounts, seatsLeft as seatsLeftFor } from '../lib/stats.js';
 import { WORKSHOP_FIELDS, ISSUER, CURRENCY } from '../lib/schema.js';
 import { formatDateRange } from '../lib/tickets.js';
 
@@ -50,18 +51,10 @@ export default function WorkshopPage() {
     return () => { live = false; };
   }, [id]);
 
-  const stats = useMemo(() => {
-    const paid = regs.filter((r) => r.paymentStatus === 'Paid');
-    const collected = paid.reduce(
-      (s, r) => s + (Number(r.amountPaid) || Number(workshop?.feeAmount) || 0), 0
-    );
-    return {
-      total: regs.length,
-      paid: paid.length,
-      pending: regs.filter((r) => r.paymentStatus === 'Pending').length,
-      collected,
-    };
-  }, [regs, workshop]);
+  const stats = useMemo(
+    () => ({ ...paymentCounts(regs), collected: amountCollected(workshop, regs) }),
+    [regs, workshop]
+  );
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -123,9 +116,16 @@ export default function WorkshopPage() {
     }
     setNotice('');
     const { unique, duplicates } = splitDuplicates(parsed, regs);
-    if (duplicates.length) {
+
+    // The seat limit was previously only reported after the fact. Adding past
+    // it is still allowed — a coordinator may well have authorised it — but it
+    // is now a decision rather than a surprise.
+    const limit = Number(workshop.seatLimit) || 0;
+    const overBy = limit ? regs.length + unique.length - limit : 0;
+
+    if (duplicates.length || overBy > 0) {
       setError('');
-      setPendingPaste({ unique, duplicates });
+      setPendingPaste({ unique, duplicates, overBy });
       return;
     }
     await commitPaste(parsed, 0);
@@ -174,7 +174,7 @@ export default function WorkshopPage() {
     return <main><div className="empty">Workshop not found. <Link to="/">Back to records</Link></div></main>;
   }
 
-  const seatsLeft = workshop.seatLimit ? Number(workshop.seatLimit) - regs.length : null;
+  const seatsLeft = seatsLeftFor(workshop, regs.length);
 
   return (
     <main>
@@ -281,31 +281,50 @@ export default function WorkshopPage() {
 
             {pendingPaste && (
               <div className="notice warn" style={{ marginTop: 12 }}>
-                <strong>
-                  {pendingPaste.duplicates.length === 1
-                    ? 'One of these is already registered:'
-                    : `${pendingPaste.duplicates.length} of these are already registered:`}
-                </strong>
-                <ul>
-                  {pendingPaste.duplicates.map((d, k) => <li key={k}>{describeDuplicate(d)}</li>)}
-                </ul>
+                {pendingPaste.duplicates.length > 0 && (
+                  <>
+                    <strong>
+                      {pendingPaste.duplicates.length === 1
+                        ? 'One of these is already registered:'
+                        : `${pendingPaste.duplicates.length} of these are already registered:`}
+                    </strong>
+                    <ul>
+                      {pendingPaste.duplicates.map((d, k) => <li key={k}>{describeDuplicate(d)}</li>)}
+                    </ul>
+                  </>
+                )}
+
+                {pendingPaste.overBy > 0 && (
+                  <p style={{ margin: pendingPaste.duplicates.length ? '10px 0 0' : 0 }}>
+                    <strong>
+                      This would put the workshop {pendingPaste.overBy} over its seat limit of{' '}
+                      {workshop.seatLimit}.
+                    </strong>{' '}
+                    Adding them is allowed — confirm below if that is intended.
+                  </p>
+                )}
                 <div className="btn-row" style={{ marginTop: 10 }}>
                   <button
                     className="primary"
                     disabled={adding || !pendingPaste.unique.length}
                     onClick={() => commitPaste(pendingPaste.unique, pendingPaste.duplicates.length)}
                   >
-                    Add the {pendingPaste.unique.length} new one
-                    {pendingPaste.unique.length === 1 ? '' : 's'}
+                    {adding ? 'Adding…' : `Add ${pendingPaste.unique.length}`}
+                    {pendingPaste.duplicates.length > 0 ? ' new' : ''}
                   </button>
-                  <button
-                    disabled={adding}
-                    onClick={() =>
-                      commitPaste([...pendingPaste.unique, ...pendingPaste.duplicates.map((d) => d.row)], 0)
-                    }
-                  >
-                    Add all anyway
-                  </button>
+                  {pendingPaste.duplicates.length > 0 && (
+                    <button
+                      disabled={adding}
+                      onClick={() =>
+                        commitPaste(
+                          [...pendingPaste.unique, ...pendingPaste.duplicates.map((d) => d.row)],
+                          0
+                        )
+                      }
+                    >
+                      Add all {pendingPaste.unique.length + pendingPaste.duplicates.length}, repeats included
+                    </button>
+                  )}
                   <button disabled={adding} onClick={() => setPendingPaste(null)}>Cancel</button>
                 </div>
               </div>

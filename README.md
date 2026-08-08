@@ -115,8 +115,14 @@ npm run dev
 
 Signing in is *not* the same as being authorised. Firebase's Email/Password
 provider lets anyone holding the public API key create an account, so the app
-checks two things instead: is this the permanent owner account, or does a
-document exist at `admins/{uid}`?
+asks one question and only one:
+
+> does a document exist at `admins/{uid}`?
+
+That allow-list is the whole of authorisation. The permanent owner address gets
+exactly one privilege, and it is **not** data access: it may create its own
+`admins` record, which is what makes the very first sign-in work without anyone
+hand-creating a document in the Console.
 
 The owner account is **`almajeed.work@gmail.com`**, defined as
 `BOOTSTRAP_ADMIN_EMAIL` in `src/lib/schema.js` **and** in `firestore.rules`.
@@ -126,13 +132,16 @@ Both copies must match — the rules file cannot import from JavaScript.
 
 1. **Authentication → Users → Add user** → `almajeed.work@gmail.com` + a password.
 
-That's all. On its first sign-in the app writes its own record into the
-`admins` collection automatically, so the owner appears in the administrator
-list without anyone copying a UID by hand. Access does not depend on that
-write succeeding — the rules grant the owner access either way.
+On its first sign-in the app writes the owner's own record into `admins`, and
+access begins from that moment. If the write fails — rules not deployed yet, no
+connection — the app says so and you can sign out and in again to retry.
 
 > Until that address is registered, the email is unclaimed. Anyone who knew the
-> rule could register it and inherit administrator access, so do this first.
+> rule could register it, add themselves to the allow-list and inherit
+> administrator access, so do this first.
+
+Email verification is deliberately *not* required: accounts created from the
+Firebase Console are unverified, which is how every account here is made.
 
 ### 3.5 Add other administrators
 
@@ -141,8 +150,23 @@ write succeeding — the rules grant the owner access either way.
 3. **Firestore → Start collection** → ID `admins` → document ID = that UID →
    fields `email` and `name`.
 
-To revoke access, delete their `admins` document. (The owner account is not
-revocable this way — change `BOOTSTRAP_ADMIN_EMAIL` in both files and redeploy.)
+To revoke access, delete their `admins` document. That works for the owner too,
+but they can re-add themselves by signing in again — to remove them for good,
+delete the account in **Authentication** as well, or change
+`BOOTSTRAP_ADMIN_EMAIL` in both files and redeploy.
+
+### 3.6 Hardening the deployment
+
+`firebase.json` sends a Content-Security-Policy along with the usual
+`X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` and HSTS. The
+policy is tight — no inline scripts, no framing — and lists the exact Google
+origins the Firebase SDK needs, including `www.google.com` for the image
+Firestore's transport uses to probe the connection.
+
+It has been verified against a real build in Chromium, but **if you add a
+Firebase feature** (Storage, Analytics, popup sign-in) its origin must be added
+to `connect-src` or the call will be silently blocked. Check the browser
+console for `Refused to connect` after any such change.
 
 ---
 
@@ -231,15 +255,34 @@ src/
   lib/schema.js            field + organisation definitions — THE file to edit
   lib/parser.js            text -> structured records
   lib/tickets.js           ticket IDs, share links, ticket & receipt text
+  lib/dedupe.js            spotting a candidate who is already registered
+  lib/stats.js             registration counts, amount collected, seats left
   lib/db.js                Firestore reads/writes, ticket-ID allocation
-  lib/exporters.js         Excel + CSV (loaded on demand)
+  lib/exporters.js         which sheets to build (loaded on demand)
+  lib/xlsx.js              the .xlsx and .csv file formats themselves
   components/              WorkshopForm, RegistrationEditor,
                            RegistrationList, TicketDocument
   pages/                   Login, List, Import, Workshop, Edit, Ticket
   AuthContext.jsx          sign-in + admin allow-list check
   styles.css               all styling; monochrome only
+tests/                     parser, tickets, dedupe, stats, xlsx
 firestore.rules            access control
+firebase.json              hosting, caching and security headers
 ```
+
+### On the spreadsheet writer
+
+`lib/xlsx.js` writes `.xlsx` directly — it is a zip of a few XML parts, and
+fflate provides the zip. This replaced SheetJS, which has been stuck at 0.18.5
+on npm since the project moved to its own distribution, carrying an unpatched
+prototype-pollution advisory with no fix available. The replacement is a
+fraction of the size (the export bundle went from 286 kB to 16 kB) and removed
+the only high-severity finding from `npm audit`.
+
+Values are written as inline strings, never formulas, so a name such as
+`=cmd|calc` pasted into a registration lands in the sheet as text. CSV has no
+way to say "this is text", so there such a value is prefixed with an
+apostrophe — otherwise Excel would run it on open.
 
 ## 8. Deleting
 
@@ -273,7 +316,14 @@ the Firebase emulator.
 ## 10. Notes
 
 - Search and filtering happen on the client, so no composite Firestore indexes
-  are needed. Comfortable into the low thousands of records.
+  are needed. Comfortable into the low thousands of records. Past that, the
+  fix is server-side search — paging the list alone would break the search
+  box, which is the point of loading everything.
+- Exports read only the workshops currently on screen, not the whole database.
+- Dates are validated as real calendar days: `31/04/2026` is refused and
+  reported rather than stored and printed on a ticket.
+- The seat limit is not a hard stop — going over asks for confirmation, since
+  a coordinator may well have authorised the extra places.
 - Editing a workshop makes its registration list match the screen — rows
   deleted there are deleted from the database. Registrations added by somebody
   else *while the edit screen was open* are kept, not wiped, and you are told

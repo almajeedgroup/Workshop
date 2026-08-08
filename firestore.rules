@@ -5,61 +5,84 @@ rules_version = '2';
 // Firebase's Email/Password provider lets ANYONE who has the (public) web API
 // key create an account. So "signed in" is NOT proof of authorisation.
 //
-// A request is authorised when EITHER:
-//   1. it comes from the permanent owner account (BOOTSTRAP_ADMIN_EMAIL), or
-//   2. a document exists at /admins/{uid} for that user.
+// Authorisation is the /admins allow-list, and nothing else:
 //
-// (1) exists so the very first sign-in works without anyone having to
-// hand-create an /admins document. IMPORTANT: register that email address in
-// Authentication BEFORE (or immediately after) deploying these rules —
-// whoever owns the account owns the data.
+//     a request may read or write data  <=>  /admins/{request.auth.uid} exists
+//
+// The permanent owner address gets ONE privilege, and it is not data access:
+// it may create its own /admins record. That is what makes the very first
+// sign-in work without anyone hand-creating a document in the Console. The
+// owner is then an administrator by the same rule as everybody else.
+//
+// This matters: an impostor who claimed the owner address before it was
+// registered used to gain silent read access to every student's phone number
+// and date of birth. Now they must first write a document into /admins, which
+// is visible in the Console and in the audit log. Registering the address is
+// still the real protection — see below.
 //
 // To authorise anyone else:
 //   1. Firebase Console > Authentication > Users > Add user (email + password)
 //   2. Copy their UID
 //   3. Firestore > collection "admins" > document ID = that UID
 //      (fields: email, name)
-// To revoke: delete their /admins/{uid} document.
+// To revoke: delete their /admins/{uid} document. This works for the owner
+// too, though they can re-create their own record by signing in again — to
+// remove them for good, delete the account in Authentication as well.
 //
 // KEEP THE EMAIL BELOW IN SYNC with BOOTSTRAP_ADMIN_EMAIL in
 // src/lib/schema.js. Rules cannot import from JavaScript, so it lives in
 // both files; the copy here is the one that is actually enforced.
+//
+// NOTE ON email_verified: it is deliberately NOT required. Accounts created
+// from the Firebase Console are unverified, which is exactly how every
+// account here is made, so requiring it would lock out all of them.
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isOwner() {
+    function isAdmin() {
       return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Holder of the permanent owner address. Grants no data access on its
+    // own — only the right to join the allow-list above.
+    function isBootstrapOwner() {
+      return request.auth != null
+        && request.auth.token.email != null
         && request.auth.token.email.lower() == 'almajeed.work@gmail.com';
     }
 
-    function isAdmin() {
-      return request.auth != null
-        && (isOwner()
-            || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    function sized(value, max) {
+      return value is string && value.size() <= max;
     }
 
-    // The allow-list is not writable from the client, with one narrow
-    // exception: the owner account may create ITS OWN record, so the first
-    // sign-in registers itself in the list instead of needing a UID copied
-    // by hand in the Console. That grants no new privilege — isOwner() is
-    // already full access — it only materialises the record.
-    //
-    // Everyone else is added from the Firebase Console.
+    // Light-touch shape checks. Deliberately NOT a full field list: the app
+    // generates its fields from src/lib/schema.js, and mirroring that here
+    // would mean editing two files every time one is added. These bound what
+    // a stolen administrator session can store, without freezing the schema.
+    function sane(data, longestField) {
+      return data.keys().size() <= 40
+        && sized(data.get('searchText', ''), 8000)
+        && sized(data.get(longestField, ''), 300);
+    }
+
     match /admins/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
-      allow create: if isOwner()
+      allow create: if isBootstrapOwner()
                     && request.auth.uid == uid
                     && request.resource.data.email.lower() == request.auth.token.email.lower();
-      allow update: if isOwner() && request.auth.uid == uid;
+      allow update: if isBootstrapOwner() && request.auth.uid == uid;
       allow delete: if false;
     }
 
     match /workshops/{workshopId} {
-      allow read, create, update, delete: if isAdmin();
+      allow read, delete: if isAdmin();
+      allow create, update: if isAdmin() && sane(request.resource.data, 'title');
 
       match /registrations/{registrationId} {
-        allow read, create, update, delete: if isAdmin();
+        allow read, delete: if isAdmin();
+        allow create, update: if isAdmin() && sane(request.resource.data, 'name');
       }
     }
 
