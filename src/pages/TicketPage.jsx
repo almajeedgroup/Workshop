@@ -11,7 +11,11 @@ export default function TicketPage() {
   const { id, regId } = useParams();
   const [workshop, setWorkshop] = useState(null);
   const [reg, setReg] = useState(null);
-  const [error, setError] = useState('');
+  // Two kinds of failure, kept apart: one means there is no ticket to show,
+  // the other is a passing problem with an action. A failed copy must not
+  // take the ticket off the screen.
+  const [loadError, setLoadError] = useState('');
+  const [actionError, setActionError] = useState('');
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
@@ -20,28 +24,36 @@ export default function TicketPage() {
     Promise.all([getWorkshop(id), getRegistration(id, regId)])
       .then(([w, r]) => {
         if (!live) return;
-        if (!w || !r) { setError('Ticket not found.'); return; }
+        if (!w || !r) { setLoadError('Ticket not found.'); return; }
         setWorkshop(w);
         setReg(r);
       })
-      .catch((e) => live && setError(e.message))
+      .catch((e) => live && setLoadError(e.message))
       .finally(() => live && setLoading(false));
     return () => { live = false; };
   }, [id, regId]);
 
   if (loading) return <main><p className="count">Loading…</p></main>;
-  if (error) return <main><div className="notice warn">{error}</div></main>;
+  if (loadError) {
+    return (
+      <main>
+        <div className="notice warn">{loadError}</div>
+        <Link className="btn" to={`/w/${id}`}>← Back to the workshop</Link>
+      </main>
+    );
+  }
 
   const message = ticketMessage(workshop, reg);
   const plain = ticketMessagePlain(workshop, reg);
 
   const copy = async () => {
+    setActionError('');
     try {
       await navigator.clipboard.writeText(message);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      setError('Could not copy — select the preview text below and copy manually.');
+      setActionError('Could not copy — select the preview text below and copy it manually.');
     }
   };
 
@@ -63,6 +75,7 @@ export default function TicketPage() {
 
       <div className="panel no-print" style={{ marginTop: 18 }}>
         <h2>Send this ticket</h2>
+        {actionError && <div className="notice warn">{actionError}</div>}
         <div className="btn-row" style={{ marginBottom: 12 }}>
           {reg.whatsapp && (
             <>

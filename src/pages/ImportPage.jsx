@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { parseText, SAMPLE_WORKSHOP_TEXT, SAMPLE_REGISTRATION_TEXT } from '../lib/parser.js';
 import { createWorkshop } from '../lib/db.js';
+import { splitDuplicates, describeDuplicate } from '../lib/dedupe.js';
 import WorkshopForm from '../components/WorkshopForm.jsx';
 import RegistrationEditor from '../components/RegistrationEditor.jsx';
 import { WORKSHOP_FIELDS } from '../lib/schema.js';
@@ -42,17 +43,29 @@ export default function ImportPage() {
     setSaving(true);
     setError('');
     const done = [];
+    const storedIdx = new Set();
     try {
-      for (const r of records) {
+      for (const [i, r] of records.entries()) {
         if (missingFor(r).length) continue;
         const id = await createWorkshop(r.workshop, r.registrations);
         done.push({ id, title: r.workshop.title });
+        storedIdx.add(i);
       }
       setSaved(done);
       setRecords(null);
       setText('');
     } catch (e) {
-      setError(`Save failed: ${e.message}`);
+      // Report what did get through, and take those records off the screen.
+      // Otherwise the obvious next move is to press Save again, which would
+      // store a second copy of everything that already succeeded.
+      setSaved(done);
+      setRecords(records.filter((_, i) => !storedIdx.has(i)));
+      setError(
+        done.length
+          ? `Stopped after ${done.length} record${done.length === 1 ? '' : 's'}: ${e.message} — ` +
+            'those are saved and have been cleared from this screen. Press Save again for the rest.'
+          : `Save failed: ${e.message}`
+      );
     } finally {
       setSaving(false);
     }
@@ -95,7 +108,7 @@ export default function ImportPage() {
           <strong>Saved {saved.length} record{saved.length === 1 ? '' : 's'}.</strong>
           <ul>
             {saved.map((s) => (
-              <li key={s.id}><a href={`/w/${s.id}`}>{s.title || '(untitled)'}</a></li>
+              <li key={s.id}><Link to={`/w/${s.id}`}>{s.title || '(untitled)'}</Link></li>
             ))}
           </ul>
         </div>
@@ -153,6 +166,7 @@ export default function ImportPage() {
 
       {records && records.map((r, i) => {
         const missing = missingFor(r);
+        const { duplicates } = splitDuplicates(r.registrations);
         return (
           <div className="record-card" key={i}>
             <header>
@@ -181,6 +195,28 @@ export default function ImportPage() {
                 <div className="notice">
                   <strong>Check these:</strong>
                   <ul>{r.warnings.map((w, k) => <li key={k}>{w}</li>)}</ul>
+                </div>
+              )}
+
+              {duplicates.length > 0 && (
+                <div className="notice warn">
+                  <strong>
+                    {duplicates.length} registration{duplicates.length === 1 ? '' : 's'} appear
+                    {duplicates.length === 1 ? 's' : ''} more than once:
+                  </strong>
+                  <ul>{duplicates.map((d, k) => <li key={k}>{describeDuplicate(d)}</li>)}</ul>
+                  <div className="btn-row" style={{ marginTop: 10 }}>
+                    <button
+                      className="small"
+                      disabled={saving}
+                      onClick={() => patchRegistrations(i, splitDuplicates(r.registrations).unique)}
+                    >
+                      Remove the repeats
+                    </button>
+                    <span className="hint">
+                      Or leave them — each will be registered separately, with its own ticket.
+                    </span>
+                  </div>
                 </div>
               )}
 

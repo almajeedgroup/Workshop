@@ -69,9 +69,11 @@ function Protected({ children }) {
             in the <code>admins</code> collection in Firestore.
           </p>
           <p className="hint">
-            If this should be the owner account, check that the address matches{' '}
-            <code>BOOTSTRAP_ADMIN_EMAIL</code> in <code>src/lib/schema.js</code> and the
-            same address in <code>firestore.rules</code>.
+            If this should be the owner account, it failed to add itself to the list.
+            Check that the address matches <code>BOOTSTRAP_ADMIN_EMAIL</code> in{' '}
+            <code>src/lib/schema.js</code> and the same address in{' '}
+            <code>firestore.rules</code>, that the rules are deployed, then sign out and
+            in again.
           </p>
           <div className="btn-row" style={{ marginTop: 14 }}>
             <button onClick={logout}>Sign out</button>

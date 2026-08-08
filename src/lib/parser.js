@@ -21,6 +21,7 @@ import {
   REGISTRATION_FIELDS,
   REGISTRATION_POSITIONAL_ORDER,
   workshopFieldByKey,
+  registrationFieldByKey,
   emptyWorkshop,
   emptyRegistration,
   PAYMENT_STATUSES,
@@ -144,10 +145,27 @@ const MONTHS = {
   dec: 12, december: 12,
 };
 
+const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+function daysIn(year, month) {
+  if (month !== 2) return DAYS_IN_MONTH[month - 1];
+  const leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+  return leap ? 29 : 28;
+}
+
+/**
+ * Build an ISO date, rejecting anything that is not a real calendar day.
+ *
+ * "31/04/2026" and "29/02/2025" used to be accepted verbatim and printed on
+ * tickets. A date that cannot exist is a misreading, so it is refused here and
+ * the caller reports that it could not read a date — which the operator can
+ * see and fix, unlike a silently wrong one.
+ */
 function iso(y, m, d) {
   if (!y || !m || !d) return '';
-  if (m < 1 || m > 12 || d < 1 || d > 31) return '';
+  if (m < 1 || m > 12 || d < 1) return '';
   if (y < 100) y += y < 50 ? 2000 : 1900;
+  if (d > daysIn(y, m)) return '';
   return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 }
 
@@ -332,9 +350,32 @@ function detectDelimiter(lines) {
   return null;
 }
 
+/**
+ * Split on `delim`, honouring "quoted, cells" so a genuine CSV export pastes
+ * cleanly. Doubled quotes inside a quoted cell mean one literal quote.
+ */
+function splitQuoted(line, delim) {
+  const out = [];
+  let cur = '';
+  let quoted = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (quoted) {
+      if (c !== '"') cur += c;
+      else if (line[i + 1] === '"') { cur += '"'; i++; }
+      else quoted = false;
+    } else if (c === '"') quoted = true;
+    else if (c === delim) { out.push(cur); cur = ''; }
+    else cur += c;
+  }
+  out.push(cur);
+  return out;
+}
+
 function splitRow(line, delim) {
   if (delim === 'spaces') return line.split(/\s{2,}/);
   if (delim === null) return [line];
+  if (delim === ',' || line.includes('"')) return splitQuoted(line, delim);
   return line.split(delim);
 }
 
@@ -346,6 +387,131 @@ function headerMap(cells) {
     if (key && !(key in map)) { map[key] = i; hits++; }
   });
   return hits >= 2 ? map : null;
+}
+
+/* ------------------------------------------------------------------ *
+ * Column alignment
+ *
+ * An unquoted comma inside a value ("Jayanagar, Bengaluru") splits one cell
+ * into two and shifts every later column left — which used to push the phone
+ * number into a field that then discarded it. When a row has more cells than
+ * the header has columns, work out which cells were split apart by checking
+ * each typed column (phone / email / date / number) against what it is
+ * actually holding, and rejoin the surplus into the text column it came from.
+ * ------------------------------------------------------------------ */
+
+const NUMBER_CELL_RE = /^[^\d]{0,3}[\d,]+(?:\.\d+)?[^\d]{0,3}$/;
+
+/** Does this cell plausibly hold a value of this field type? */
+function matchesType(type, cell) {
+  const s = String(cell ?? '').trim();
+  if (!s) return false;
+  switch (type) {
+    case 'email': return EMAIL_RE.test(s);
+    case 'tel': return PHONE_RE.test(s) && s.replace(/\D/g, '').length >= 7;
+    case 'date': return DOB_RE.test(s);
+    case 'number': return NUMBER_CELL_RE.test(s);
+    case 'enum': return true;
+    default: return true;
+  }
+}
+
+/** As above, but an empty cell is acceptable anywhere. */
+function cellLooksLike(type, cell) {
+  return String(cell ?? '').trim() === '' || matchesType(type, cell);
+}
+
+/**
+ * How reluctant we are to believe a column swallowed a comma. Addresses and
+ * free-text notes routinely contain one; names and qualifications rarely do.
+ */
+function mergeCost(field) {
+  if (!field || !field.key) return 4;
+  if (field.key === 'area' || field.key === 'notes') return 1;
+  if (field.key === 'courseName' || field.key === 'qualification') return 3;
+  return 6;
+}
+
+/** The field sitting at each column position, `null` where the header wasn't recognised. */
+function columnsFor(map, width) {
+  const columns = new Array(width).fill(null);
+  for (const [key, idx] of Object.entries(map)) {
+    if (idx < width) columns[idx] = registrationFieldByKey[key] || null;
+  }
+  return columns;
+}
+
+/**
+ * Fit `cells` (too many) onto `columns` by letting text columns absorb the
+ * surplus, while typed columns must still end up holding something of their
+ * own type. Returns one value per column, or null when no such fit exists.
+ */
+function alignCells(cells, columns) {
+  const width = columns.length;
+  if (cells.length <= width) return null;
+
+  const memo = new Map();
+
+  const best = (ci, coli) => {
+    if (coli === width) return ci === cells.length ? { cost: 0, rightness: 0, take: [] } : null;
+    const memoKey = ci * (width + 1) + coli;
+    if (memo.has(memoKey)) return memo.get(memoKey);
+
+    const field = columns[coli];
+    const typed = field && isTypedField(field);
+    // Every later column still needs at least one cell of its own.
+    const maxTake = cells.length - ci - (width - coli - 1);
+    const limit = typed ? Math.min(1, maxTake) : maxTake;
+
+    let chosen = null;
+    for (let take = 1; take <= limit; take++) {
+      const joined = cells.slice(ci, ci + take).join(', ').trim();
+      if (typed && !cellLooksLike(field.type, joined)) continue;
+      const sub = best(ci + take, coli + 1);
+      if (!sub) continue;
+      const cost = sub.cost + (take - 1) * mergeCost(field);
+      // Tie-break towards the later column: "Area, City" is far more common
+      // than a comma in the first column of a row.
+      const rightness = sub.rightness + (take - 1) * coli;
+      if (!chosen || cost < chosen.cost || (cost === chosen.cost && rightness > chosen.rightness)) {
+        chosen = { cost, rightness, take: [take, ...sub.take] };
+      }
+    }
+
+    memo.set(memoKey, chosen);
+    return chosen;
+  };
+
+  const fit = best(0, 0);
+  if (!fit) return null;
+
+  const merged = [];
+  let i = 0;
+  for (const take of fit.take) {
+    merged.push(cells.slice(i, i + take).join(', ').trim());
+    i += take;
+  }
+  return merged;
+}
+
+/** Columns whose value is recognisable on sight, and so recoverable. */
+const RESCUABLE = [['whatsapp', 'tel'], ['email', 'email'], ['dob', 'date']];
+
+/**
+ * Last line of defence: if a mapped column ended up holding something that
+ * cannot possibly be a phone number / email / date, but an unclaimed cell in
+ * the row plainly is one, take it. Better a value in the right field than a
+ * value silently thrown away by `coerce`.
+ */
+function rescueTypedCells(reg, cells, map) {
+  const claimed = new Set(Object.values(reg).map((v) => String(v ?? '').trim()).filter(Boolean));
+  for (const [key, type] of RESCUABLE) {
+    if (!(key in map)) continue;
+    const current = String(reg[key] ?? '').trim();
+    if (current && matchesType(type, current)) continue;
+    const hit = cells.find((c) => c && c !== current && !claimed.has(c) && matchesType(type, c));
+    if (hit) { reg[key] = hit; claimed.add(hit); }
+  }
 }
 
 function finishRegistration(reg) {
@@ -409,10 +575,10 @@ function looksLikeBlocks(lines) {
  * labelled-block shape or a table (with or without a header row).
  */
 export function parseRegistrations(text) {
-  const lines = cleanText(text)
+  const rawLines = cleanText(text)
     .split('\n')
-    .map((l) => l.trim())
-    .filter((l) => l && !/^[-=_*]{3,}$/.test(l));
+    .filter((l) => l.trim() && !/^[-=_*]{3,}$/.test(l.trim()));
+  const lines = rawLines.map((l) => l.trim());
 
   if (lines.length === 0) return [];
 
@@ -420,27 +586,41 @@ export function parseRegistrations(text) {
 
   // ---- table mode ----
   const delim = detectDelimiter(lines);
-  const rows = lines.map((l) =>
-    splitRow(stripBullet(stripMarkup(l)), delim).map((c) => c.trim())
+  // A tab-separated row can legitimately open with an empty cell ("\tAyesha"),
+  // and trimming the line would delete it and shift every column left. Only
+  // tabs carry that meaning, so other delimiters keep the tidied lines.
+  const sourceLines = delim === '\t' ? rawLines : lines;
+  const rows = sourceLines.map((l) =>
+    splitRow(l.replace(/[*_~`]/g, ''), delim)
+      .map((c, i) => (i === 0 ? stripBullet(c) : c).trim())
   );
 
+  const numericFirst = rows.filter((r) => r.length > 1 && /^\d{1,3}$/.test(r[0])).length;
   const hasSerialCol =
-    rows.length > 1 &&
-    rows.filter((r) => r.length > 1 && /^\d{1,3}$/.test(r[0])).length >= rows.length - 1;
+    rows.length > 1
+      // A serial column is numeric on every row but the header.
+      ? numericFirst >= rows.length - 1
+      // A lone row has no pattern to compare against, so require a serial
+      // number followed by something that clearly is not one.
+      : rows[0].length >= 3 && /^\d{1,3}$/.test(rows[0][0]) && !/^\d/.test(rows[0][1] || '');
 
   let body = hasSerialCol ? rows.map((r) => r.slice(1)) : rows;
 
   const map = headerMap(body[0] || []);
+  const columns = map ? columnsFor(map, body[0].length) : null;
   if (map) body = body.slice(1);
 
   const out = [];
-  for (const cells of body) {
-    const nonEmpty = cells.filter((c) => c !== '');
+  for (const rawCells of body) {
+    const nonEmpty = rawCells.filter((c) => c !== '');
     if (nonEmpty.length === 0) continue;
 
     const reg = {};
     if (map) {
+      const cells =
+        rawCells.length > columns.length ? alignCells(rawCells, columns) || rawCells : rawCells;
       for (const [key, idx] of Object.entries(map)) reg[key] = cells[idx] ?? '';
+      rescueTypedCells(reg, rawCells, map);
     } else {
       const rest = [];
       for (const cell of nonEmpty) {
@@ -471,6 +651,33 @@ export function parseRegistrations(text) {
 
 const SEPARATOR_RE = /^\s*(?:[-=_~]{3,}|#{2,}.*)\s*$/;
 
+/**
+ * Could this block stand on its own as a workshop?
+ *
+ * A rule of dashes is used both to separate two workshops and to decorate one,
+ * so the divider alone cannot be trusted. A block counts as a record if it
+ * names a title outright, or carries enough workshop detail — two labelled
+ * fields, or two poster emoji — to be one in its own right.
+ */
+function looksLikeRecord(block) {
+  const fields = new Set();
+  let emoji = 0;
+
+  for (const line of block.split('\n')) {
+    if (!line.trim()) continue;
+
+    const kv = matchKeyValue(line);
+    const key = kv ? WORKSHOP_ALIAS.get(normalizeKey(kv.rawKey)) : undefined;
+    if (key === 'title') return true;
+    if (key) fields.add(key);
+
+    const hint = emojiHint(leadingEmoji(line));
+    if (hint) emoji++;
+  }
+
+  return fields.size >= 2 || emoji >= 2;
+}
+
 function splitRecords(text) {
   const lines = text.split('\n');
 
@@ -482,7 +689,12 @@ function splitRecords(text) {
       else cur.push(line);
     }
     blocks.push(cur);
-    return blocks.map((b) => b.join('\n')).filter((b) => b.trim());
+
+    const parts = blocks.map((b) => b.join('\n')).filter((b) => b.trim());
+    // Only honour the divider if what it separates really are separate
+    // records. Otherwise it was decoration inside one, and splitting there
+    // would tear a workshop in half.
+    if (parts.filter(looksLikeRecord).length >= 2) return parts;
   }
 
   const titleIdx = [];
@@ -533,6 +745,10 @@ function parseRecord(block) {
       else registrationsText += '\n';
       continue;
     }
+
+    // A rule that turned out to be decoration rather than a record separator.
+    // It is never content.
+    if (SEPARATOR_RE.test(line)) continue;
 
     const kv = matchKeyValue(line);
     const nk = kv ? normalizeKey(kv.rawKey) : null;

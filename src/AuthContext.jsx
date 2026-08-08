@@ -1,9 +1,8 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db, isConfigured } from './firebase.js';
+import { auth, isConfigured } from './firebase.js';
 import { BOOTSTRAP_ADMIN_EMAIL } from './lib/schema.js';
-import { ensureAdminRecord } from './lib/db.js';
+import { isListedAdmin, registerOwner } from './lib/db.js';
 
 const Ctx = createContext(null);
 export const useAuth = () => useContext(Ctx);
@@ -17,29 +16,27 @@ export function AuthProvider({ children }) {
     if (!isConfigured) return;
     return onAuthStateChanged(auth, async (u) => {
       setUser(u);
-      if (u) {
-        // Signing in is not the same as being authorised. Access comes from
-        // the /admins allow-list, plus the permanent owner account so the
-        // first ever sign-in isn't locked out. This mirrors firestore.rules —
-        // the server enforces the same two conditions.
-        const isOwner =
-          (u.email || '').toLowerCase() === BOOTSTRAP_ADMIN_EMAIL.toLowerCase();
-        if (isOwner) {
-          setIsAdmin(true);
-          // Record the owner in the admins list on first sign-in. Best-effort:
-          // access does not depend on it, so a failure here is not fatal.
-          ensureAdminRecord(u);
-        } else {
-          try {
-            const snap = await getDoc(doc(db, 'admins', u.uid));
-            setIsAdmin(snap.exists());
-          } catch {
-            setIsAdmin(false);
-          }
-        }
-      } else {
+
+      if (!u) {
         setIsAdmin(false);
+        setLoading(false);
+        return;
       }
+
+      // Signing in is not the same as being authorised: anyone holding the
+      // public API key can create an account. Authorisation is the /admins
+      // allow-list and nothing else, exactly as firestore.rules enforces it.
+      let allowed = await isListedAdmin(u.uid);
+
+      if (!allowed) {
+        // First sign-in by the permanent owner. The rules let that one
+        // address add itself to the list — which is the only thing this
+        // address can do that others cannot.
+        const isOwner = (u.email || '').toLowerCase() === BOOTSTRAP_ADMIN_EMAIL.toLowerCase();
+        if (isOwner) allowed = await registerOwner(u);
+      }
+
+      setIsAdmin(allowed);
       setLoading(false);
     });
   }, []);

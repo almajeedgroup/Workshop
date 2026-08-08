@@ -2,9 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   getWorkshop, getRegistrations, deleteWorkshop, updateRegistration, addRegistrations,
+  deleteRegistration,
 } from '../lib/db.js';
 import RegistrationList from '../components/RegistrationList.jsx';
 import { parseRegistrations } from '../lib/parser.js';
+import { splitDuplicates, describeDuplicate } from '../lib/dedupe.js';
+import { amountCollected, paymentCounts, seatsLeft as seatsLeftFor } from '../lib/stats.js';
 import { WORKSHOP_FIELDS, ISSUER, CURRENCY } from '../lib/schema.js';
 import { formatDateRange } from '../lib/tickets.js';
 
@@ -30,6 +33,8 @@ export default function WorkshopPage() {
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState('');
   const [adding, setAdding] = useState(false);
+  const [notice, setNotice] = useState('');
+  const [pendingPaste, setPendingPaste] = useState(null);
 
   const reload = async () => {
     const [w, r] = await Promise.all([getWorkshop(id), getRegistrations(id)]);
@@ -46,18 +51,10 @@ export default function WorkshopPage() {
     return () => { live = false; };
   }, [id]);
 
-  const stats = useMemo(() => {
-    const paid = regs.filter((r) => r.paymentStatus === 'Paid');
-    const collected = paid.reduce(
-      (s, r) => s + (Number(r.amountPaid) || Number(workshop?.feeAmount) || 0), 0
-    );
-    return {
-      total: regs.length,
-      paid: paid.length,
-      pending: regs.filter((r) => r.paymentStatus === 'Pending').length,
-      collected,
-    };
-  }, [regs, workshop]);
+  const stats = useMemo(
+    () => ({ ...paymentCounts(regs), collected: amountCollected(workshop, regs) }),
+    [regs, workshop]
+  );
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -86,23 +83,68 @@ export default function WorkshopPage() {
     }
   };
 
+  const commitPaste = async (rows, skipped) => {
+    setAdding(true);
+    setError('');
+    try {
+      await addRegistrations(id, rows);
+      await reload();
+      setPasteText('');
+      setPasteOpen(false);
+      setPendingPaste(null);
+      setNotice(
+        `Added ${rows.length} registration${rows.length === 1 ? '' : 's'}` +
+        (skipped ? `, skipped ${skipped} already registered.` : '.')
+      );
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  /**
+   * Registrations arrive as pasted WhatsApp replies, so overlapping batches
+   * are routine. Anything that matches someone already registered is held
+   * back for a decision rather than quietly issued a second ticket.
+   */
   const addPasted = async () => {
     const parsed = parseRegistrations(pasteText);
     if (!parsed.length) {
       setError('No registrations recognised in that text.');
       return;
     }
-    setAdding(true);
+    setNotice('');
+    const { unique, duplicates } = splitDuplicates(parsed, regs);
+
+    // The seat limit was previously only reported after the fact. Adding past
+    // it is still allowed — a coordinator may well have authorised it — but it
+    // is now a decision rather than a surprise.
+    const limit = Number(workshop.seatLimit) || 0;
+    const overBy = limit ? regs.length + unique.length - limit : 0;
+
+    if (duplicates.length || overBy > 0) {
+      setError('');
+      setPendingPaste({ unique, duplicates, overBy });
+      return;
+    }
+    await commitPaste(parsed, 0);
+  };
+
+  const deleteOne = async (reg) => {
+    setBusyId(reg.id);
     setError('');
     try {
-      await addRegistrations(id, parsed);
-      await reload();
-      setPasteText('');
-      setPasteOpen(false);
+      await deleteRegistration(id, reg.id);
+      setRegs((prev) => prev.filter((r) => r.id !== reg.id));
+      setNotice(
+        `Deleted ${reg.name || 'the registration'}` +
+        (reg.ticketId ? ` (ticket ${reg.ticketId}). That number is retired, not reissued.` : '.')
+      );
     } catch (e) {
       setError(e.message);
     } finally {
-      setAdding(false);
+      setBusyId('');
     }
   };
 
@@ -132,7 +174,7 @@ export default function WorkshopPage() {
     return <main><div className="empty">Workshop not found. <Link to="/">Back to records</Link></div></main>;
   }
 
-  const seatsLeft = workshop.seatLimit ? Number(workshop.seatLimit) - regs.length : null;
+  const seatsLeft = seatsLeftFor(workshop, regs.length);
 
   return (
     <main>
@@ -160,6 +202,7 @@ export default function WorkshopPage() {
       </div>
 
       {error && <div className="notice warn">{error}</div>}
+      {notice && <div className="notice no-print">{notice}</div>}
 
       <div className="stats no-print">
         <div className="stat"><span className="n">{stats.total}</span><span className="l">Registered</span></div>
@@ -225,7 +268,8 @@ export default function WorkshopPage() {
               className="mono-area"
               style={{ minHeight: 0 }}
               value={pasteText}
-              onChange={(e) => setPasteText(e.target.value)}
+              // Editing the text invalidates any duplicate check already shown.
+              onChange={(e) => { setPasteText(e.target.value); setPendingPaste(null); }}
               placeholder={'*Name:* …\n*DoB:* …\n*Qualification:* …\n*Course Name:* …\n*WhatsApp #:* …\n*Area:* …\n*Email ID:* …\n\n(paste as many replies as you like, one after another)'}
             />
             <div className="btn-row" style={{ marginTop: 8 }}>
@@ -234,6 +278,57 @@ export default function WorkshopPage() {
               </button>
               <span className="hint">Each gets a ticket ID automatically.</span>
             </div>
+
+            {pendingPaste && (
+              <div className="notice warn" style={{ marginTop: 12 }}>
+                {pendingPaste.duplicates.length > 0 && (
+                  <>
+                    <strong>
+                      {pendingPaste.duplicates.length === 1
+                        ? 'One of these is already registered:'
+                        : `${pendingPaste.duplicates.length} of these are already registered:`}
+                    </strong>
+                    <ul>
+                      {pendingPaste.duplicates.map((d, k) => <li key={k}>{describeDuplicate(d)}</li>)}
+                    </ul>
+                  </>
+                )}
+
+                {pendingPaste.overBy > 0 && (
+                  <p style={{ margin: pendingPaste.duplicates.length ? '10px 0 0' : 0 }}>
+                    <strong>
+                      This would put the workshop {pendingPaste.overBy} over its seat limit of{' '}
+                      {workshop.seatLimit}.
+                    </strong>{' '}
+                    Adding them is allowed — confirm below if that is intended.
+                  </p>
+                )}
+                <div className="btn-row" style={{ marginTop: 10 }}>
+                  <button
+                    className="primary"
+                    disabled={adding || !pendingPaste.unique.length}
+                    onClick={() => commitPaste(pendingPaste.unique, pendingPaste.duplicates.length)}
+                  >
+                    {adding ? 'Adding…' : `Add ${pendingPaste.unique.length}`}
+                    {pendingPaste.duplicates.length > 0 ? ' new' : ''}
+                  </button>
+                  {pendingPaste.duplicates.length > 0 && (
+                    <button
+                      disabled={adding}
+                      onClick={() =>
+                        commitPaste(
+                          [...pendingPaste.unique, ...pendingPaste.duplicates.map((d) => d.row)],
+                          0
+                        )
+                      }
+                    >
+                      Add all {pendingPaste.unique.length + pendingPaste.duplicates.length}, repeats included
+                    </button>
+                  )}
+                  <button disabled={adding} onClick={() => setPendingPaste(null)}>Cancel</button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -258,6 +353,7 @@ export default function WorkshopPage() {
           workshop={workshop}
           rows={filtered}
           onPaymentChange={changePayment}
+          onDelete={deleteOne}
           busyId={busyId}
         />
       </div>

@@ -20,6 +20,33 @@
           {
             "key": "Cache-Control",
             "value": "no-cache, max-age=0, must-revalidate"
+          },
+          {
+            "//": "connect-src lists what the Firebase SDK actually talks to: Identity Toolkit and Secure Token for auth, Firestore for data. img-src allows www.google.com because Firestore's WebChannel transport fetches cleardot.gif from there to probe the connection — without it the browser blocks the probe on every session. 'unsafe-inline' on style-src is required because React writes inline style attributes; there are no inline scripts, so script-src stays strict. Verified against a real build in Chromium. If a Firebase feature is added later (Storage, Analytics, popup sign-in) its origin must be added here or the call will be blocked.",
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.google.com; font-src 'self'; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://*.googleapis.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+          },
+          {
+            "key": "X-Content-Type-Options",
+            "value": "nosniff"
+          },
+          {
+            "//": "frame-ancestors above covers modern browsers; this is the older equivalent.",
+            "key": "X-Frame-Options",
+            "value": "DENY"
+          },
+          {
+            "//": "Ticket URLs carry a workshop and registration ID, so keep them off third-party referers.",
+            "key": "Referrer-Policy",
+            "value": "same-origin"
+          },
+          {
+            "key": "Permissions-Policy",
+            "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+          },
+          {
+            "key": "Strict-Transport-Security",
+            "value": "max-age=31536000; includeSubDomains"
           }
         ]
       },
