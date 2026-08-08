@@ -10,7 +10,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  ticketPrefixFor, formatTicketId, compareTicketIds,
+  ticketPrefixFor, formatTicketId, compareTicketIds, highestTicketSeq,
   formatDate, formatDateRange, ticketMessage, paymentReminderMessage,
   whatsappLink, mailtoLink, telLink,
 } from '../src/lib/tickets.js';
@@ -67,6 +67,36 @@ test('order: different prefixes group together', () => {
     ['B-002', 'A-010', 'B-001', 'A-002'].sort(compareTicketIds),
     ['A-002', 'A-010', 'B-001', 'B-002']
   );
+});
+
+/* ------------------------------------------------------------------ *
+ * Tickets that arrive carrying their own number
+ * ------------------------------------------------------------------ */
+
+test('the high-water mark is the largest number already issued', () => {
+  assert.equal(highestTicketSeq('IIC', ['IIC-006', 'IIC-012', 'IIC-007']), 12);
+});
+
+test('padding and ordering do not matter', () => {
+  assert.equal(highestTicketSeq('IIC', ['IIC-9', 'IIC-010', 'IIC-1000']), 1000);
+});
+
+test('a different series is not counted', () => {
+  // Two workshops, two prefixes: RMI-050 must not push the IIC counter to 50.
+  assert.equal(highestTicketSeq('IIC', ['IIC-006', 'RMI-050']), 6);
+});
+
+test('the prefix match ignores case', () => {
+  assert.equal(highestTicketSeq('iic', ['IIC-006']), 6);
+});
+
+test('anything unparseable is skipped rather than guessed at', () => {
+  assert.equal(highestTicketSeq('IIC', ['', null, undefined, 'no-number', 'IIC-006']), 6);
+  assert.equal(highestTicketSeq('IIC', []), 0);
+});
+
+test('a prefix containing a dash still resolves', () => {
+  assert.equal(highestTicketSeq('IIC-AI26', ['IIC-AI26-004']), 4);
 });
 
 /* ------------------------------------------------------------------ *

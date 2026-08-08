@@ -15,7 +15,9 @@ import { db } from '../firebase.js';
 import {
   WORKSHOP_FIELDS, REGISTRATION_FIELDS, emptyWorkshop,
 } from './schema.js';
-import { ticketPrefixFor, formatTicketId, compareTicketIds } from './tickets.js';
+import {
+  ticketPrefixFor, formatTicketId, compareTicketIds, highestTicketSeq,
+} from './tickets.js';
 
 const WORKSHOPS = 'workshops';
 const REGISTRATIONS = 'registrations';
@@ -134,31 +136,40 @@ export async function getRegistration(workshopId, regId) {
  * Runs in a transaction, so concurrent imports cannot be handed the same
  * number. Returns the formatted IDs, e.g. ['IIC-AI26-004', 'IIC-AI26-005'].
  *
- * Two guarantees, both of which the register depends on:
+ * Three guarantees, all of which the register depends on:
  *   - the prefix is whatever the workshop was first given, never re-derived,
  *     so an edit to the title cannot change the series mid-event;
  *   - `lastTicketSeq` only ever climbs. Deleting a registration does not hand
  *     its number to the next candidate, so an issued ticket stays unique to
- *     the person who was issued it.
+ *     the person who was issued it;
+ *   - importing rows that already carry a ticket number pushes the counter
+ *     past them (`carriedIds`), so re-entering a printed ticket cannot leave
+ *     the counter behind and hand the same number out a second time.
  */
-export async function allocateTicketIds(workshopId, count) {
-  if (count <= 0) return [];
+export async function allocateTicketIds(workshopId, count, carriedIds = []) {
   const ref = doc(db, WORKSHOPS, workshopId);
 
   return runTransaction(db, async (tx) => {
     const snap = await tx.get(ref);
     if (!snap.exists()) throw new Error('Workshop no longer exists.');
     const data = snap.data();
-    const start = Number(data.lastTicketSeq || 0);
 
     const stored = String(data.ticketPrefix || '').trim();
     const prefix = stored || ticketPrefixFor(data);
 
-    const patch = { lastTicketSeq: start + count, updatedAt: serverTimestamp() };
-    // Pin it now, so documents written before this behaviour existed keep the
-    // prefix they have already been issuing.
+    // Never issue below a number that already exists. `carriedIds` are tickets
+    // arriving with their own number — re-entered from a printed ticket, or
+    // restored after a mishap. Without this the counter would still be at 0
+    // and the next candidate would be handed IIC-001 while somebody already
+    // holds that ticket.
+    const start = Math.max(Number(data.lastTicketSeq || 0), highestTicketSeq(prefix, carriedIds));
+
+    const patch = {};
+    // Pin the prefix now, so documents written before that behaviour existed
+    // keep the one they have already been issuing.
     if (!stored) patch.ticketPrefix = prefix;
-    tx.update(ref, patch);
+    if (start + count !== Number(data.lastTicketSeq || 0)) patch.lastTicketSeq = start + count;
+    if (Object.keys(patch).length) tx.update(ref, { ...patch, updatedAt: serverTimestamp() });
 
     const ids = [];
     for (let i = 1; i <= count; i++) ids.push(formatTicketId(prefix, start + i));
@@ -210,8 +221,9 @@ export async function updateWorkshop(id, workshop) {
 export async function addRegistrations(workshopId, registrations) {
   if (!registrations.length) return [];
 
-  const needing = registrations.filter((r) => !String(r.ticketId || '').trim()).length;
-  const fresh = await allocateTicketIds(workshopId, needing);
+  const carried = registrations.map((r) => r.ticketId).filter(Boolean);
+  const needing = registrations.length - carried.length;
+  const fresh = await allocateTicketIds(workshopId, needing, carried);
 
   let n = 0;
   const withIds = registrations.map((r) =>
@@ -265,8 +277,9 @@ export async function syncRegistrations(workshopId, registrations, baseIds = nul
   // nothing rather than guess.
   const deletable = baseIds ? new Set(baseIds) : new Set();
 
-  const needing = registrations.filter((r) => !String(r.ticketId || '').trim()).length;
-  const fresh = await allocateTicketIds(workshopId, needing);
+  const carried = registrations.map((r) => r.ticketId).filter(Boolean);
+  const needing = registrations.length - carried.length;
+  const fresh = await allocateTicketIds(workshopId, needing, carried);
   let n = 0;
 
   const ops = [];
