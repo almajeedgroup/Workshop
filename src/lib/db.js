@@ -15,7 +15,7 @@ import { db } from '../firebase.js';
 import {
   WORKSHOP_FIELDS, REGISTRATION_FIELDS, emptyWorkshop,
 } from './schema.js';
-import { ticketPrefixFor, formatTicketId } from './tickets.js';
+import { ticketPrefixFor, formatTicketId, compareTicketIds } from './tickets.js';
 
 const WORKSHOPS = 'workshops';
 const REGISTRATIONS = 'registrations';
@@ -101,10 +101,13 @@ export async function getWorkshop(id) {
 }
 
 export async function getRegistrations(workshopId) {
-  const snap = await getDocs(
-    query(collection(db, WORKSHOPS, workshopId, REGISTRATIONS), orderBy('ticketId'))
-  );
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const snap = await getDocs(collection(db, WORKSHOPS, workshopId, REGISTRATIONS));
+  // Sorted here rather than by Firestore: `orderBy('ticketId')` is a string
+  // sort, which files PREFIX-1000 ahead of PREFIX-999, and drops any row that
+  // has no ticket ID at all.
+  return snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => compareTicketIds(a.ticketId, b.ticketId));
 }
 
 export async function getRegistration(workshopId, regId) {
@@ -122,6 +125,13 @@ export async function getRegistration(workshopId, regId) {
  *
  * Runs in a transaction, so concurrent imports cannot be handed the same
  * number. Returns the formatted IDs, e.g. ['IIC-AI26-004', 'IIC-AI26-005'].
+ *
+ * Two guarantees, both of which the register depends on:
+ *   - the prefix is whatever the workshop was first given, never re-derived,
+ *     so an edit to the title cannot change the series mid-event;
+ *   - `lastTicketSeq` only ever climbs. Deleting a registration does not hand
+ *     its number to the next candidate, so an issued ticket stays unique to
+ *     the person who was issued it.
  */
 export async function allocateTicketIds(workshopId, count) {
   if (count <= 0) return [];
@@ -132,9 +142,15 @@ export async function allocateTicketIds(workshopId, count) {
     if (!snap.exists()) throw new Error('Workshop no longer exists.');
     const data = snap.data();
     const start = Number(data.lastTicketSeq || 0);
-    const prefix = ticketPrefixFor(data);
 
-    tx.update(ref, { lastTicketSeq: start + count, updatedAt: serverTimestamp() });
+    const stored = String(data.ticketPrefix || '').trim();
+    const prefix = stored || ticketPrefixFor(data);
+
+    const patch = { lastTicketSeq: start + count, updatedAt: serverTimestamp() };
+    // Pin it now, so documents written before this behaviour existed keep the
+    // prefix they have already been issuing.
+    if (!stored) patch.ticketPrefix = prefix;
+    tx.update(ref, patch);
 
     const ids = [];
     for (let i = 1; i <= count; i++) ids.push(formatTicketId(prefix, start + i));
@@ -147,8 +163,14 @@ export async function allocateTicketIds(workshopId, count) {
  * ------------------------------------------------------------------ */
 
 export async function createWorkshop(workshop, registrations = []) {
+  const data = sanitizeWorkshop(workshop);
+  // Mint the ticket prefix once, here, and store it. Leaving it blank would
+  // mean re-deriving it from the title at every allocation, so renaming the
+  // workshop later would start a second ticket series inside one event.
+  if (!data.ticketPrefix) data.ticketPrefix = ticketPrefixFor(data);
+
   const ref = await addDoc(collection(db, WORKSHOPS), {
-    ...sanitizeWorkshop(workshop),
+    ...data,
     lastTicketSeq: 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -158,11 +180,19 @@ export async function createWorkshop(workshop, registrations = []) {
 }
 
 export async function updateWorkshop(id, workshop) {
-  await setDoc(
-    doc(db, WORKSHOPS, id),
-    { ...sanitizeWorkshop(workshop), updatedAt: serverTimestamp() },
-    { merge: true }
-  );
+  const ref = doc(db, WORKSHOPS, id);
+  const data = sanitizeWorkshop(workshop);
+
+  if (!data.ticketPrefix) {
+    // The prefix was cleared in the form. Restore the one this workshop has
+    // been issuing rather than deriving a fresh one — tickets already in
+    // people's hands have to keep matching the ones issued next.
+    const snap = await getDoc(ref);
+    const stored = snap.exists() ? String(snap.data().ticketPrefix || '').trim() : '';
+    data.ticketPrefix = stored || ticketPrefixFor(data);
+  }
+
+  await setDoc(ref, { ...data, updatedAt: serverTimestamp() }, { merge: true });
 }
 
 /**
@@ -205,25 +235,44 @@ export async function deleteRegistration(workshopId, regId) {
 }
 
 /**
- * Rewrite the whole registration list to match `registrations` exactly.
- * Rows carrying an `id` are updated, new rows are added (and get a ticket
- * ID), and anything no longer present is removed.
+ * Make the stored registration list match `registrations`.
+ *
+ * Rows carrying an `id` are updated, new rows are added (and get a ticket ID),
+ * and rows the editor removed are deleted.
+ *
+ * `baseIds` is the set of registration IDs the editor actually loaded. Only
+ * those may be deleted — anything that appeared in Firestore afterwards was
+ * added by somebody else while this screen was open, and is left alone. This
+ * screen is a full-list rewrite, so without that fence one administrator
+ * saving an edit would wipe out registrations another had just entered.
+ *
+ * Returns { deleted, added, updated, keptFromOthers } so the caller can say
+ * what happened.
  */
-export async function syncRegistrations(workshopId, registrations) {
+export async function syncRegistrations(workshopId, registrations, baseIds = null) {
   const col = collection(db, WORKSHOPS, workshopId, REGISTRATIONS);
   const existing = await getDocs(col);
   const keep = new Set(registrations.map((r) => r.id).filter(Boolean));
+  // No baseline supplied (a caller that never loaded the list) — delete
+  // nothing rather than guess.
+  const deletable = baseIds ? new Set(baseIds) : new Set();
 
   const needing = registrations.filter((r) => !String(r.ticketId || '').trim()).length;
   const fresh = await allocateTicketIds(workshopId, needing);
   let n = 0;
 
   const ops = [];
+  let keptFromOthers = 0;
   for (const d of existing.docs) {
-    if (!keep.has(d.id)) ops.push({ type: 'delete', ref: d.ref });
+    if (keep.has(d.id)) continue;
+    if (deletable.has(d.id)) ops.push({ type: 'delete', ref: d.ref });
+    else keptFromOthers++;
   }
+
+  let added = 0;
   for (const r of registrations) {
     const withId = String(r.ticketId || '').trim() ? r : { ...r, ticketId: fresh[n++] };
+    if (!r.id) added++;
     ops.push({
       type: 'set',
       ref: r.id ? doc(col, r.id) : doc(col),
@@ -239,6 +288,13 @@ export async function syncRegistrations(workshopId, registrations) {
     }
     await batch.commit();
   }
+
+  return {
+    deleted: ops.filter((o) => o.type === 'delete').length,
+    added,
+    updated: registrations.length - added,
+    keptFromOthers,
+  };
 }
 
 export async function deleteWorkshop(id) {

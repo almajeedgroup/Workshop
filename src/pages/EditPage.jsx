@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   getWorkshop, getRegistrations, createWorkshop, updateWorkshop, syncRegistrations,
@@ -6,6 +6,7 @@ import {
 import WorkshopForm from '../components/WorkshopForm.jsx';
 import RegistrationEditor from '../components/RegistrationEditor.jsx';
 import { parseRegistrations } from '../lib/parser.js';
+import { splitDuplicates, describeDuplicate } from '../lib/dedupe.js';
 import { WORKSHOP_FIELDS, emptyWorkshop } from '../lib/schema.js';
 
 const REQUIRED = WORKSHOP_FIELDS.filter((f) => f.required);
@@ -20,8 +21,17 @@ export default function EditPage({ mode }) {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState('');
+  const [missingWorkshop, setMissingWorkshop] = useState(false);
+
+  /**
+   * The registrations this screen actually loaded. Saving may delete these
+   * if they have been removed from the grid — but nothing else, so rows added
+   * elsewhere while this page was open survive.
+   */
+  const baseIds = useRef([]);
 
   useEffect(() => {
     if (isNew) return;
@@ -29,9 +39,10 @@ export default function EditPage({ mode }) {
     Promise.all([getWorkshop(id), getRegistrations(id)])
       .then(([w, r]) => {
         if (!live) return;
-        if (!w) { setError('Workshop not found.'); return; }
+        if (!w) { setMissingWorkshop(true); return; }
         setWorkshop(w);
         setRegs(r);
+        baseIds.current = r.map((x) => x.id);
       })
       .catch((e) => live && setError(e.message))
       .finally(() => live && setLoading(false));
@@ -41,7 +52,7 @@ export default function EditPage({ mode }) {
   const missing = REQUIRED.filter((f) => !workshop[f.key]).map((f) => f.label);
 
   const save = async () => {
-    if (missing.length) return;
+    if (missing.length || missingWorkshop) return;
     setSaving(true);
     setError('');
     try {
@@ -50,7 +61,20 @@ export default function EditPage({ mode }) {
         nav(`/w/${newId}`);
       } else {
         await updateWorkshop(id, workshop);
-        await syncRegistrations(id, regs);
+        const result = await syncRegistrations(id, regs, baseIds.current);
+        if (result.keptFromOthers > 0) {
+          // Don't navigate away silently — rows exist that were never on this
+          // screen. Reload so the grid shows them, and stay put.
+          const refreshed = await getRegistrations(id);
+          setRegs(refreshed);
+          baseIds.current = refreshed.map((x) => x.id);
+          setSaving(false);
+          setNotice(
+            `Saved. ${result.keptFromOthers} registration${result.keptFromOthers === 1 ? ' was' : 's were'} ` +
+            'added by someone else while this page was open. They have been kept and are now shown below.'
+          );
+          return;
+        }
         nav(`/w/${id}`);
       }
     } catch (e) {
@@ -65,13 +89,30 @@ export default function EditPage({ mode }) {
       setError('No registrations recognised in that text.');
       return;
     }
-    setRegs((prev) => [...prev, ...parsed]);
+    const { unique, duplicates } = splitDuplicates(parsed, regs);
+    setRegs((prev) => [...prev, ...unique]);
     setPasteText('');
     setPasteOpen(false);
     setError('');
+    setNotice(
+      duplicates.length
+        ? `Added ${unique.length}. Skipped ${duplicates.length} already on the list: ` +
+          `${duplicates.map(describeDuplicate).join('; ')}.`
+        : ''
+    );
   };
 
   if (loading) return <main><p className="count">Loading…</p></main>;
+
+  if (missingWorkshop) {
+    return (
+      <main>
+        <div className="empty">
+          That workshop no longer exists. <Link to="/">Back to records</Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main>
@@ -87,6 +128,7 @@ export default function EditPage({ mode }) {
       </div>
 
       {error && <div className="notice warn">{error}</div>}
+      {notice && <div className="notice">{notice}</div>}
       {missing.length > 0 && (
         <div className="notice warn">Required before saving: <strong>{missing.join(', ')}</strong></div>
       )}
@@ -127,8 +169,9 @@ export default function EditPage({ mode }) {
         <RegistrationEditor rows={regs} onChange={setRegs} />
         {!isNew && (
           <div className="hint" style={{ marginTop: 10 }}>
-            Saving makes the stored list match exactly what is shown here — rows you delete
-            here are deleted from the database. Existing ticket IDs are preserved.
+            Saving makes the stored list match what is shown here — rows you delete here are
+            deleted from the database. Registrations added by someone else since this page
+            loaded are kept, not removed. Ticket IDs already issued never change.
           </div>
         )}
       </div>

@@ -25,6 +25,8 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 | **Contact** | Call or email any registrant directly from the list. |
 | **Payments** | Mark Paid / Pending / Waived / Refunded inline; running totals and amount collected. |
 | **Seats** | Seat limit tracked, with a warning when it is reached or exceeded. |
+| **Duplicates** | A pasted candidate who is already registered is flagged before anything is saved. |
+| **Delete** | Remove a single registration, or a whole workshop and everything under it. |
 | **Export** | Excel, CSV, printable PDF — for all workshops, one workshop, or its registrations. |
 
 ---
@@ -58,11 +60,25 @@ block at the top of the same file.
 
 `PREFIX-001`, `PREFIX-002`, … The prefix comes from the workshop's
 **Ticket ID Prefix** field, or its code, or initials of the title plus the year
-(`AI Hands-On Workshop` starting 2026 → `AIHOW26`).
+(`AI Hands-On Workshop` starting 2026 → `AHOW26`).
 
-Numbers are allocated inside a Firestore transaction against
-`lastTicketSeq` on the workshop, so two people importing at the same moment can
-never be handed the same number.
+**A ticket ID never changes once issued.** Three things guarantee that:
+
+- The prefix is worked out **once**, when the workshop is created, and stored on
+  the workshop document. Renaming the workshop afterwards does not change it, so
+  one event cannot end up with two different ticket series. (Clearing the
+  **Ticket ID Prefix** field in the edit form restores the stored one rather
+  than deriving a new one; type a different value if you genuinely want to
+  change what *future* tickets look like.)
+- Numbers are allocated inside a Firestore transaction against `lastTicketSeq`
+  on the workshop, so two people importing at the same moment can never be
+  handed the same number.
+- `lastTicketSeq` only ever climbs. Deleting a registration **retires** its
+  number — the next candidate gets a new one rather than inheriting a ticket
+  someone else has already been sent.
+
+Editing a registration never rewrites its ticket ID; the field is read-only
+once allocated.
 
 ---
 
@@ -225,12 +241,44 @@ src/
 firestore.rules            access control
 ```
 
-## 8. Notes
+## 8. Deleting
+
+- **One registration** — *Remove* column on the workshop page. Asks first. The
+  ticket number is retired, not reissued.
+- **A whole workshop** — *Remove* column on the Records list, or the Delete
+  button on the workshop page. Asks first, and takes every registration under
+  it with it.
+
+Deletion is immediate and there is no undo, so both routes require a second
+click to confirm.
+
+---
+
+## 9. Tests
+
+```bash
+npm test
+```
+
+Runs the parser, ticket and duplicate-detection suites (`tests/`) on Node's
+built-in test runner — no extra dependencies, no config. The parser is
+heuristic and fails **silently** when it fails at all, so anything you teach it
+belongs in `tests/parser.test.js` alongside a paste that used to break it.
+
+The Firestore layer in `src/lib/db.js` is not covered here; testing it needs
+the Firebase emulator.
+
+---
+
+## 10. Notes
 
 - Search and filtering happen on the client, so no composite Firestore indexes
   are needed. Comfortable into the low thousands of records.
-- Editing a workshop makes its registration list match the screen exactly —
-  rows deleted there are deleted from the database. Existing ticket IDs are
-  preserved.
-- Deleting a workshop also deletes its registrations.
+- Editing a workshop makes its registration list match the screen — rows
+  deleted there are deleted from the database. Registrations added by somebody
+  else *while the edit screen was open* are kept, not wiped, and you are told
+  they appeared.
+- Registrations that match someone already on the list (same WhatsApp number,
+  same email, or same name and date of birth) are held back for a decision
+  rather than being issued a second ticket.
 - Phone numbers are normalised to `+91` when a bare 10-digit number is given.

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { listWorkshops, listAllWithRegistrations } from '../lib/db.js';
+import { listWorkshops, listAllWithRegistrations, deleteWorkshop } from '../lib/db.js';
 import { WORKSHOP_FIELDS, ISSUER } from '../lib/schema.js';
 import { formatDateRange } from '../lib/tickets.js';
 
@@ -22,6 +22,9 @@ export default function ListPage() {
   const [mode, setMode] = useState('');
   const [year, setYear] = useState('');
   const [busy, setBusy] = useState('');
+  const [notice, setNotice] = useState('');
+  const [pendingId, setPendingId] = useState('');
+  const [deletingId, setDeletingId] = useState('');
 
   useEffect(() => {
     listWorkshops()
@@ -64,6 +67,22 @@ export default function ListPage() {
     }
   };
 
+  /** Deletes the workshop and every registration under it. */
+  const remove = async (w) => {
+    setDeletingId(w.id);
+    setError('');
+    try {
+      await deleteWorkshop(w.id);
+      setRows((prev) => prev.filter((r) => r.id !== w.id));
+      setNotice(`Deleted “${w.title || '(untitled)'}” and its registrations.`);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setDeletingId('');
+      setPendingId('');
+    }
+  };
+
   if (loading) return <main><p className="count">Loading records…</p></main>;
 
   return (
@@ -87,6 +106,7 @@ export default function ListPage() {
       </div>
 
       {error && <div className="notice warn">{error}</div>}
+      {notice && <div className="notice no-print">{notice}</div>}
 
       <div className="toolbar no-print">
         <input
@@ -133,6 +153,7 @@ export default function ListPage() {
                 {TABLE_FIELDS.map((f) => (
                   <th key={f.key} className={f.type === 'number' ? 'num' : undefined}>{f.label}</th>
                 ))}
+                <th className="no-print">Remove</th>
               </tr>
             </thead>
             <tbody>
@@ -146,6 +167,38 @@ export default function ListPage() {
                         : displayCell(f, w)}
                     </td>
                   ))}
+                  <td className="no-print">
+                    {pendingId === w.id ? (
+                      <div className="actions">
+                        <button
+                          type="button"
+                          className="small danger"
+                          disabled={Boolean(deletingId)}
+                          onClick={() => remove(w)}
+                        >
+                          {deletingId === w.id ? 'Deleting…' : 'Delete all'}
+                        </button>
+                        <button
+                          type="button"
+                          className="small"
+                          disabled={Boolean(deletingId)}
+                          onClick={() => setPendingId('')}
+                        >
+                          Keep
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="small"
+                        disabled={Boolean(deletingId)}
+                        title={`Delete ${w.title || 'this workshop'} and its registrations`}
+                        onClick={() => setPendingId(w.id)}
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

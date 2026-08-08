@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PAYMENT_STATUSES } from '../lib/schema.js';
 import {
@@ -7,11 +8,17 @@ import {
 
 /**
  * Operational view of a workshop's registrations: contact each candidate
- * directly, flip payment status inline, and open or send their ticket.
+ * directly, flip payment status inline, open or send their ticket, and remove
+ * a registration outright.
+ *
+ * Removing asks first — it deletes one person's record, and the ticket number
+ * they were issued is retired with them rather than passed to anyone else.
  */
 export default function RegistrationList({
-  workshop, rows, onPaymentChange, busyId,
+  workshop, rows, onPaymentChange, onDelete, busyId,
 }) {
+  const [pendingId, setPendingId] = useState('');
+
   if (rows.length === 0) {
     return <div className="empty">No registrations yet.</div>;
   }
@@ -30,6 +37,7 @@ export default function RegistrationList({
             <th>Contact</th>
             <th>Payment</th>
             <th className="no-print">Ticket</th>
+            {onDelete && <th className="no-print">Remove</th>}
           </tr>
         </thead>
         <tbody>
@@ -94,6 +102,41 @@ export default function RegistrationList({
                 <td className="no-print">
                   <Link className="chip" to={`/w/${workshop.id}/t/${r.id}`}>Open</Link>
                 </td>
+
+                {onDelete && (
+                  <td className="no-print">
+                    {pendingId === r.id ? (
+                      <div className="actions">
+                        <button
+                          type="button"
+                          className="small danger"
+                          disabled={busyId === r.id}
+                          onClick={() => onDelete(r)}
+                        >
+                          {busyId === r.id ? 'Deleting…' : 'Confirm'}
+                        </button>
+                        <button
+                          type="button"
+                          className="small"
+                          disabled={busyId === r.id}
+                          onClick={() => setPendingId('')}
+                        >
+                          Keep
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="small"
+                        disabled={Boolean(busyId)}
+                        title={`Delete ${r.name}`}
+                        onClick={() => setPendingId(r.id)}
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </td>
+                )}
               </tr>
             );
           })}

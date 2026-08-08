@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   getWorkshop, getRegistrations, deleteWorkshop, updateRegistration, addRegistrations,
+  deleteRegistration,
 } from '../lib/db.js';
 import RegistrationList from '../components/RegistrationList.jsx';
 import { parseRegistrations } from '../lib/parser.js';
+import { splitDuplicates, describeDuplicate } from '../lib/dedupe.js';
 import { WORKSHOP_FIELDS, ISSUER, CURRENCY } from '../lib/schema.js';
 import { formatDateRange } from '../lib/tickets.js';
 
@@ -30,6 +32,8 @@ export default function WorkshopPage() {
   const [pasteOpen, setPasteOpen] = useState(false);
   const [pasteText, setPasteText] = useState('');
   const [adding, setAdding] = useState(false);
+  const [notice, setNotice] = useState('');
+  const [pendingPaste, setPendingPaste] = useState(null);
 
   const reload = async () => {
     const [w, r] = await Promise.all([getWorkshop(id), getRegistrations(id)]);
@@ -86,23 +90,61 @@ export default function WorkshopPage() {
     }
   };
 
+  const commitPaste = async (rows, skipped) => {
+    setAdding(true);
+    setError('');
+    try {
+      await addRegistrations(id, rows);
+      await reload();
+      setPasteText('');
+      setPasteOpen(false);
+      setPendingPaste(null);
+      setNotice(
+        `Added ${rows.length} registration${rows.length === 1 ? '' : 's'}` +
+        (skipped ? `, skipped ${skipped} already registered.` : '.')
+      );
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  /**
+   * Registrations arrive as pasted WhatsApp replies, so overlapping batches
+   * are routine. Anything that matches someone already registered is held
+   * back for a decision rather than quietly issued a second ticket.
+   */
   const addPasted = async () => {
     const parsed = parseRegistrations(pasteText);
     if (!parsed.length) {
       setError('No registrations recognised in that text.');
       return;
     }
-    setAdding(true);
+    setNotice('');
+    const { unique, duplicates } = splitDuplicates(parsed, regs);
+    if (duplicates.length) {
+      setError('');
+      setPendingPaste({ unique, duplicates });
+      return;
+    }
+    await commitPaste(parsed, 0);
+  };
+
+  const deleteOne = async (reg) => {
+    setBusyId(reg.id);
     setError('');
     try {
-      await addRegistrations(id, parsed);
-      await reload();
-      setPasteText('');
-      setPasteOpen(false);
+      await deleteRegistration(id, reg.id);
+      setRegs((prev) => prev.filter((r) => r.id !== reg.id));
+      setNotice(
+        `Deleted ${reg.name || 'the registration'}` +
+        (reg.ticketId ? ` (ticket ${reg.ticketId}). That number is retired, not reissued.` : '.')
+      );
     } catch (e) {
       setError(e.message);
     } finally {
-      setAdding(false);
+      setBusyId('');
     }
   };
 
@@ -160,6 +202,7 @@ export default function WorkshopPage() {
       </div>
 
       {error && <div className="notice warn">{error}</div>}
+      {notice && <div className="notice no-print">{notice}</div>}
 
       <div className="stats no-print">
         <div className="stat"><span className="n">{stats.total}</span><span className="l">Registered</span></div>
@@ -225,7 +268,8 @@ export default function WorkshopPage() {
               className="mono-area"
               style={{ minHeight: 0 }}
               value={pasteText}
-              onChange={(e) => setPasteText(e.target.value)}
+              // Editing the text invalidates any duplicate check already shown.
+              onChange={(e) => { setPasteText(e.target.value); setPendingPaste(null); }}
               placeholder={'*Name:* …\n*DoB:* …\n*Qualification:* …\n*Course Name:* …\n*WhatsApp #:* …\n*Area:* …\n*Email ID:* …\n\n(paste as many replies as you like, one after another)'}
             />
             <div className="btn-row" style={{ marginTop: 8 }}>
@@ -234,6 +278,38 @@ export default function WorkshopPage() {
               </button>
               <span className="hint">Each gets a ticket ID automatically.</span>
             </div>
+
+            {pendingPaste && (
+              <div className="notice warn" style={{ marginTop: 12 }}>
+                <strong>
+                  {pendingPaste.duplicates.length === 1
+                    ? 'One of these is already registered:'
+                    : `${pendingPaste.duplicates.length} of these are already registered:`}
+                </strong>
+                <ul>
+                  {pendingPaste.duplicates.map((d, k) => <li key={k}>{describeDuplicate(d)}</li>)}
+                </ul>
+                <div className="btn-row" style={{ marginTop: 10 }}>
+                  <button
+                    className="primary"
+                    disabled={adding || !pendingPaste.unique.length}
+                    onClick={() => commitPaste(pendingPaste.unique, pendingPaste.duplicates.length)}
+                  >
+                    Add the {pendingPaste.unique.length} new one
+                    {pendingPaste.unique.length === 1 ? '' : 's'}
+                  </button>
+                  <button
+                    disabled={adding}
+                    onClick={() =>
+                      commitPaste([...pendingPaste.unique, ...pendingPaste.duplicates.map((d) => d.row)], 0)
+                    }
+                  >
+                    Add all anyway
+                  </button>
+                  <button disabled={adding} onClick={() => setPendingPaste(null)}>Cancel</button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -258,6 +334,7 @@ export default function WorkshopPage() {
           workshop={workshop}
           rows={filtered}
           onPaymentChange={changePayment}
+          onDelete={deleteOne}
           busyId={busyId}
         />
       </div>

@@ -29,16 +29,23 @@ export function formatDateRange(workshop) {
   return a || b || '';
 }
 
-/** Uppercase, alphanumeric, ≤10 chars — safe inside an ID. */
+/**
+ * Uppercase, alphanumeric, ≤10 chars — safe inside an ID.
+ *
+ * This is only ever consulted to MINT a prefix. Once a workshop has one it is
+ * stored on the workshop document and reused verbatim (see db.js), because a
+ * prefix derived from the title would otherwise change the moment anyone
+ * edited the title — leaving one event with two different ticket series.
+ */
 export function ticketPrefixFor(workshop) {
   const explicit = String(workshop.ticketPrefix || '').trim();
-  if (explicit) return explicit.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+  if (explicit) return explicit.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 10);
 
   const fromCode = String(workshop.code || '').trim();
   if (fromCode) return fromCode.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
 
-  // Initials of the title + the year: "AI Hands-On Workshop" 2026 -> AIHOW26
-  const initials = String(workshop.title || 'WS')
+  // Initials of the title + the year: "AI Hands-On Workshop" 2026 -> AHOW26
+  const initials = String(workshop.title || '')
     .replace(/[^A-Za-z0-9\s-]/g, ' ')
     .split(/[\s-]+/)
     .filter(Boolean)
@@ -52,6 +59,26 @@ export function ticketPrefixFor(workshop) {
 
 export function formatTicketId(prefix, seq) {
   return `${prefix}-${String(seq).padStart(3, '0')}`;
+}
+
+/**
+ * Register order for ticket IDs.
+ *
+ * IDs are padded to three digits, so a plain string sort puts `-1000` before
+ * `-999`. Sorting on the trailing number keeps the register in issue order
+ * without changing a single stored ID. Rows with no ticket yet go last.
+ */
+export function compareTicketIds(a, b) {
+  const x = String(a ?? '').trim();
+  const y = String(b ?? '').trim();
+  if (!x || !y) return x ? -1 : y ? 1 : 0;
+
+  const nx = x.match(/^(.*?)-(\d+)$/);
+  const ny = y.match(/^(.*?)-(\d+)$/);
+  if (!nx || !ny) return x < y ? -1 : x > y ? 1 : 0;
+
+  if (nx[1] !== ny[1]) return nx[1] < ny[1] ? -1 : 1;
+  return Number(nx[2]) - Number(ny[2]);
 }
 
 /* ------------------------------------------------------------------ *
