@@ -1,0 +1,71 @@
+rules_version = '2';
+
+// Al-Majeed Workshops — access model
+// ----------------------------------
+// Firebase's Email/Password provider lets ANYONE who has the (public) web API
+// key create an account. So "signed in" is NOT proof of authorisation.
+//
+// A request is authorised when EITHER:
+//   1. it comes from the permanent owner account (BOOTSTRAP_ADMIN_EMAIL), or
+//   2. a document exists at /admins/{uid} for that user.
+//
+// (1) exists so the very first sign-in works without anyone having to
+// hand-create an /admins document. IMPORTANT: register that email address in
+// Authentication BEFORE (or immediately after) deploying these rules —
+// whoever owns the account owns the data.
+//
+// To authorise anyone else:
+//   1. Firebase Console > Authentication > Users > Add user (email + password)
+//   2. Copy their UID
+//   3. Firestore > collection "admins" > document ID = that UID
+//      (fields: email, name)
+// To revoke: delete their /admins/{uid} document.
+//
+// KEEP THE EMAIL BELOW IN SYNC with BOOTSTRAP_ADMIN_EMAIL in
+// src/lib/schema.js. Rules cannot import from JavaScript, so it lives in
+// both files; the copy here is the one that is actually enforced.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner() {
+      return request.auth != null
+        && request.auth.token.email.lower() == 'almajeed.work@gmail.com';
+    }
+
+    function isAdmin() {
+      return request.auth != null
+        && (isOwner()
+            || exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+
+    // The allow-list is not writable from the client, with one narrow
+    // exception: the owner account may create ITS OWN record, so the first
+    // sign-in registers itself in the list instead of needing a UID copied
+    // by hand in the Console. That grants no new privilege — isOwner() is
+    // already full access — it only materialises the record.
+    //
+    // Everyone else is added from the Firebase Console.
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if isOwner()
+                    && request.auth.uid == uid
+                    && request.resource.data.email.lower() == request.auth.token.email.lower();
+      allow update: if isOwner() && request.auth.uid == uid;
+      allow delete: if false;
+    }
+
+    match /workshops/{workshopId} {
+      allow read, create, update, delete: if isAdmin();
+
+      match /registrations/{registrationId} {
+        allow read, create, update, delete: if isAdmin();
+      }
+    }
+
+    // Deny everything not explicitly matched above.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
