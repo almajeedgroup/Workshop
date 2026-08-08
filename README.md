@@ -332,3 +332,30 @@ the Firebase emulator.
   same email, or same name and date of birth) are held back for a decision
   rather than being issued a second ticket.
 - Phone numbers are normalised to `+91` when a bare 10-digit number is given.
+
+---
+
+## 11. Verifying the security rules
+
+`firestore.rules` is the only thing standing between the public internet and
+every student's phone number, so it is worth testing rather than trusting.
+The Firestore emulator runs the real rules engine locally:
+
+```bash
+mkdir -p /tmp/rules && cd /tmp/rules
+npm init -y && npm pkg set type=module
+npm install firebase-tools @firebase/rules-unit-testing@^4 firebase@^11
+# write a test with initializeTestEnvironment({ rules: <this repo's firestore.rules> })
+npx firebase emulators:exec --only firestore --project demo-workshops "node verify.mjs"
+```
+
+This is kept out of `package.json` on purpose: it needs firebase-tools and a
+Java runtime, and `npm test` is deliberately dependency-free.
+
+The current rules were checked this way — 28 assertions covering: signed-out
+and not-on-the-list accounts are refused everything; a listed administrator
+can read and write workshops and registrations but cannot add, read or delete
+another administrator; the owner address has **no** data access until it adds
+itself to the allow-list, cannot add anyone else, and cannot claim a record
+under a different email; oversized and bloated documents are rejected; and
+every unmatched path is closed.
