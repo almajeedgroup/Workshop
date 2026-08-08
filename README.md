@@ -95,11 +95,16 @@ once allocated.
 
 ### 3.2 Configure
 
-Copy `.env.example` to `.env` and paste in those values. Put your project ID
-into `.firebaserc`, replacing `REPLACE_WITH_YOUR_FIREBASE_PROJECT_ID`.
+Copy `.env.example` to `.env` and paste in those values.
+
+`.firebaserc` already names the project this app deploys to —
+**`workshops-1649c`**. Change it there if you ever point at a different one.
 
 > These config values are **not secret** — they ship inside the browser bundle
 > by design. Security comes from the Firestore rules, not from hiding them.
+
+`.env` is **not** in the repository, and the build will refuse to run without
+it (see §4), so whoever deploys needs their own copy.
 
 ### 3.3 Install and run
 
