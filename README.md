@@ -27,6 +27,8 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 | **Seats** | Seat limit tracked, with a warning when it is reached or exceeded. |
 | **Duplicates** | A pasted candidate who is already registered is flagged before anything is saved. |
 | **Delete** | Remove a single registration, or a whole workshop and everything under it. |
+| **Certify** | Award Completion, Participation, Excellence or Appreciation certificates, in bulk, from the workshop's own screen. |
+| **Verify** | Every certificate carries an ID and a QR code that anyone can check publicly, without an account. |
 | **Export** | Excel, CSV, printable PDF — for all workshops, one workshop, or its registrations. |
 
 ---
@@ -47,6 +49,16 @@ workshops/{workshopId}
         ticketId, notes, nameLower, searchText
 
 admins/{uid}            <- the access allow-list, managed from the Console
+
+certificates/{certificateId}    <- PUBLICLY READABLE, one at a time
+    certificateId, type, typeLabel, recipientName,
+    workshopId, workshopTitle, workshopDates, venue, presentedBy,
+    ticketId, holderKey, issuedOn, revoked
+
+holders/{holderKey}             <- PUBLICLY READABLE, the award history
+    name, entries[]
+
+holderIndex/{phone|email}       <- ADMIN ONLY, maps a person to their holderKey
 ```
 
 **Everything is generated from [`src/lib/schema.js`](src/lib/schema.js)** — the
@@ -265,11 +277,18 @@ src/
   lib/db.js                Firestore reads/writes, ticket-ID allocation
   lib/exporters.js         which sheets to build (loaded on demand)
   lib/xlsx.js              the .xlsx and .csv file formats themselves
+  lib/certificates.js      the four awards, their wording and their IDs
+  lib/certdb.js            issuing, verification, holder history
+  lib/certlinks.js         public certificate and verification URLs
   components/              WorkshopForm, RegistrationEditor,
                            RegistrationList, TicketDocument
-  pages/                   Login, List, Import, Workshop, Edit, Ticket
+  pages/                   Landing, Login, List, Import, Workshop, Edit,
+                           Ticket, CertificateAllot, Certificate, Verify
   AuthContext.jsx          sign-in + admin allow-list check
-  styles.css               all styling; monochrome only
+  styles.css               the admin tool; monochrome only
+  certificate.css          the certificate; the one place with colour
+  landing.css              the public landing page
+public/fonts, public/crests  certificate typefaces and crests
 tests/                     parser, tickets, dedupe, stats, xlsx
 firestore.rules            access control
 firebase.json              hosting, caching and security headers

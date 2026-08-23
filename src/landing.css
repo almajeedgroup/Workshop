@@ -1,0 +1,78 @@
+/* Public landing page.
+   The admin tool is deliberately monochrome; this is not part of the tool. It
+   borrows the certificate's palette so the site and the certificates people
+   receive look like they come from the same place. */
+
+.landing{
+  --lpaper:#FBFAF6; --link2:#031A43; --lsaffron:#F17304; --lsaffron-deep:#DD4901;
+  --lgreen:#0A7A2C; --lgreen-deep:#0D5436; --lmuted:#5c6371; --lhair:rgba(3,26,67,.12);
+  background:var(--lpaper); color:var(--link2);
+  font-family:'Poppins','Segoe UI',Helvetica,Arial,sans-serif;
+  margin:0 auto; max-width:none; padding:0;
+}
+.landing *{box-sizing:border-box}
+.landing section{padding:clamp(44px,7vw,86px) clamp(20px,6vw,64px);max-width:1180px;margin:0 auto}
+
+.landing .lhero{text-align:center;padding-top:clamp(38px,6vw,70px)}
+.landing .lcrests{display:flex;align-items:center;justify-content:center;gap:clamp(14px,3vw,34px);flex-wrap:wrap;margin-bottom:26px}
+.landing .lcrests img{height:clamp(46px,7vw,74px);width:auto}
+.landing .ltri{display:flex;justify-content:center;margin:22px 0}
+.landing .ltri i{display:block;height:5px;width:52px;border-radius:3px}
+.landing .ltri i:nth-child(1){background:var(--lsaffron)}
+.landing .ltri i:nth-child(2){background:#fff;box-shadow:inset 0 0 0 1px var(--lhair);margin:0 4px}
+.landing .ltri i:nth-child(3){background:var(--lgreen)}
+
+.landing h1{
+  font-family:'Anton',Impact,'Arial Narrow',sans-serif;font-weight:400;
+  font-size:clamp(30px,5.6vw,58px);line-height:1.04;letter-spacing:.02em;
+  text-transform:uppercase;margin:0;
+}
+.landing .lkicker{font-size:clamp(11px,1.5vw,13px);letter-spacing:.24em;text-transform:uppercase;color:var(--lsaffron-deep);font-weight:600;margin-bottom:14px}
+.landing .llede{font-size:clamp(15px,2vw,19px);line-height:1.7;color:var(--lmuted);max-width:660px;margin:22px auto 0;font-weight:300}
+
+.landing .lcta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:32px}
+.landing .lbtn{
+  display:inline-block;font:inherit;font-size:14px;font-weight:600;letter-spacing:.02em;
+  padding:13px 26px;border-radius:999px;border:0;cursor:pointer;text-decoration:none;
+  background:var(--lsaffron);color:#fff;transition:transform .12s ease,box-shadow .12s ease;
+}
+.landing .lbtn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(221,73,1,.28);background:var(--lsaffron)}
+.landing .lbtn.ghost{background:transparent;color:var(--link2);box-shadow:inset 0 0 0 1.5px var(--lhair)}
+.landing .lbtn.ghost:hover{box-shadow:inset 0 0 0 1.5px var(--link2);background:transparent}
+
+.landing .lband{background:var(--link2);color:#EDEFF4;max-width:none}
+.landing .lband h2,.landing .lband h3{color:#fff}
+.landing .lband .lmuted{color:#aab3c4}
+
+.landing h2{font-size:clamp(21px,3vw,32px);line-height:1.2;letter-spacing:-.01em;margin:0 0 14px;font-weight:700}
+.landing .lsub{color:var(--lmuted);font-size:15px;line-height:1.75;font-weight:300;max-width:640px}
+
+.landing .lgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:clamp(18px,3vw,30px);margin-top:36px}
+.landing .lcard{background:#fff;border:1px solid var(--lhair);border-radius:14px;padding:26px 24px}
+.landing .lband .lcard{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14)}
+.landing .lcard h3{font-size:16px;margin:0 0 9px;font-weight:600}
+.landing .lcard p{margin:0;font-size:14px;line-height:1.7;color:var(--lmuted);font-weight:300}
+.landing .lcard .lnum{
+  font-family:'Anton',Impact,sans-serif;font-size:26px;color:var(--lsaffron);
+  display:block;margin-bottom:10px;letter-spacing:.04em;
+}
+
+.landing .lverify{
+  background:linear-gradient(135deg,var(--lgreen-deep),var(--lgreen));color:#fff;
+  border-radius:18px;padding:clamp(28px,4vw,46px);text-align:center;
+}
+.landing .lverify h2{color:#fff}
+.landing .lverify p{color:rgba(255,255,255,.86);font-weight:300;max-width:560px;margin:0 auto;line-height:1.7}
+.landing .lverify form{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:24px}
+.landing .lverify input{
+  font:inherit;font-size:15px;padding:13px 18px;border-radius:999px;border:0;width:min(320px,100%);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+.landing .lverify input:focus{outline:3px solid rgba(255,255,255,.55);outline-offset:2px}
+.landing .lverify .lbtn{background:#fff;color:var(--lgreen-deep)}
+
+.landing .lfoot{border-top:1px solid var(--lhair);text-align:center;color:var(--lmuted);font-size:13px;line-height:1.9;font-weight:300}
+.landing .lfoot a{color:var(--link2)}
+.landing .lfoot .lorg{font-weight:600;color:var(--link2);font-size:14px}
+
+@media print{ .landing{display:none} }

@@ -110,7 +110,7 @@ export default function EditPage({ mode }) {
     return (
       <main>
         <div className="empty">
-          That workshop no longer exists. <Link to="/">Back to records</Link>
+          That workshop no longer exists. <Link to="/records">Back to records</Link>
         </div>
       </main>
     );
@@ -122,7 +122,7 @@ export default function EditPage({ mode }) {
         <h1>{isNew ? 'Add workshop' : 'Edit workshop'}</h1>
         <span className="spacer" />
         <div className="btn-row">
-          <Link className="btn" to={isNew ? '/' : `/w/${id}`}>Cancel</Link>
+          <Link className="btn" to={isNew ? '/records' : `/w/${id}`}>Cancel</Link>
           <button className="primary" onClick={save} disabled={saving || missing.length > 0}>
             {saving ? 'Saving…' : 'Save'}
           </button>

@@ -20,7 +20,7 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
 
   if (loading) return <main><p className="count">Loading…</p></main>;
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/records" replace />;
 
   const submit = async (e) => {
     e.preventDefault();

@@ -163,7 +163,7 @@ export default function WorkshopPage() {
   const remove = async () => {
     try {
       await deleteWorkshop(id);
-      nav('/');
+      nav('/records');
     } catch (e) {
       setError(e.message);
     }
@@ -171,7 +171,7 @@ export default function WorkshopPage() {
 
   if (loading) return <main><p className="count">Loading…</p></main>;
   if (!workshop) {
-    return <main><div className="empty">Workshop not found. <Link to="/">Back to records</Link></div></main>;
+    return <main><div className="empty">Workshop not found. <Link to="/records">Back to records</Link></div></main>;
   }
 
   const seatsLeft = seatsLeftFor(workshop, regs.length);
@@ -195,8 +195,9 @@ export default function WorkshopPage() {
         </div>
         <span className="spacer" />
         <div className="btn-row">
-          <Link className="btn" to="/">← Records</Link>
+          <Link className="btn" to="/records">← Records</Link>
           <Link className="btn" to={`/w/${id}/edit`}>Edit</Link>
+          <Link className="btn" to={`/w/${id}/certificates`}>Certificates</Link>
           <button onClick={() => window.print()}>Print / PDF</button>
         </div>
       </div>

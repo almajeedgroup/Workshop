@@ -1,14 +1,18 @@
-import { Routes, Route, NavLink, Navigate, Link } from 'react-router-dom';
+import { Routes, Route, NavLink, Navigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext.jsx';
 import { isConfigured } from './firebase.js';
 import { ISSUER } from './lib/schema.js';
 
+import LandingPage from './pages/LandingPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import ListPage from './pages/ListPage.jsx';
 import ImportPage from './pages/ImportPage.jsx';
 import WorkshopPage from './pages/WorkshopPage.jsx';
 import EditPage from './pages/EditPage.jsx';
 import TicketPage from './pages/TicketPage.jsx';
+import CertificateAllotPage from './pages/CertificateAllotPage.jsx';
+import CertificatePage from './pages/CertificatePage.jsx';
+import VerifyPage from './pages/VerifyPage.jsx';
 
 function SetupNotice() {
   return (
@@ -35,11 +39,12 @@ function Masthead() {
       <span className="spacer" />
       {isAdmin && (
         <nav>
-          <NavLink to="/" end className="navlink">Records</NavLink>
+          <NavLink to="/records" end className="navlink">Records</NavLink>
           <NavLink to="/import" className="navlink">Import Text</NavLink>
           <NavLink to="/new" className="navlink">Add Manually</NavLink>
         </nav>
       )}
+      {!isAdmin && <NavLink to="/verify" className="navlink">Verify a certificate</NavLink>}
       {user && (
         <>
           <span className="who">{user.email}</span>
@@ -86,6 +91,11 @@ function Protected({ children }) {
 }
 
 export default function App() {
+  const { pathname } = useLocation();
+  // The landing page carries its own header and footer, and is the one page
+  // that must look like nothing else here.
+  const bare = pathname === '/';
+
   if (!isConfigured) {
     return (
       <div className="shell">
@@ -95,17 +105,33 @@ export default function App() {
     );
   }
 
+  if (bare) {
+    return (
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+      </Routes>
+    );
+  }
+
   return (
     <div className="shell">
       <Masthead />
       <Routes>
+        {/* Public */}
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/" element={<Protected><ListPage /></Protected>} />
+        <Route path="/verify" element={<VerifyPage />} />
+        <Route path="/verify/:certificateId" element={<VerifyPage />} />
+        <Route path="/c/:certificateId" element={<CertificatePage />} />
+
+        {/* Administrators only */}
+        <Route path="/records" element={<Protected><ListPage /></Protected>} />
         <Route path="/import" element={<Protected><ImportPage /></Protected>} />
         <Route path="/new" element={<Protected><EditPage mode="new" /></Protected>} />
         <Route path="/w/:id" element={<Protected><WorkshopPage /></Protected>} />
         <Route path="/w/:id/edit" element={<Protected><EditPage mode="edit" /></Protected>} />
         <Route path="/w/:id/t/:regId" element={<Protected><TicketPage /></Protected>} />
+        <Route path="/w/:id/certificates" element={<Protected><CertificateAllotPage /></Protected>} />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <footer className="foot no-print">
