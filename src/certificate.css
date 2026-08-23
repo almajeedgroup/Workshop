@@ -57,7 +57,11 @@
 .sheet .signs{display:flex;justify-content:space-between;gap:12mm;margin-top:auto;padding-top:6.5mm}
 .sheet .sig{flex:1;text-align:center}
 .sheet .sig .line{height:.4mm;background:var(--cink);opacity:.5;margin-bottom:2mm}
-.sheet .sig b{display:block;font-size:9pt;font-weight:600}
+.sheet .sig b{
+  display:flex; align-items:center; justify-content:center; gap:1.3mm;
+  font-size:9pt; font-weight:600;
+}
+.sheet .sig .tick{width:3.3mm;height:3.3mm;flex:none;display:block}
 .sheet .sig span{display:block;height:11mm;font-size:6.9pt;color:var(--cmuted);margin-top:1mm;letter-spacing:.06em;text-transform:uppercase;line-height:1.5}
 
 .sheet .cfoot{display:flex;align-items:flex-end;justify-content:space-between;gap:12mm;margin-top:2mm;padding-top:4.5mm;border-top:.3mm solid var(--chair)}

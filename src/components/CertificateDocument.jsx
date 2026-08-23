@@ -33,6 +33,24 @@ function Chakra() {
   );
 }
 
+/**
+ * The verified mark beside each signatory, in the manner of an Aadhaar card:
+ * this signature belongs to the office named beneath it, and the certificate
+ * it sits on can be checked against the register by ID or QR.
+ */
+function VerifiedTick() {
+  return (
+    <svg className="tick" viewBox="0 0 24 24" role="img" aria-label="Verified signatory">
+      <circle cx="12" cy="12" r="11" fill="#0D5436" />
+      <path
+        d="M6.8 12.5 L10.3 16 L17.2 8.7"
+        fill="none" stroke="#FFFFFF" strokeWidth="2.6"
+        strokeLinecap="round" strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 const WAVE = 'M0,0 L88,0 C66,52 100,104 74,156 C52,208 96,258 70,310 C48,362 92,412 66,464 C44,516 90,566 64,618 C44,670 88,716 62,762 C52,782 70,790 60,800 L0,800 Z';
 const WAVE_INNER = 'M0,0 L62,0 C44,52 74,104 50,156 C32,208 68,258 46,310 C28,362 66,412 42,464 C26,516 64,566 40,618 C24,670 62,716 38,762 C30,782 46,790 38,800 L0,800 Z';
 
@@ -141,7 +159,7 @@ export default function CertificateDocument({ cert, verifyUrl = '' }) {
           {SIGNATORIES.map((s) => (
             <div className="sig" key={s.name}>
               <div className="line" />
-              <b>{s.name}</b>
+              <b>{s.name}<VerifiedTick /></b>
               <span>{s.role}<br />{s.org}</span>
             </div>
           ))}
