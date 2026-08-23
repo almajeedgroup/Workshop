@@ -34,20 +34,24 @@ function Chakra() {
 }
 
 /**
- * The verified mark beside each signatory, in the manner of an Aadhaar card:
- * this signature belongs to the office named beneath it, and the certificate
- * it sits on can be checked against the register by ID or QR.
+ * Stands where a handwritten signature would, in the manner of a digitally
+ * signed Aadhaar document: nobody signed this sheet by hand, and it is not
+ * pretending they did. What vouches for it is the register — the ID and QR at
+ * the foot of the certificate.
  */
-function VerifiedTick() {
+function VerifiedMark() {
   return (
-    <svg className="tick" viewBox="0 0 24 24" role="img" aria-label="Verified signatory">
-      <circle cx="12" cy="12" r="11" fill="#0D5436" />
-      <path
-        d="M6.8 12.5 L10.3 16 L17.2 8.7"
-        fill="none" stroke="#FFFFFF" strokeWidth="2.6"
-        strokeLinecap="round" strokeLinejoin="round"
-      />
-    </svg>
+    <div className="mark">
+      <svg className="tick" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="11" fill="#0D5436" />
+        <path
+          d="M6.8 12.5 L10.3 16 L17.2 8.7"
+          fill="none" stroke="#FFFFFF" strokeWidth="2.6"
+          strokeLinecap="round" strokeLinejoin="round"
+        />
+      </svg>
+      <span>Verified</span>
+    </div>
   );
 }
 
@@ -158,8 +162,9 @@ export default function CertificateDocument({ cert, verifyUrl = '' }) {
         <div className="signs">
           {SIGNATORIES.map((s) => (
             <div className="sig" key={s.name}>
+              <VerifiedMark />
               <div className="line" />
-              <b>{s.name}<VerifiedTick /></b>
+              <b>{s.name}</b>
               <span>{s.role}<br />{s.org}</span>
             </div>
           ))}

@@ -57,11 +57,21 @@
 .sheet .signs{display:flex;justify-content:space-between;gap:12mm;margin-top:auto;padding-top:6.5mm}
 .sheet .sig{flex:1;text-align:center}
 .sheet .sig .line{height:.4mm;background:var(--cink);opacity:.5;margin-bottom:2mm}
-.sheet .sig b{
-  display:flex; align-items:center; justify-content:center; gap:1.3mm;
-  font-size:9pt; font-weight:600;
+.sheet .sig b{display:block;font-size:9pt;font-weight:600}
+
+/* Occupies the space a handwritten signature would, above the rule. */
+.sheet .sig .mark{
+  display:flex; align-items:center; justify-content:center; gap:1.5mm;
+  height:9mm; margin-bottom:.5mm;
 }
-.sheet .sig .tick{width:3.3mm;height:3.3mm;flex:none;display:block}
+.sheet .sig .mark .tick{width:4.6mm;height:4.6mm;flex:none;display:block}
+.sheet .sig .mark span{
+  /* The role caption below uses `.sig span` with a fixed 11mm block height;
+     undo that here or the word rides above the tick instead of beside it. */
+  display:inline; height:auto; margin:0;
+  font-size:8pt; font-weight:600; letter-spacing:.17em;
+  text-transform:uppercase; color:var(--green-deep); line-height:1;
+}
 .sheet .sig span{display:block;height:11mm;font-size:6.9pt;color:var(--cmuted);margin-top:1mm;letter-spacing:.06em;text-transform:uppercase;line-height:1.5}
 
 .sheet .cfoot{display:flex;align-items:flex-end;justify-content:space-between;gap:12mm;margin-top:2mm;padding-top:4.5mm;border-top:.3mm solid var(--chair)}
