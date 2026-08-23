@@ -5,7 +5,11 @@
   },
   "hosting": {
     "public": "dist",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
     "rewrites": [
       {
         "source": "**",
@@ -22,9 +26,9 @@
             "value": "no-cache, max-age=0, must-revalidate"
           },
           {
-            "//": "connect-src lists what the Firebase SDK actually talks to: Identity Toolkit and Secure Token for auth, Firestore for data. img-src allows www.google.com because Firestore's WebChannel transport fetches cleardot.gif from there to probe the connection — without it the browser blocks the probe on every session. 'unsafe-inline' on style-src is required because React writes inline style attributes; there are no inline scripts, so script-src stays strict. Verified against a real build in Chromium. If a Firebase feature is added later (Storage, Analytics, popup sign-in) its origin must be added here or the call will be blocked.",
+            "//": "connect-src lists what the Firebase SDK actually talks to: Identity Toolkit and Secure Token for auth, Firestore for data. Google sign-in adds three: an invisible iframe on the project's authDomain that carries the result back, accounts.google.com for the sign-in window, and apis.google.com for the helper script the SDK loads. img-src allows www.google.com because Firestore's WebChannel fetches cleardot.gif from there to probe the connection, and Google account avatars come from googleusercontent. 'unsafe-inline' on style-src is required because React writes inline style attributes; there are no inline scripts, so script-src stays strict apart from apis.google.com. Verified against a real build in Chromium. Adding a Firebase feature (Storage, Analytics) means adding its origin here or the call is silently blocked.",
             "key": "Content-Security-Policy",
-            "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.google.com; font-src 'self'; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://*.googleapis.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+            "value": "default-src 'self'; script-src 'self' https://apis.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://www.google.com https://*.googleusercontent.com; font-src 'self'; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://*.googleapis.com https://accounts.google.com https://workshops-1649c.firebaseapp.com; frame-src 'self' https://accounts.google.com https://workshops-1649c.firebaseapp.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
           },
           {
             "key": "X-Content-Type-Options",

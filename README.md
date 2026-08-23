@@ -160,7 +160,26 @@ connection — the app says so and you can sign out and in again to retry.
 Email verification is deliberately *not* required: accounts created from the
 Firebase Console are unverified, which is how every account here is made.
 
-### 3.5 Add other administrators
+### 3.5 Google sign-in (owner only)
+
+The sign-in page offers **Sign in with Google** as well as a password. It is
+deliberately restricted to `almajeed.work@gmail.com`: Google will sign anyone
+in, so any other account is signed straight back out with a plain message
+rather than being left on "Not authorised". This changes no permissions — the
+server still consults the `/admins` allow-list and nothing else.
+
+Other administrators sign in with an email and password, because their
+`/admins` record is keyed to that account.
+
+To enable it: **Authentication → Sign-in method → Google → Enable.**
+
+> **Custom domains need adding by hand.** `*.web.app` and `*.firebaseapp.com`
+> are authorised automatically, but `workshops.almajeedgroup.in` is not — until
+> you add it under **Authentication → Settings → Authorized domains**, Google
+> sign-in there fails with `auth/unauthorized-domain`. The sign-in page names
+> that error and where to fix it.
+
+### 3.6 Add other administrators
 
 1. **Authentication → Users → Add user** — their email and password.
 2. Copy the generated **User UID**.
@@ -172,7 +191,7 @@ but they can re-add themselves by signing in again — to remove them for good,
 delete the account in **Authentication** as well, or change
 `BOOTSTRAP_ADMIN_EMAIL` in both files and redeploy.
 
-### 3.6 Hardening the deployment
+### 3.7 Hardening the deployment
 
 `firebase.json` sends a Content-Security-Policy along with the usual
 `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` and HSTS. The
