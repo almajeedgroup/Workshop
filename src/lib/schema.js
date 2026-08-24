@@ -27,6 +27,11 @@ export const ISSUER = {
   phones: ['+91 98452 89298', '+91 63646 30740'],
   /** Shown in the app masthead — who built/operates the system. */
   operator: 'Al-Majeed School of Research Methodology & Innovation',
+  /** The public site. Used in the footer, on certificates and in share links. */
+  site: 'school.almajeedgroup.in',
+  siteUrl: 'https://school.almajeedgroup.in',
+  email: 'almajeed.work@gmail.com',
+  city: 'Bengaluru, Karnataka',
 };
 
 export const ORG_NAME = ISSUER.operator;

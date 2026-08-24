@@ -3,7 +3,12 @@ import { useAuth } from './AuthContext.jsx';
 import { isConfigured } from './firebase.js';
 import { ISSUER } from './lib/schema.js';
 
-import LandingPage from './pages/LandingPage.jsx';
+import PublicShell from './components/site/PublicShell.jsx';
+import HomePage from './pages/site/HomePage.jsx';
+import AboutPage from './pages/site/AboutPage.jsx';
+import ProgrammesPage from './pages/site/ProgrammesPage.jsx';
+import CertificatesPage from './pages/site/CertificatesPage.jsx';
+import ContactPage from './pages/site/ContactPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import ListPage from './pages/ListPage.jsx';
 import ImportPage from './pages/ImportPage.jsx';
@@ -90,11 +95,23 @@ function Protected({ children }) {
   return children;
 }
 
+/** Everything the public sees, wrapped in the site's own header and footer. */
+const PUBLIC = [
+  ['/', <HomePage />],
+  ['/programmes', <ProgrammesPage />],
+  ['/certificates', <CertificatesPage />],
+  ['/about', <AboutPage />],
+  ['/contact', <ContactPage />],
+  ['/verify', <VerifyPage />],
+  ['/verify/:certificateId', <VerifyPage />],
+  ['/c/:certificateId', <CertificatePage />],
+];
+
 export default function App() {
   const { pathname } = useLocation();
-  // The landing page carries its own header and footer, and is the one page
-  // that must look like nothing else here.
-  const bare = pathname === '/';
+  // The public site has its own chrome and must not inherit the admin
+  // masthead. Admin routes all sit under these prefixes.
+  const isAdminArea = /^\/(login|records|import|new|w)(\/|$)/.test(pathname);
 
   if (!isConfigured) {
     return (
@@ -105,11 +122,14 @@ export default function App() {
     );
   }
 
-  if (bare) {
+  if (!isAdminArea) {
     return (
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-      </Routes>
+      <PublicShell>
+        <Routes>
+          {PUBLIC.map(([path, el]) => <Route key={path} path={path} element={el} />)}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </PublicShell>
     );
   }
 
@@ -117,11 +137,7 @@ export default function App() {
     <div className="shell">
       <Masthead />
       <Routes>
-        {/* Public */}
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/verify" element={<VerifyPage />} />
-        <Route path="/verify/:certificateId" element={<VerifyPage />} />
-        <Route path="/c/:certificateId" element={<CertificatePage />} />
 
         {/* Administrators only */}
         <Route path="/records" element={<Protected><ListPage /></Protected>} />
