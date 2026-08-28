@@ -53,6 +53,7 @@ export function publicWorkshopRecord(workshop) {
     feeAmount: num(workshop.feeAmount),
     contactNumbers: Array.isArray(workshop.contactNumbers) ? workshop.contactNumbers.filter(Boolean) : [],
     paymentUpi: str(workshop.paymentUpi) || ISSUER.upiId || '',
+    paymentQrUrl: str(workshop.paymentQrUrl) || ISSUER.paymentQrImage || '',
     registrationOpen: str(workshop.registrationOpen) === 'Open',
   };
 }
@@ -72,6 +73,21 @@ export async function removePublicWorkshop(workshopId) {
   } catch {
     /* The mirror going stale must not block deleting the workshop itself. */
   }
+}
+
+/**
+ * Publish, or withdraw, the registration page for a workshop — in one action.
+ *
+ * Writes the mirror and flips the workshop's own flag together. Before this,
+ * a workshop created earlier had no mirror at all, so its registration link
+ * read "not valid", and turning registration on meant finding a dropdown on
+ * the edit screen. Neither is something anybody should have to know.
+ */
+export async function setRegistrationOpen(workshopId, workshop, open) {
+  const registrationOpen = open ? 'Open' : 'Closed';
+  await setDoc(doc(db, 'workshops', workshopId), { registrationOpen }, { merge: true });
+  await syncPublicWorkshop(workshopId, { ...workshop, registrationOpen });
+  return registrationOpen;
 }
 
 /** Public. What the registration page shows. */

@@ -40,6 +40,13 @@ export const ISSUER = {
    */
   upiId: '',
   upiName: 'Islamic Information Centre',
+  /**
+   * A payment QR supplied by the bank — a BharatQR or merchant standee — shown
+   * on the registration form as an image. Put the file in `public/` and name it
+   * here. This takes precedence over `upiId`, because a merchant QR carries
+   * card rails a plain UPI link cannot.
+   */
+  paymentQrImage: '/payment-qr.png',
 };
 
 export const ORG_NAME = ISSUER.operator;
@@ -184,6 +191,13 @@ export const WORKSHOP_FIELDS = [
     type: 'text',
     aliases: ['upi', 'upi id', 'payment upi', 'vpa', 'pay to'],
     hint: 'Fees are collected here. Leave blank to use the organisation default.',
+  },
+  {
+    key: 'paymentQrUrl',
+    label: 'Payment QR Image',
+    type: 'text',
+    aliases: ['payment qr', 'qr image', 'payment qr image'],
+    hint: 'Path to a QR image in public/, e.g. /payment-qr.png. Overrides the UPI ID.',
   },
   {
     key: 'registrationOpen',

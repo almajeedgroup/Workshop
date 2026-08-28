@@ -31,7 +31,8 @@ export function receiptMessage(workshop, request, ticketId) {
  * hand afterwards, on the list below.
  */
 export default function RequestsPanel({
-  workshop, requests, registerLink, onAccept, onReject, onDelete, busyId,
+  workshop, requests, registerLink, onAccept, onReject, onDelete, onToggleOpen,
+  busyId, toggling,
 }) {
   const [showQr, setShowQr] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -65,13 +66,26 @@ export default function RequestsPanel({
         </div>
       </div>
 
-      {!open && (
-        <div className="notice warn">
-          Public registration is <strong>Closed</strong> for this workshop, so the form
-          refuses new entries. Set <strong>Public Registration</strong> to Open on the edit
-          screen to accept them.
+      <div className={`notice${open ? '' : ' warn'}`}>
+        <div className="btn-row" style={{ alignItems: 'center' }}>
+          <span style={{ flex: 1, minWidth: 220 }}>
+            {open ? (
+              <>The registration page is <strong>live</strong>. Anyone with the QR or the
+              link can register.</>
+            ) : (
+              <>The registration page is <strong>not live</strong>. The link will not work
+              until you publish it.</>
+            )}
+          </span>
+          <button
+            className={open ? undefined : 'primary'}
+            disabled={toggling}
+            onClick={() => onToggleOpen(!open)}
+          >
+            {toggling ? 'Saving…' : open ? 'Close registration' : 'Publish the registration page'}
+          </button>
         </div>
-      )}
+      </div>
 
       {showQr && (
         <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap', marginBottom: 16 }}>

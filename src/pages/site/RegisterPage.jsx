@@ -34,6 +34,9 @@ export default function RegisterPage() {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState('');
   const [done, setDone] = useState(null);
+  // The QR image is configured by path. If the file is not there yet, fall
+  // back rather than showing a broken image on a payment screen.
+  const [qrBroken, setQrBroken] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -51,6 +54,9 @@ export default function RegisterPage() {
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const fee = workshop?.feeAmount;
+  // A bank-issued QR (BharatQR, a merchant standee) is an image and carries
+  // card rails a plain UPI link cannot, so it wins where both are set.
+  const qrImage = qrBroken ? '' : (workshop?.paymentQrUrl || '');
   const pay = useMemo(() => (workshop?.paymentUpi ? upiLink({
     upiId: workshop.paymentUpi,
     name: ISSUER.upiName || ISSUER.name,
@@ -275,7 +281,25 @@ export default function RegisterPage() {
                   <p style={{ marginTop: 6, fontSize: 15 }}>No fee is payable for this workshop.</p>
                 )}
 
-                {pay ? (
+                {qrImage ? (
+                  <div style={{
+                    marginTop: 18, padding: 14, borderRadius: 14, background: '#fff',
+                    border: '1px solid var(--hair)', textAlign: 'center',
+                  }}>
+                    <img
+                      src={qrImage}
+                      alt="Payment QR code"
+                      onError={() => setQrBroken(true)}
+                      style={{ width: '100%', maxWidth: 320, height: 'auto', display: 'block', margin: '0 auto' }}
+                    />
+                    <p style={{ marginTop: 12, fontSize: 13.5, color: 'var(--ink-soft)' }}>
+                      Scan with any UPI or banking app{fee ? <> and pay <strong style={{ color: 'var(--ink)' }}>{CURRENCY}{fee}</strong></> : null}.
+                    </p>
+                    <p style={{ marginTop: 6, fontSize: 12.5, color: 'var(--ink-faint)' }}>
+                      The amount is not filled in automatically — please enter it yourself.
+                    </p>
+                  </div>
+                ) : pay ? (
                   <>
                     <div style={{
                       marginTop: 18, padding: 18, borderRadius: 14, background: '#fff',
@@ -287,7 +311,7 @@ export default function RegisterPage() {
                         style={{ width: 190, height: 190, maxWidth: '100%', color: 'var(--ink)' }}
                       />
                       <p style={{ marginTop: 12, fontSize: 13, color: 'var(--ink-faint)' }}>
-                        Scan with any UPI app
+                        Scan with any UPI app — the amount is already filled in
                       </p>
                       <p style={{
                         marginTop: 4, fontSize: 13.5, fontWeight: 600, color: 'var(--ink)',

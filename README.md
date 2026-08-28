@@ -285,7 +285,80 @@ trade-off; ask before enabling it.
 
 ---
 
-## 7. Project layout
+## 7. Self-registration
+
+Students scan a QR code on the poster, fill the form themselves, pay, and land
+in a queue you review by hand. Nothing is admitted automatically: you decide
+who becomes a registration, and you decide who is marked paid.
+
+### Publishing the page
+
+On the workshop page, press **Publish the registration page**. That one press
+does both halves of the job — it turns registration on, and it writes the
+public copy of the workshop that the form reads. A workshop created before
+this feature existed has no public copy at all, which is why its link used to
+report *"link is not valid"*; publishing creates it.
+
+The panel then shows the link and a QR code. **Show poster QR** prints at any
+size — put it on the poster, on a standee, in the WhatsApp broadcast.
+
+**Close registration** withdraws it. The link stops accepting entries the
+moment you press it; nothing already submitted is lost.
+
+### What the student sees
+
+Workshop title, dates, venue, fee, the form, and the payment QR. The form asks
+only what a ticket needs. They pay, type the UPI reference, and submit.
+
+### What you do
+
+Pending requests appear on the workshop page under **Registration requests**:
+
+| Action | What happens |
+|---|---|
+| **Accept** | Becomes a real registration, gets the next ticket number, runs through duplicate detection first. |
+| **Reject** | Marked handled, kept for the record, no ticket issued. |
+| **Delete** | Removed entirely. |
+
+Accepting is where the ticket number is issued — never before. Payment status
+starts as whatever the student claimed and is yours to confirm: mark **Paid**
+on the registration list once you have checked the bank.
+
+The panel gives you a receipt message per accepted request, ready to paste
+into WhatsApp to the number they gave.
+
+### The payment QR
+
+Two ways, and the image wins if both are set:
+
+1. **A QR from your bank** (BharatQR, a merchant standee). Save the image as
+   `public/payment-qr.png` and deploy. It is already the default in
+   `ISSUER.paymentQrImage` (`src/lib/schema.js`). This route accepts cards as
+   well as UPI, but **carries no amount** — the form tells the student to type
+   it themselves.
+2. **A UPI ID**. Set `ISSUER.upiId`, or **Payment UPI** on a single workshop.
+   The page then generates the QR with the fee already filled in.
+
+Per-workshop overrides are **Payment UPI** and **Payment QR Image** on the
+edit screen. If the image file is missing the page falls back to the UPI QR
+rather than showing a broken image on a payment screen.
+
+### Why a separate public document
+
+`publicWorkshops` is a whitelisted copy — title, dates, venue, fee, payment
+details. The workshop document itself carries internal notes and counters, and
+Firestore rules cannot expose half a document. `src/lib/publicdb.js` builds
+the copy from a fixed list, so a field added to workshops later cannot leak
+onto the public page by accident.
+
+Requests are **create-only** for the public: a stranger may write one and can
+never read one back, not even their own. The rules also require the workshop
+to exist and be open, cap every field's length, and reject anything carrying a
+key they do not expect. A hidden honeypot field must arrive empty.
+
+---
+
+## 8. Project layout
 
 ```
 src/
@@ -295,21 +368,27 @@ src/
   lib/dedupe.js            spotting a candidate who is already registered
   lib/stats.js             registration counts, amount collected, seats left
   lib/db.js                Firestore reads/writes, ticket-ID allocation
+  lib/publicdb.js          the public workshop copy and the request queue
   lib/exporters.js         which sheets to build (loaded on demand)
   lib/xlsx.js              the .xlsx and .csv file formats themselves
   lib/certificates.js      the four awards, their wording and their IDs
   lib/certdb.js            issuing, verification, holder history
   lib/certlinks.js         public certificate and verification URLs
-  components/              WorkshopForm, RegistrationEditor,
-                           RegistrationList, TicketDocument
-  pages/                   Landing, Login, List, Import, Workshop, Edit,
-                           Ticket, CertificateAllot, Certificate, Verify
+  components/              WorkshopForm, RegistrationEditor, RegistrationList,
+                           TicketDocument, RequestsPanel, QrCode,
+                           CertificateDocument, CertificateStage
+  components/site/         PublicShell, SiteHeader, SiteFooter, Icons
+  pages/                   the admin tool: Login, List, Import, Workshop,
+                           Edit, Ticket, CertificateAllot
+  pages/site/              the public site: Home, Programmes, Certificates,
+                           About, Contact, Register
   AuthContext.jsx          sign-in + admin allow-list check
   styles.css               the admin tool; monochrome only
+  site.css                 the public site
   certificate.css          the certificate; the one place with colour
-  landing.css              the public landing page
 public/fonts, public/crests  certificate typefaces and crests
-tests/                     parser, tickets, dedupe, stats, xlsx
+public/payment-qr.png      the bank's payment QR, if you use one
+tests/                     parser, tickets, dedupe, stats, xlsx, certificates
 firestore.rules            access control
 firebase.json              hosting, caching and security headers
 ```
@@ -328,20 +407,23 @@ Values are written as inline strings, never formulas, so a name such as
 way to say "this is text", so there such a value is prefixed with an
 apostrophe — otherwise Excel would run it on open.
 
-## 8. Deleting
+## 9. Deleting
 
 - **One registration** — *Remove* column on the workshop page. Asks first. The
   ticket number is retired, not reissued.
 - **A whole workshop** — *Remove* column on the Records list, or the Delete
   button on the workshop page. Asks first, and takes every registration under
-  it with it.
+  it with it. The public copy of the workshop goes too, so its registration
+  link stops working.
+- **A registration request** — *Delete* on the requests panel, for entries you
+  never want to see again. Rejecting keeps the record instead.
 
 Deletion is immediate and there is no undo, so both routes require a second
 click to confirm.
 
 ---
 
-## 9. Tests
+## 10. Tests
 
 ```bash
 npm test
@@ -357,7 +439,7 @@ the Firebase emulator.
 
 ---
 
-## 10. Notes
+## 11. Notes
 
 - Search and filtering happen on the client, so no composite Firestore indexes
   are needed. Comfortable into the low thousands of records. Past that, the
@@ -379,7 +461,7 @@ the Firebase emulator.
 
 ---
 
-## 11. Verifying the security rules
+## 12. Verifying the security rules
 
 `firestore.rules` is the only thing standing between the public internet and
 every student's phone number, so it is worth testing rather than trusting.

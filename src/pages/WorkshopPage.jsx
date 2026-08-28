@@ -9,6 +9,7 @@ import { parseRegistrations } from '../lib/parser.js';
 import { splitDuplicates, describeDuplicate } from '../lib/dedupe.js';
 import {
   listRequests, setRequestStatus, deleteRequest, requestToRegistration,
+  setRegistrationOpen,
 } from '../lib/publicdb.js';
 import RequestsPanel from '../components/RequestsPanel.jsx';
 import { amountCollected, paymentCounts, seatsLeft as seatsLeftFor } from '../lib/stats.js';
@@ -41,6 +42,7 @@ export default function WorkshopPage() {
   const [pendingPaste, setPendingPaste] = useState(null);
   const [requests, setRequests] = useState([]);
   const [reqBusy, setReqBusy] = useState('');
+  const [toggling, setToggling] = useState(false);
 
   const reload = async () => {
     const [w, r, q] = await Promise.all([getWorkshop(id), getRegistrations(id), listRequests(id)]);
@@ -208,6 +210,27 @@ export default function WorkshopPage() {
     }
   };
 
+  /**
+   * Publishing writes the public mirror as well as the flag. A workshop
+   * created before self-registration existed has no mirror at all, so its
+   * link reads "not valid" — this is what fixes that, in one press.
+   */
+  const toggleRegistration = async (open) => {
+    setToggling(true);
+    setError('');
+    try {
+      await setRegistrationOpen(id, workshop, open);
+      await reload();
+      setNotice(open
+        ? 'The registration page is live. Print the QR, or share the link.'
+        : 'Registration closed. The form now refuses new entries.');
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setToggling(false);
+    }
+  };
+
   const runExport = async (fn) => {
     setExporting(true);
     try {
@@ -311,7 +334,9 @@ export default function WorkshopPage() {
         onAccept={acceptRequest}
         onReject={rejectRequest}
         onDelete={removeRequest}
+        onToggleOpen={toggleRegistration}
         busyId={reqBusy}
+        toggling={toggling}
       />
 
       <div className="panel">
