@@ -9,6 +9,7 @@ import AboutPage from './pages/site/AboutPage.jsx';
 import ProgrammesPage from './pages/site/ProgrammesPage.jsx';
 import CertificatesPage from './pages/site/CertificatesPage.jsx';
 import ContactPage from './pages/site/ContactPage.jsx';
+import RegisterPage from './pages/site/RegisterPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import ListPage from './pages/ListPage.jsx';
 import ImportPage from './pages/ImportPage.jsx';
@@ -105,6 +106,7 @@ const PUBLIC = [
   ['/verify', <VerifyPage />],
   ['/verify/:certificateId', <VerifyPage />],
   ['/c/:certificateId', <CertificatePage />],
+  ['/register/:workshopId', <RegisterPage />],
 ];
 
 export default function App() {

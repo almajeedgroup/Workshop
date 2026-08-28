@@ -122,6 +122,76 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // ---- Public registration ------------------------------------------
+    //
+    // A whitelisted mirror of the workshop: what a poster would say, and
+    // nothing else. The workshop document itself carries internal notes and
+    // counters, and Firestore rules cannot expose half a document — hence a
+    // separate one. src/lib/publicdb.js builds it from a whitelist.
+    match /publicWorkshops/{workshopId} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Registration requests are the ONE place an unauthenticated stranger may
+    // write, so this is the strictest rule in the file.
+    //
+    //   - create only. No read, no list, no update, no delete — not even by
+    //     the person who submitted it. A submission cannot be read back, so
+    //     the form cannot be turned into a way of reading other people's.
+    //   - the key set is fixed. Unlike the admin collections, where a
+    //     whitelist would freeze the schema, here an unexpected field is a
+    //     good reason to refuse the write.
+    //   - the workshop must exist AND have registration open, so a closed or
+    //     deleted workshop cannot collect entries.
+    //   - `hp` is a honeypot: hidden from people, filled in by naive bots.
+    //     It must arrive empty.
+    //
+    // Rules cannot rate-limit. If the form is ever abused, close registration
+    // on the workshop and the writes stop at the door.
+    function requestFields() {
+      return ['workshopId', 'name', 'dob', 'qualification', 'courseName',
+              'whatsapp', 'area', 'email', 'paymentMode', 'paymentRef',
+              'notes', 'ref', 'status', 'hp', 'createdAt'];
+    }
+
+    // `get` on a path that does not exist raises an evaluation error rather
+    // than returning nothing, and a mirror written before this field existed
+    // has no `registrationOpen` at all — so both are handled explicitly. The
+    // request is refused either way; this just refuses it cleanly.
+    function openForRegistration(workshopId) {
+      return exists(/databases/$(database)/documents/publicWorkshops/$(workshopId))
+        && get(/databases/$(database)/documents/publicWorkshops/$(workshopId))
+             .data.get('registrationOpen', false) == true;
+    }
+
+    function validRequest(d) {
+      return d.keys().hasAll(['workshopId', 'name', 'whatsapp', 'status', 'hp'])
+        && d.keys().hasOnly(requestFields())
+        && d.status == 'new'
+        && d.hp == ''
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 200
+        && d.whatsapp is string && d.whatsapp.size() > 0 && d.whatsapp.size() <= 40
+        && d.workshopId is string && d.workshopId.size() <= 200
+        && sized(d.get('email', ''), 200)
+        && sized(d.get('area', ''), 200)
+        && sized(d.get('qualification', ''), 200)
+        && sized(d.get('courseName', ''), 200)
+        && sized(d.get('notes', ''), 200)
+        && sized(d.get('paymentRef', ''), 200)
+        && sized(d.get('paymentMode', ''), 200)
+        && sized(d.get('dob', ''), 40)
+        && sized(d.get('ref', ''), 40);
+    }
+
+    match /registrationRequests/{requestId} {
+      allow create: if validRequest(request.resource.data)
+                    && openForRegistration(request.resource.data.workshopId);
+      allow read, list: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
     // Deny everything not explicitly matched above.
     match /{document=**} {
       allow read, write: if false;

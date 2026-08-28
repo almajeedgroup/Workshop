@@ -7,6 +7,10 @@ import {
 import RegistrationList from '../components/RegistrationList.jsx';
 import { parseRegistrations } from '../lib/parser.js';
 import { splitDuplicates, describeDuplicate } from '../lib/dedupe.js';
+import {
+  listRequests, setRequestStatus, deleteRequest, requestToRegistration,
+} from '../lib/publicdb.js';
+import RequestsPanel from '../components/RequestsPanel.jsx';
 import { amountCollected, paymentCounts, seatsLeft as seatsLeftFor } from '../lib/stats.js';
 import { WORKSHOP_FIELDS, ISSUER, CURRENCY } from '../lib/schema.js';
 import { formatDateRange } from '../lib/tickets.js';
@@ -35,17 +39,20 @@ export default function WorkshopPage() {
   const [adding, setAdding] = useState(false);
   const [notice, setNotice] = useState('');
   const [pendingPaste, setPendingPaste] = useState(null);
+  const [requests, setRequests] = useState([]);
+  const [reqBusy, setReqBusy] = useState('');
 
   const reload = async () => {
-    const [w, r] = await Promise.all([getWorkshop(id), getRegistrations(id)]);
+    const [w, r, q] = await Promise.all([getWorkshop(id), getRegistrations(id), listRequests(id)]);
     setWorkshop(w);
     setRegs(r);
+    setRequests(q);
   };
 
   useEffect(() => {
     let live = true;
-    Promise.all([getWorkshop(id), getRegistrations(id)])
-      .then(([w, r]) => { if (live) { setWorkshop(w); setRegs(r); } })
+    Promise.all([getWorkshop(id), getRegistrations(id), listRequests(id).catch(() => [])])
+      .then(([w, r, q]) => { if (live) { setWorkshop(w); setRegs(r); setRequests(q); } })
       .catch((e) => live && setError(e.message))
       .finally(() => live && setLoading(false));
     return () => { live = false; };
@@ -148,6 +155,59 @@ export default function WorkshopPage() {
     }
   };
 
+  /**
+   * Accepting is the manual step: only here does a submission become a
+   * registration and get its ticket number. Payment stays Pending until it is
+   * marked by hand on the list below.
+   */
+  const acceptRequest = async (request) => {
+    setReqBusy(request.id);
+    setError('');
+    try {
+      const { duplicates } = splitDuplicates([requestToRegistration(request)], regs);
+      if (duplicates.length) {
+        setError(`${request.name} looks already registered — ${describeDuplicate(duplicates[0])}. Reject the request, or add them by hand if this really is somebody else.`);
+        return;
+      }
+      const [saved] = await addRegistrations(id, [requestToRegistration(request)]);
+      await setRequestStatus(request.id, 'accepted', { ticketId: saved?.ticketId || '' });
+      await reload();
+      setNotice(
+        `${request.name} registered as ${saved?.ticketId || 'a new entry'}. ` +
+        'Payment is Pending until you mark it below.'
+      );
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setReqBusy('');
+    }
+  };
+
+  const rejectRequest = async (request) => {
+    setReqBusy(request.id);
+    try {
+      await setRequestStatus(request.id, 'rejected');
+      await reload();
+      setNotice(`${request.name}'s request marked rejected.`);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setReqBusy('');
+    }
+  };
+
+  const removeRequest = async (request) => {
+    setReqBusy(request.id);
+    try {
+      await deleteRequest(request.id);
+      await reload();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setReqBusy('');
+    }
+  };
+
   const runExport = async (fn) => {
     setExporting(true);
     try {
@@ -243,6 +303,16 @@ export default function WorkshopPage() {
           })}
         </dl>
       </div>
+
+      <RequestsPanel
+        workshop={workshop}
+        requests={requests}
+        registerLink={`${window.location.origin}/register/${id}`}
+        onAccept={acceptRequest}
+        onReject={rejectRequest}
+        onDelete={removeRequest}
+        busyId={reqBusy}
+      />
 
       <div className="panel">
         <div className="page-head" style={{ border: 0, paddingBottom: 0, marginBottom: 12 }}>

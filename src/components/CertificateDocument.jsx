@@ -1,6 +1,5 @@
-import { useMemo } from 'react';
-import qrcode from 'qrcode-generator';
 import { ISSUER } from '../lib/schema.js';
+import QrCode from './QrCode.jsx';
 import { certificateContent, CRESTS, SIGNATORIES } from '../lib/certificates.js';
 
 /** The Ashoka Chakra: 24 spokes, drawn rather than pasted. */
@@ -72,50 +71,6 @@ function Edge({ side, colour }) {
   );
 }
 
-/** A real QR of the verification URL, so scanning it checks this certificate. */
-function VerifyQr({ url }) {
-  const rects = useMemo(() => {
-    if (!url) return null;
-    try {
-      const qr = qrcode(0, 'M');
-      qr.addData(url);
-      qr.make();
-      const n = qr.getModuleCount();
-      const out = [];
-      // Merge runs of dark modules along each row — far fewer nodes than one
-      // rect per module, which matters when printing thirty of these.
-      for (let row = 0; row < n; row++) {
-        let start = -1;
-        for (let col = 0; col <= n; col++) {
-          const dark = col < n && qr.isDark(row, col);
-          if (dark && start === -1) start = col;
-          if (!dark && start !== -1) {
-            out.push(<rect key={`${row}-${start}`} x={start} y={row} width={col - start} height="1" />);
-            start = -1;
-          }
-        }
-      }
-      return { n, out };
-    } catch {
-      return null;
-    }
-  }, [url]);
-
-  if (!rects) return null;
-  return (
-    <svg
-      className="qr"
-      role="img"
-      aria-label="Certificate verification QR code"
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox={`0 0 ${rects.n} ${rects.n}`}
-      shapeRendering="crispEdges"
-    >
-      {rects.out}
-    </svg>
-  );
-}
-
 /**
  * The printable certificate.
  *
@@ -177,7 +132,7 @@ export default function CertificateDocument({ cert, verifyUrl = '' }) {
           </div>
 
           <div className="verify">
-            <VerifyQr url={verifyUrl} />
+            <QrCode className="qr" value={verifyUrl} title="Certificate verification QR code" />
             <div className="t">
               <b>Verify this certificate</b>
               {verifyUrl ? <a href={verifyUrl}>{host}</a> : <span>{host}</span>}

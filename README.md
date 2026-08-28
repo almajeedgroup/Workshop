@@ -27,6 +27,7 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 | **Seats** | Seat limit tracked, with a warning when it is reached or exceeded. |
 | **Duplicates** | A pasted candidate who is already registered is flagged before anything is saved. |
 | **Delete** | Remove a single registration, or a whole workshop and everything under it. |
+| **Self-registration** | Students scan a QR on the poster, fill the form, pay by UPI, and land in a queue for review. |
 | **Certify** | Award Completion, Participation, Excellence or Appreciation certificates, in bulk, from the workshop's own screen. |
 | **Verify** | Every certificate carries an ID and a QR code that anyone can check publicly, without an account. |
 | **Export** | Excel, CSV, printable PDF — for all workshops, one workshop, or its registrations. |

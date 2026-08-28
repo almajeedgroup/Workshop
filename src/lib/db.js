@@ -18,6 +18,7 @@ import {
 import {
   ticketPrefixFor, formatTicketId, compareTicketIds, highestTicketSeq,
 } from './tickets.js';
+import { syncPublicWorkshop, removePublicWorkshop } from './publicdb.js';
 
 const WORKSHOPS = 'workshops';
 const REGISTRATIONS = 'registrations';
@@ -194,6 +195,10 @@ export async function createWorkshop(workshop, registrations = []) {
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
+  // The public registration page reads a mirror of this, built from a
+  // whitelist. Kept in step here so the two cannot drift.
+  await syncPublicWorkshop(ref.id, data);
+
   if (registrations.length) await addRegistrations(ref.id, registrations);
   return ref.id;
 }
@@ -212,6 +217,7 @@ export async function updateWorkshop(id, workshop) {
   }
 
   await setDoc(ref, { ...data, updatedAt: serverTimestamp() }, { merge: true });
+  await syncPublicWorkshop(id, data);
 }
 
 /**
@@ -329,6 +335,7 @@ export async function deleteWorkshop(id) {
     snap = await getDocs(query(col, limit(450)));
   }
   await deleteDoc(doc(db, WORKSHOPS, id));
+  await removePublicWorkshop(id);
 }
 
 /**

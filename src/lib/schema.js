@@ -32,6 +32,14 @@ export const ISSUER = {
   siteUrl: 'https://school.almajeedgroup.in',
   email: 'almajeed.work@gmail.com',
   city: 'Bengaluru, Karnataka',
+  /**
+   * UPI ID that registration fees are paid to, e.g. 'name@okhdfcbank'.
+   * Shown as a scannable QR on the public registration form, with the fee
+   * already filled in. A workshop can override it with its own Payment UPI
+   * field. Leave blank and the form asks students to call instead.
+   */
+  upiId: '',
+  upiName: 'Islamic Information Centre',
 };
 
 export const ORG_NAME = ISSUER.operator;
@@ -169,6 +177,21 @@ export const WORKSHOP_FIELDS = [
     label: 'Enquiry Numbers',
     type: 'list',
     aliases: ['contact', 'contacts', 'contact number', 'contact numbers', 'enquiry', 'enquiries', 'phone', 'call', 'for registration'],
+  },
+  {
+    key: 'paymentUpi',
+    label: 'Payment UPI ID',
+    type: 'text',
+    aliases: ['upi', 'upi id', 'payment upi', 'vpa', 'pay to'],
+    hint: 'Fees are collected here. Leave blank to use the organisation default.',
+  },
+  {
+    key: 'registrationOpen',
+    label: 'Public Registration',
+    type: 'enum',
+    options: ['Open', 'Closed'],
+    aliases: ['registration open', 'public registration', 'registration status'],
+    hint: 'Open lets students register themselves from the QR code on the poster.',
   },
   {
     key: 'topics',

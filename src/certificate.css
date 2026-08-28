@@ -79,7 +79,7 @@
 .sheet .cid b{display:block;font-size:6.5pt;font-weight:600;letter-spacing:.19em;text-transform:uppercase;color:#8a8f9c}
 .sheet .cid .id{display:block;width:56mm;min-height:6.5mm;font-size:10pt;font-weight:600;letter-spacing:.05em;font-variant-numeric:tabular-nums;margin-top:2mm}
 .sheet .verify{display:flex;align-items:center;gap:3.5mm;flex:none}
-.sheet .verify svg.qr{width:12mm;height:12mm;fill:var(--cink);flex:none}
+.sheet .verify svg.qr{width:12mm;height:12mm;color:var(--cink);flex:none}
 .sheet .verify .t{text-align:left}
 .sheet .verify .t b{display:block;font-size:6.5pt;font-weight:600;letter-spacing:.19em;text-transform:uppercase;color:#8a8f9c}
 .sheet .verify .t a,.sheet .verify .t span{display:block;font-size:9.4pt;font-weight:600;color:var(--green-deep);text-decoration:none;margin-top:.6mm}
