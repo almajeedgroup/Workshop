@@ -329,19 +329,35 @@ into WhatsApp to the number they gave.
 
 ### The payment QR
 
-Two ways, and the image wins if both are set:
+This is the one part students actually have to use, so it is worth getting
+right. Two ways, and an image beats a UPI ID wherever both are set.
 
-1. **A QR from your bank** (BharatQR, a merchant standee). Save the image as
-   `public/payment-qr.png` and deploy. It is already the default in
-   `ISSUER.paymentQrImage` (`src/lib/schema.js`). This route accepts cards as
-   well as UPI, but **carries no amount** — the form tells the student to type
-   it themselves.
-2. **A UPI ID**. Set `ISSUER.upiId`, or **Payment UPI** on a single workshop.
-   The page then generates the QR with the fee already filled in.
+**Upload the QR from your bank** — the usual route. On the workshop's **Edit**
+screen, under **Payment QR Image**, press *Choose an image* and pick the QR
+your bank gave you (a BharatQR or merchant standee). It is shrunk to 480px and
+stored on the workshop itself: no file to copy into the repository, no deploy,
+and it can be changed by anyone who can edit the workshop.
 
-Per-workshop overrides are **Payment UPI** and **Payment QR Image** on the
-edit screen. If the image file is missing the page falls back to the UPI QR
-rather than showing a broken image on a payment screen.
+This route accepts cards as well as UPI, but **carries no amount** — bank QRs
+never do — so the form tells the student to type the fee in themselves.
+
+**Or set a UPI ID** — **Payment UPI** on the workshop, or `ISSUER.upiId` in
+`src/lib/schema.js` for every workshop. The page then draws the QR itself with
+the fee already filled in, and offers an *Open my UPI app* button next to it.
+
+If neither is set, the form tells students to telephone instead, and the
+workshop page shows a warning saying so — a payment screen with nothing on it
+looks like a QR that failed to load, which is not a thing to leave to chance.
+
+`ISSUER.paymentQrImage` also accepts a path to a file shipped in `public/`
+(e.g. `/payment-qr.png`) if you would rather the QR travel with the site.
+Uploading is preferred: a path pointing at a file that is not there shows
+nothing, and gives no clue why.
+
+Uploaded images are stored as data URLs. `src/lib/imagefile.js` caps them at
+320 KB, well under Firestore's 1 MiB per document, and re-encodes as PNG —
+JPEG's ringing around hard black-and-white edges is exactly what stops a
+scanner reading a QR.
 
 ### Why a separate public document
 
@@ -369,13 +385,14 @@ src/
   lib/stats.js             registration counts, amount collected, seats left
   lib/db.js                Firestore reads/writes, ticket-ID allocation
   lib/publicdb.js          the public workshop copy and the request queue
+  lib/imagefile.js         shrinking a picked image to fit in a document
   lib/exporters.js         which sheets to build (loaded on demand)
   lib/xlsx.js              the .xlsx and .csv file formats themselves
   lib/certificates.js      the four awards, their wording and their IDs
   lib/certdb.js            issuing, verification, holder history
   lib/certlinks.js         public certificate and verification URLs
   components/              WorkshopForm, RegistrationEditor, RegistrationList,
-                           TicketDocument, RequestsPanel, QrCode,
+                           TicketDocument, RequestsPanel, QrCode, ImageField,
                            CertificateDocument, CertificateStage
   components/site/         PublicShell, SiteHeader, SiteFooter, Icons
   pages/                   the admin tool: Login, List, Import, Workshop,
@@ -387,8 +404,8 @@ src/
   site.css                 the public site
   certificate.css          the certificate; the one place with colour
 public/fonts, public/crests  certificate typefaces and crests
-public/payment-qr.png      the bank's payment QR, if you use one
-tests/                     parser, tickets, dedupe, stats, xlsx, certificates
+tests/                     parser, tickets, dedupe, stats, xlsx,
+                           certificates, imagefile
 firestore.rules            access control
 firebase.json              hosting, caching and security headers
 ```

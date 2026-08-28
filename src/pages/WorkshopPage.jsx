@@ -20,6 +20,12 @@ function shown(field, w) {
   const v = w[field.key];
   if (field.type === 'list') return Array.isArray(v) && v.length ? v.join('; ') : '';
   if (v === null || v === undefined) return '';
+  // An uploaded image is a data URL hundreds of thousands of characters long.
+  // Saying it is set is the useful part; the blob is not readable by anyone.
+  if (field.type === 'image') {
+    if (!v) return '';
+    return String(v).startsWith('data:') ? 'Uploaded' : String(v);
+  }
   return String(v);
 }
 

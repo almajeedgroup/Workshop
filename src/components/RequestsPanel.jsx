@@ -49,6 +49,12 @@ export default function RequestsPanel({
   };
 
   const open = workshop.registrationOpen === 'Open';
+  // What the payment block on the form will actually be able to show. If
+  // neither is set the form falls back to "we will send you the details",
+  // which looks to everyone like a QR that failed to load.
+  const hasQrImage = !!(workshop.paymentQrUrl || ISSUER.paymentQrImage);
+  const hasUpi = !!(workshop.paymentUpi || ISSUER.upiId);
+  const feePayable = Number(workshop.feeAmount) > 0;
 
   return (
     <div className="panel">
@@ -86,6 +92,16 @@ export default function RequestsPanel({
           </button>
         </div>
       </div>
+
+      {feePayable && !hasQrImage && !hasUpi && (
+        <div className="notice warn">
+          There is <strong>no payment QR</strong> on the registration form, so it asks
+          students to telephone instead. Add one on <strong>Edit</strong>: upload the QR
+          from your bank under <strong>Payment QR Image</strong>, or type a{' '}
+          <strong>Payment UPI</strong> ID and the QR is generated with the{' '}
+          {CURRENCY}{workshop.feeAmount} already filled in.
+        </div>
+      )}
 
       {showQr && (
         <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap', marginBottom: 16 }}>

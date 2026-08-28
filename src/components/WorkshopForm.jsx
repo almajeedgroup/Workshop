@@ -1,4 +1,5 @@
 import { WORKSHOP_FIELDS } from '../lib/schema.js';
+import ImageField from './ImageField.jsx';
 
 /**
  * Renders one input per schema field. Because it loops over WORKSHOP_FIELDS,
@@ -59,6 +60,10 @@ export default function WorkshopForm({ value, onChange }) {
                 />
                 <div className="hint">Separate multiple entries with a semicolon.</div>
               </>
+            )}
+
+            {f.type === 'image' && (
+              <ImageField id={id} value={v ?? ''} onChange={(nv) => set(f.key, nv)} hint={f.hint} />
             )}
 
             {f.type === 'text' && (
