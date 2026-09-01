@@ -19,6 +19,7 @@ import TicketPage from './pages/TicketPage.jsx';
 import CertificateAllotPage from './pages/CertificateAllotPage.jsx';
 import IdCardPage from './pages/IdCardPage.jsx';
 import IdCardsPage from './pages/IdCardsPage.jsx';
+import AttendancePage from './pages/AttendancePage.jsx';
 import CertificatePage from './pages/CertificatePage.jsx';
 import VerifyPage from './pages/VerifyPage.jsx';
 
@@ -151,6 +152,7 @@ export default function App() {
         <Route path="/w/:id/edit" element={<Protected><EditPage mode="edit" /></Protected>} />
         <Route path="/w/:id/t/:regId" element={<Protected><TicketPage /></Protected>} />
         <Route path="/w/:id/certificates" element={<Protected><CertificateAllotPage /></Protected>} />
+        <Route path="/w/:id/attendance" element={<Protected><AttendancePage /></Protected>} />
         <Route path="/w/:id/cards" element={<Protected><IdCardsPage /></Protected>} />
         <Route path="/w/:id/card/:regId" element={<Protected><IdCardPage /></Protected>} />
 

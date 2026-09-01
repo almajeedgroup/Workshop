@@ -288,6 +288,7 @@ export default function WorkshopPage() {
         <div className="btn-row">
           <Link className="btn" to="/records">← Records</Link>
           <Link className="btn" to={`/w/${id}/edit`}>Edit</Link>
+          <Link className="btn" to={`/w/${id}/attendance`}>Attendance</Link>
           <Link className="btn" to={`/w/${id}/cards`}>ID Cards</Link>
           <Link className="btn" to={`/w/${id}/certificates`}>Certificates</Link>
           <button onClick={() => window.print()}>Print / PDF</button>

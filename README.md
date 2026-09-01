@@ -27,6 +27,7 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 | **Seats** | Seat limit tracked, with a warning when it is reached or exceeded. |
 | **Duplicates** | A pasted candidate who is already registered is flagged before anything is saved. |
 | **Free or paid** | Each course is set Free or Paid when it is established; a free course shows no fee, no QR and no payment chase. |
+| **Attendance** | A printable register with a signature box per participant per day, and signing lines for the presenter and coordinator. |
 | **ID cards** | Every registrant gets a two-sided colour ID card — colourway and crests chosen for the course, editable per person, printed nine to an A4 sheet. |
 | **Delete** | Remove a single registration, or a whole workshop and everything under it. |
 | **Self-registration** | Students scan a QR on the poster, fill the form, pay by UPI, and land in a queue for review. |
@@ -473,7 +474,51 @@ the rules — comfortably inside Firestore's 1MiB per document.
 
 ---
 
-## 9. Project layout
+## 9. Attendance sheets
+
+**Attendance** on the workshop page produces the register, ready to print and
+sign. It is the one document in this system that exists to be written *on*,
+and that settles most of its design.
+
+- **Rows are 11mm tall.** That is what a signature needs. A row a pen cannot
+  sign in gets signed across two rows, and then the sheet proves nothing.
+- **The heading repeats on every page.** A second page of signature boxes with
+  no names against them is worthless.
+- **One column per day.** A three-day course gets three dated columns on one
+  sheet, each about 24mm wide.
+- **The presenter and coordinator sign the foot**, named from the workshop
+  where those are recorded, with a third blank line for whoever signs on the
+  day.
+
+People are listed by ticket number — numerically, so `IIC-010` follows
+`IIC-009` rather than `IIC-001` — and anyone not yet issued one is listed
+after them by name. Sorting by name alone would reshuffle the sheet every time
+somebody new joined, which is exactly what you do not want between the day one
+sheet and the day two sheet.
+
+The crests are the ones chosen for this course's **ID Card Logos**, in the
+same order, so a course's paperwork reads as one set of documents.
+
+### Courses longer than six days
+
+Six columns across A4 leaves about 22mm each, which is a signature; ten would
+leave 13mm, which is an initial at best. Past six days the page switches to
+one sheet per day and says so, with a date picker at the top.
+
+A shorter course can be printed that way too — choose a single day instead of
+*The whole course* if you would rather each day were signed on its own sheet.
+
+### Dates
+
+Days are worked out from the course's start and end dates, in UTC, so a sheet
+is never dated a day out because of where the machine is. A course with only a
+start date is one day. Dates typed into the wrong boxes are read as the range
+between them rather than refused — somebody transposed them, and an empty
+sheet helps nobody.
+
+---
+
+## 10. Project layout
 
 ```
 src/
@@ -486,6 +531,7 @@ src/
   lib/publicdb.js          the public workshop copy and the request queue
   lib/imagefile.js         shrinking a picked image to fit in a document
   lib/idcards.js           card colourways, crests, and what each face says
+  lib/attendance.js        course days, signature columns, who signs the foot
   lib/photodb.js           participant photographs, kept off the registration
   lib/exporters.js         which sheets to build (loaded on demand)
   lib/xlsx.js              the .xlsx and .csv file formats themselves
@@ -494,11 +540,12 @@ src/
   lib/certlinks.js         public certificate and verification URLs
   components/              WorkshopForm, RegistrationEditor, RegistrationList,
                            TicketDocument, RequestsPanel, QrCode, ImageField,
-                           IdCard, OrderedChoice,
+                           IdCard, OrderedChoice, AttendanceSheet,
                            CertificateDocument, CertificateStage
   components/site/         PublicShell, SiteHeader, SiteFooter, Icons
   pages/                   the admin tool: Login, List, Import, Workshop,
-                           Edit, Ticket, CertificateAllot, IdCard, IdCards
+                           Edit, Ticket, CertificateAllot, IdCard, IdCards,
+                           Attendance
   pages/site/              the public site: Home, Programmes, Certificates,
                            About, Contact, Register
   AuthContext.jsx          sign-in + admin allow-list check
@@ -506,9 +553,10 @@ src/
   site.css                 the public site
   certificate.css          the certificate; the one place with colour
   idcard.css               the ID card, in millimetres against a real card
+  attendance.css           the attendance register, A4 portrait
 public/fonts, public/crests  certificate typefaces and crests
 tests/                     parser, tickets, dedupe, stats, xlsx,
-                           certificates, imagefile, idcards
+                           certificates, imagefile, idcards, attendance
 firestore.rules            access control
 firebase.json              hosting, caching and security headers
 ```
@@ -527,7 +575,7 @@ Values are written as inline strings, never formulas, so a name such as
 way to say "this is text", so there such a value is prefixed with an
 apostrophe — otherwise Excel would run it on open.
 
-## 10. Deleting
+## 11. Deleting
 
 - **One registration** — *Remove* column on the workshop page. Asks first. The
   ticket number is retired, not reissued, and the photograph goes with the
@@ -545,15 +593,16 @@ click to confirm.
 
 ---
 
-## 11. Tests
+## 12. Tests
 
 ```bash
 npm test
 ```
 
-Runs 130 assertions on Node's built-in test runner — no extra dependencies,
+Runs 153 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
-the spreadsheet writer, certificates, image shrinking and ID cards. The parser
+the spreadsheet writer, certificates, image shrinking, ID cards and
+attendance sheets. The parser
 is heuristic and fails **silently** when it fails at all, so anything you teach
 it belongs in `tests/parser.test.js` alongside a paste that used to break it.
 
@@ -562,7 +611,7 @@ the Firebase emulator.
 
 ---
 
-## 12. Notes
+## 13. Notes
 
 - Search and filtering happen on the client, so no composite Firestore indexes
   are needed. Comfortable into the low thousands of records. Past that, the
@@ -584,7 +633,7 @@ the Firebase emulator.
 
 ---
 
-## 13. Verifying the security rules
+## 14. Verifying the security rules
 
 `firestore.rules` is the only thing standing between the public internet and
 every student's phone number, so it is worth testing rather than trusting.
