@@ -30,7 +30,7 @@ export default function HomePage() {
               </h1>
               <div className="tri" style={{ marginTop: 26 }}><i /><i /><i /></div>
               <p className="lede">
-                Al-Majeed School of Research Methodology &amp; Innovation runs short, intensive
+                {ISSUER.operator} runs short, intensive
                 programmes in artificial intelligence, research method and innovation practice —
                 where you leave with something you made, and a certificate anyone can check.
               </p>

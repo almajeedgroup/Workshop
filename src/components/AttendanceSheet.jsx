@@ -1,4 +1,4 @@
-import { ISSUER } from '../lib/schema.js';
+import { ISSUER, associationLine } from '../lib/schema.js';
 import { formatDate, formatDateRange } from '../lib/tickets.js';
 import { cardCrests } from '../lib/idcards.js';
 import { signatureColumns, attendanceRows, sheetSignatories } from '../lib/attendance.js';
@@ -38,7 +38,7 @@ export default function AttendanceSheet({ workshop, registrations, day = '' }) {
           <dt>Venue</dt><dd>{workshop.venue || '—'}</dd>
           <dt>Mode</dt><dd>{workshop.mode || '—'}</dd>
           {workshop.presentedBy && (<><dt>Presented by</dt><dd className="wide">{workshop.presentedBy}</dd></>)}
-          {workshop.collaborators && (<><dt>In association with</dt><dd className="wide">{workshop.collaborators}</dd></>)}
+          <dt>In association with</dt><dd className="wide">{associationLine(workshop)}</dd>
         </dl>
 
         {rows.length === 0 ? (

@@ -68,7 +68,7 @@ export const DEFAULT_CERTIFICATE_TYPE = 'completion';
 export const SIGNATORIES = [
   { name: 'Dr. Zoheb Javeed Khan', role: 'President', org: 'Islamic Information Centre' },
   { name: 'Ms. Sayeeda Arshiya', role: 'Principal', org: 'Kabir IND PU College for Women' },
-  { name: 'Mr. Sulaimaan', role: 'Trainer', org: 'Al-Majeed School of Research, Methodology & Innovation' },
+  { name: 'Mr. Sulaimaan', role: 'Trainer', org: ISSUER.operator },
 ];
 
 /** The crests across the head of the certificate. */
@@ -76,7 +76,7 @@ export const CRESTS = [
   { src: '/crests/beyond-guidance.png', alt: 'Beyond Guidance' },
   { src: '/crests/islamic-information-centre.png', alt: 'Islamic Information Centre' },
   { src: '/crests/kabir-college.png', alt: 'Kabir IND PU College for Women' },
-  { src: '/crests/al-majeed.png', alt: 'Al-Majeed School of Research, Methodology and Innovation' },
+  { src: '/crests/al-majeed.png', alt: ISSUER.operator },
 ];
 
 /** Substitute {placeholders}; anything unknown is left blank rather than printed raw. */

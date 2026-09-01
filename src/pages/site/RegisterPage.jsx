@@ -121,6 +121,7 @@ export default function RegisterPage() {
       `*Workshop:* ${workshop.title}`,
       formatDateRange(workshop) ? `*Date:* ${formatDateRange(workshop)}` : '',
       workshop.venue ? `*Venue:* ${workshop.venue}` : '',
+      workshop.collaborators ? `*In association with:* ${workshop.collaborators}` : '',
       fee ? `*Fee:* ${CURRENCY}${fee}` : '',
       form.paymentRef ? `*Payment reference:* ${form.paymentRef}` : '',
       '', 'Your seat is confirmed once the office checks the payment.',
@@ -155,6 +156,9 @@ export default function RegisterPage() {
               {formatDateRange(workshop) && <><dt>Dates</dt><dd>{formatDateRange(workshop)}</dd></>}
               {workshop.venue && <><dt>Venue</dt><dd>{workshop.venue}</dd></>}
               <dt>Fee</dt><dd>{free ? 'Free' : fee ? `${CURRENCY}${fee}` : '—'}</dd>
+              {workshop.collaborators && (
+                <><dt>In association with</dt><dd>{workshop.collaborators}</dd></>
+              )}
             </dl>
 
             <p style={{ marginTop: 18, fontSize: 14.5 }}>
@@ -211,6 +215,12 @@ export default function RegisterPage() {
                 </span>
               )}
             </div>
+
+            {workshop.collaborators && (
+              <p style={{ marginTop: 18, fontSize: 14.5, color: 'var(--ink-soft)' }}>
+                In association with <strong style={{ color: 'var(--ink)' }}>{workshop.collaborators}</strong>
+              </p>
+            )}
           </div>
         </div>
       </section>

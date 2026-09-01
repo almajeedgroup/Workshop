@@ -26,7 +26,16 @@ export const ISSUER = {
   unitLine: 'Beyond Guidance, a unit of Islamic Information Centre',
   phones: ['+91 98452 89298', '+91 63646 30740'],
   /** Shown in the app masthead — who built/operates the system. */
-  operator: 'Al-Majeed School of Research Methodology & Innovation',
+  /**
+   * The school that built and runs this system, and is named as an associate
+   * on everything it produces.
+   *
+   * THE canonical spelling. It was written three different ways across the
+   * code — with a comma after "Research", with "&" and with "and" — which on
+   * a certificate and the ticket for the same course is the kind of thing
+   * people notice. Every document now takes it from here.
+   */
+  operator: 'Al-Majeed School of Research Methodology and Innovation',
   /** The public site. Used in the footer, on certificates and in share links. */
   site: 'school.almajeedgroup.in',
   siteUrl: 'https://school.almajeedgroup.in',
@@ -112,6 +121,31 @@ export const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
  * chase afterwards.
  */
 export const FEE_TYPES = ['Free', 'Paid'];
+
+/**
+ * Who the course is run in association with, for print.
+ *
+ * Al-Majeed School is named on everything this system produces, whether or
+ * not anyone typed it into the workshop, and it comes last so a partner
+ * named for a particular course leads.
+ *
+ * If somebody HAS typed it into the collaborators — which they will, and
+ * spelled some other way — it is not repeated. Matching ignores case,
+ * punctuation, and "&" against "and", because those are exactly the
+ * differences a person types without thinking.
+ */
+export function associationLine(workshop) {
+  const flat = (v) => String(v ?? '')
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+
+  const own = String(workshop?.collaborators ?? '').trim();
+  const house = ISSUER.operator;
+  if (!own) return house;
+  return flat(own).includes(flat(house)) ? own : `${own} · ${house}`;
+}
 
 /**
  * Is this a free course?

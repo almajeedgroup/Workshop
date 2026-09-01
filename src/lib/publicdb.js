@@ -23,7 +23,7 @@ import {
   query, where, serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase.js';
-import { ISSUER, isFreeWorkshop, workshopFee } from './schema.js';
+import { ISSUER, isFreeWorkshop, workshopFee, associationLine } from './schema.js';
 
 const PUBLIC_WORKSHOPS = 'publicWorkshops';
 const REQUESTS = 'registrationRequests';
@@ -46,7 +46,9 @@ export function publicWorkshopRecord(workshop) {
     mode: str(workshop.mode),
     venue: str(workshop.venue),
     presentedBy: str(workshop.presentedBy),
-    collaborators: str(workshop.collaborators),
+    // Resolved here rather than on the page: the public site must credit the
+    // school on a workshop whose collaborators were never filled in.
+    collaborators: associationLine(workshop),
     audience: str(workshop.audience),
     topics: str(workshop.topics),
     seatLimit: num(workshop.seatLimit),

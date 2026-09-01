@@ -1,4 +1,6 @@
-import { ISSUER, CURRENCY, isFreeWorkshop, workshopFee } from '../lib/schema.js';
+import {
+  ISSUER, CURRENCY, isFreeWorkshop, workshopFee, associationLine,
+} from '../lib/schema.js';
 import { formatDate, formatDateRange } from '../lib/tickets.js';
 
 function Row({ label, children }) {
@@ -51,7 +53,7 @@ export default function TicketDocument({ workshop, reg }) {
           <dl className="kv tight">
             <Row label="Title">{workshop.title}</Row>
             <Row label="Presented by">{workshop.presentedBy}</Row>
-            <Row label="In association with">{workshop.collaborators}</Row>
+            <Row label="In association with">{associationLine(workshop)}</Row>
             <Row label="Date">{formatDateRange(workshop)}</Row>
             <Row label="Time">{workshop.time}</Row>
             <Row label="Venue">{workshop.venue}</Row>

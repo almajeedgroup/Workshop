@@ -8,7 +8,9 @@
  * same time can never be given the same number.
  */
 
-import { ISSUER, CURRENCY, isFreeWorkshop, workshopFee } from './schema.js';
+import {
+  ISSUER, CURRENCY, isFreeWorkshop, workshopFee, associationLine,
+} from './schema.js';
 import { normalizePhone } from './parser.js';
 
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -153,7 +155,7 @@ export function ticketMessage(workshop, reg, { ticketUrl = '' } = {}) {
   lines.push('');
   lines.push(`*Workshop:* ${workshop.title}`);
   if (workshop.presentedBy) lines.push(`*Presented by:* ${workshop.presentedBy}`);
-  if (workshop.collaborators) lines.push(`*In association with:* ${workshop.collaborators}`);
+  lines.push(`*In association with:* ${associationLine(workshop)}`);
   const dates = formatDateRange(workshop);
   if (dates) lines.push(`*Date:* ${dates}`);
   if (workshop.time) lines.push(`*Time:* ${workshop.time}`);

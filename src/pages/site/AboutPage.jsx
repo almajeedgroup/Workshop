@@ -16,7 +16,7 @@ export default function AboutPage() {
             </h1>
             <div className="tri" style={{ marginTop: 22 }}><i /><i /><i /></div>
             <p className="lede" style={{ marginTop: 22 }}>
-              Al-Majeed School of Research Methodology &amp; Innovation teaches research method,
+              {ISSUER.operator} teaches research method,
               artificial intelligence and innovation practice — working with{' '}
               {ISSUER.unitLine} and partner institutions across {ISSUER.city}.
             </p>

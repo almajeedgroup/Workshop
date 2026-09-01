@@ -27,6 +27,7 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 | **Seats** | Seat limit tracked, with a warning when it is reached or exceeded. |
 | **Duplicates** | A pasted candidate who is already registered is flagged before anything is saved. |
 | **Free or paid** | Each course is set Free or Paid when it is established; a free course shows no fee, no QR and no payment chase. |
+| **Attribution** | Al-Majeed School is named *in association with* on every document the system produces. |
 | **Attendance** | A printable register with a signature box per participant per day, and signing lines for the presenter and coordinator. |
 | **ID cards** | Every registrant gets a two-sided colour ID card — colourway and crests chosen for the course, editable per person, printed nine to an A4 sheet. |
 | **Delete** | Remove a single registration, or a whole workshop and everything under it. |
@@ -558,7 +559,7 @@ src/
 public/fonts, public/crests  certificate typefaces and crests
 tests/                     parser, tickets, dedupe, stats, xlsx,
                            certificates, imagefile, idcards, attendance,
-                           exporters
+                           exporters, association
 firestore.rules            access control
 firebase.json              hosting, caching and security headers
 ```
@@ -626,7 +627,7 @@ click to confirm.
 npm test
 ```
 
-Runs 165 assertions on Node's built-in test runner — no extra dependencies,
+Runs 175 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards and
 attendance sheets. The parser
@@ -638,7 +639,29 @@ the Firebase emulator.
 
 ---
 
-## 13. Notes
+## 13. Attribution
+
+Al-Majeed School of Research Methodology and Innovation is named **in
+association with** on everything this system produces: the ticket and its
+WhatsApp message, the receipt, the attendance sheet, the ID card, the
+certificate, the public registration page and the confirmation a student
+keeps.
+
+`associationLine()` in `src/lib/schema.js` is the single place that decides
+how. A partner named for a particular course leads and the school follows; a
+course with no collaborators still credits the school.
+
+If somebody has already typed the school into **In association with** — and
+they will — it is not repeated. The match ignores case, punctuation, and `&`
+against `and`, because those are exactly the differences a person types
+without thinking.
+
+The name itself lives once, as `ISSUER.operator`. It had been written three
+different ways across the code — with a comma after "Research", with `&`, and
+with `and` — which on a certificate and the ticket for the same course is the
+sort of thing people notice.
+
+## 14. Notes
 
 - Search and filtering happen on the client, so no composite Firestore indexes
   are needed. Comfortable into the low thousands of records. Past that, the
@@ -660,7 +683,7 @@ the Firebase emulator.
 
 ---
 
-## 14. Verifying the security rules
+## 15. Verifying the security rules
 
 `firestore.rules` is the only thing standing between the public internet and
 every student's phone number, so it is worth testing rather than trusting.

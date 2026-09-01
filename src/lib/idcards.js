@@ -13,7 +13,7 @@
  * sheet, the single-card page and the organiser's editor cannot drift apart.
  */
 
-import { ISSUER, isFreeWorkshop, BLOOD_GROUPS } from './schema.js';
+import { ISSUER, isFreeWorkshop, BLOOD_GROUPS, associationLine } from './schema.js';
 import { formatDate, formatDateRange } from './tickets.js';
 
 /* ------------------------------------------------------------------ *
@@ -75,7 +75,7 @@ export function cardTheme(workshop) {
  * organisation never invalidates saved data.
  */
 export const ID_CARD_CRESTS = [
-  { key: 'almajeed', label: 'Al-Majeed School', src: '/crests/al-majeed.png', alt: 'Al-Majeed School of Research, Methodology and Innovation' },
+  { key: 'almajeed', label: 'Al-Majeed School', src: '/crests/al-majeed.png', alt: ISSUER.operator },
   { key: 'kabir', label: 'Kabir IND PU College', src: '/crests/kabir-college.png', alt: 'Kabir IND PU College for Women' },
   { key: 'iic', label: 'Islamic Information Centre', src: '/crests/islamic-information-centre.png', alt: 'Islamic Information Centre' },
   { key: 'beyond', label: 'Beyond Guidance', src: '/crests/beyond-guidance.png', alt: 'Beyond Guidance' },
@@ -164,7 +164,7 @@ export function cardFace(workshop, reg) {
       ['Venue', clean(w.venue)],
       ['Mode', clean(w.mode)],
       ['Fee', free ? 'Free' : (Number(w.feeAmount) ? `₹${Number(w.feeAmount)}` : '')],
-      ['In association with', clean(w.collaborators)],
+      ['In association with', associationLine(w)],
     ].filter(([, v]) => v),
 
     validUntil: clean(r.idValidUntil) || clean(w.endDate) || clean(w.startDate),

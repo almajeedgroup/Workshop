@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { normalizePhone } from '../lib/parser.js';
 import { formatDateRange } from '../lib/tickets.js';
-import { ISSUER, CURRENCY, isFreeWorkshop, workshopFee } from '../lib/schema.js';
+import {
+  ISSUER, CURRENCY, isFreeWorkshop, workshopFee, associationLine,
+} from '../lib/schema.js';
 import QrCode from './QrCode.jsx';
 
 /** The receipt an accepted registrant is sent, on WhatsApp. */
@@ -16,6 +18,7 @@ export function receiptMessage(workshop, request, ticketId) {
     formatDateRange(workshop) ? `*Date:* ${formatDateRange(workshop)}` : '',
     workshop.time ? `*Time:* ${workshop.time}` : '',
     workshop.venue ? `*Venue:* ${workshop.venue}` : '',
+    `*In association with:* ${associationLine(workshop)}`,
     isFreeWorkshop(workshop) ? '*Fee:* Free' : (workshopFee(workshop) ? `*Fee:* ${CURRENCY}${workshopFee(workshop)}` : ''),
     request.paymentRef ? `*Payment reference:* ${request.paymentRef}` : '',
     '', 'Please carry your ticket (printed or on your phone) for entry.',
