@@ -358,8 +358,19 @@ export default function WorkshopPage() {
             <button onClick={() => setPasteOpen((o) => !o)}>
               {pasteOpen ? 'Close' : '+ Paste registrations'}
             </button>
+            <button
+              className="primary"
+              onClick={() => runExport('exportStudentListXlsx')}
+              disabled={!filtered.length || exporting}
+              title={filtered.length === regs.length
+                ? 'All students, one row each, in an Excel file'
+                : `Only the ${filtered.length} matching your search — clear it to download all ${regs.length}`}
+            >
+              {exporting ? 'Building…' : 'Download student list'}
+              {filtered.length !== regs.length ? ` (${filtered.length})` : ''}
+            </button>
             <button onClick={() => runExport('exportRegistrationsXlsx')} disabled={!filtered.length || exporting}>
-              Excel
+              Full Excel
             </button>
             <button onClick={() => runExport('exportRegistrationsCsv')} disabled={!filtered.length || exporting}>
               CSV

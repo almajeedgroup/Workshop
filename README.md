@@ -33,6 +33,7 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 | **Self-registration** | Students scan a QR on the poster, fill the form, pay by UPI, and land in a queue for review. |
 | **Certify** | Award Completion, Participation, Excellence or Appreciation certificates, in bulk, from the workshop's own screen. |
 | **Verify** | Every certificate carries an ID and a QR code that anyone can check publicly, without an account. |
+| **Student list** | One button, one clean sheet: a row per student and only the columns that say something. |
 | **Export** | Excel, CSV, printable PDF — for all workshops, one workshop, or its registrations. |
 
 ---
@@ -556,10 +557,36 @@ src/
   attendance.css           the attendance register, A4 portrait
 public/fonts, public/crests  certificate typefaces and crests
 tests/                     parser, tickets, dedupe, stats, xlsx,
-                           certificates, imagefile, idcards, attendance
+                           certificates, imagefile, idcards, attendance,
+                           exporters
 firestore.rules            access control
 firebase.json              hosting, caching and security headers
 ```
+
+### The student list
+
+**Download student list** on the Registrations panel gives one sheet, one row
+per student, and only the columns that carry something. It drops three kinds
+of column the full export has to keep:
+
+- **the workshop repeated on every row.** It is in the file name and the sheet
+  name instead. A title row above the header would be worse than leaving it
+  out — it breaks sorting and filtering in every spreadsheet program there is.
+- **payment, on a free course**, where there is nothing to record.
+- **anything blank for every student.** A course that never collected blood
+  groups has no business printing a Blood Group column.
+
+People are ordered by ticket number, compared numerically, so the sheet reads
+in the same order as the attendance register. Dates are written the way they
+appear on the ticket and the ID card.
+
+It is Excel rather than CSV on purpose: CSV has no way to say "this is text",
+so a WhatsApp number lands in a column as `9.33921E+09` by the time anyone
+reads it.
+
+The buttons beside it are unchanged — **Full Excel** is the complete export
+with every schema field, which is the right shape for an archive and the wrong
+shape for a list somebody is going to read.
 
 ### On the spreadsheet writer
 
@@ -599,7 +626,7 @@ click to confirm.
 npm test
 ```
 
-Runs 153 assertions on Node's built-in test runner — no extra dependencies,
+Runs 165 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards and
 attendance sheets. The parser
