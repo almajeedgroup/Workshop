@@ -8,7 +8,7 @@
  * same time can never be given the same number.
  */
 
-import { ISSUER, CURRENCY } from './schema.js';
+import { ISSUER, CURRENCY, isFreeWorkshop, workshopFee } from './schema.js';
 import { normalizePhone } from './parser.js';
 
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -138,7 +138,8 @@ export function ticketSubject(workshop, reg) {
  */
 export function ticketMessage(workshop, reg, { ticketUrl = '' } = {}) {
   const paid = reg.paymentStatus === 'Paid';
-  const amount = reg.amountPaid || workshop.feeAmount || '';
+  const free = isFreeWorkshop(workshop);
+  const amount = reg.amountPaid || workshopFee(workshop) || '';
   const lines = [];
 
   lines.push(`*${ISSUER.name.toUpperCase()}*`);
@@ -159,14 +160,21 @@ export function ticketMessage(workshop, reg, { ticketUrl = '' } = {}) {
   if (workshop.venue) lines.push(`*Venue:* ${workshop.venue}`);
   lines.push('');
 
-  lines.push('*PAYMENT RECEIPT*');
-  lines.push(`*Status:* ${reg.paymentStatus || 'Pending'}`);
-  if (amount !== '' && amount !== null) {
-    lines.push(`*Amount:* ${CURRENCY}${amount}${paid ? ' (received with thanks)' : ' (payable)'}`);
+  // A free course has nothing to receipt. Printing "Status: Pending" under a
+  // heading called PAYMENT RECEIPT reads as money owed, and gets chased.
+  if (free) {
+    lines.push('*This is a free programme — no fee is payable.*');
+    lines.push('');
+  } else {
+    lines.push('*PAYMENT RECEIPT*');
+    lines.push(`*Status:* ${reg.paymentStatus || 'Pending'}`);
+    if (amount !== '' && amount !== null) {
+      lines.push(`*Amount:* ${CURRENCY}${amount}${paid ? ' (received with thanks)' : ' (payable)'}`);
+    }
+    if (reg.paymentMode) lines.push(`*Mode:* ${reg.paymentMode}`);
+    if (reg.paymentRef) lines.push(`*Reference:* ${reg.paymentRef}`);
+    lines.push('');
   }
-  if (reg.paymentMode) lines.push(`*Mode:* ${reg.paymentMode}`);
-  if (reg.paymentRef) lines.push(`*Reference:* ${reg.paymentRef}`);
-  lines.push('');
 
   if (ticketUrl) {
     lines.push(`*View / print your ticket:* ${ticketUrl}`);
@@ -186,7 +194,7 @@ export function ticketMessagePlain(workshop, reg, opts) {
 
 /** Reminder text for someone who hasn't paid yet. */
 export function paymentReminderMessage(workshop, reg) {
-  const amount = workshop.feeAmount || '';
+  const amount = workshopFee(workshop) || '';
   return [
     `Assalamu 'alaykum ${reg.name},`,
     '',

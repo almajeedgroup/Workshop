@@ -19,6 +19,7 @@ import {
   ticketPrefixFor, formatTicketId, compareTicketIds, highestTicketSeq,
 } from './tickets.js';
 import { syncPublicWorkshop, removePublicWorkshop } from './publicdb.js';
+import { removePhoto, PHOTOS } from './photodb.js';
 
 const WORKSHOPS = 'workshops';
 const REGISTRATIONS = 'registrations';
@@ -31,7 +32,7 @@ function sanitizeWorkshop(w) {
   const out = {};
   for (const f of WORKSHOP_FIELDS) {
     const v = w[f.key];
-    if (f.type === 'list') out[f.key] = Array.isArray(v) ? v.filter(Boolean) : [];
+    if (f.type === 'list' || f.type === 'multi') out[f.key] = Array.isArray(v) ? v.filter(Boolean) : [];
     else if (f.type === 'number') out[f.key] = v === '' || v === null || v === undefined ? null : Number(v);
     else out[f.key] = v === undefined || v === null ? '' : String(v);
   }
@@ -258,6 +259,10 @@ export async function updateRegistration(workshopId, regId, patch) {
 
 export async function deleteRegistration(workshopId, regId) {
   await deleteDoc(doc(db, WORKSHOPS, workshopId, REGISTRATIONS, regId));
+  // The photograph lives in its own collection, so it does not go with the
+  // record unless it is deleted too — and a face left behind after the person
+  // was removed is the one leftover that actually matters.
+  await removePhoto(workshopId, regId);
 }
 
 /**
@@ -325,14 +330,17 @@ export async function syncRegistrations(workshopId, registrations, baseIds = nul
 }
 
 export async function deleteWorkshop(id) {
-  // Deleting a document does NOT delete its sub-collection — do it explicitly.
-  const col = collection(db, WORKSHOPS, id, REGISTRATIONS);
-  let snap = await getDocs(query(col, limit(450)));
-  while (!snap.empty) {
-    const batch = writeBatch(db);
-    snap.docs.forEach((d) => batch.delete(d.ref));
-    await batch.commit();
-    snap = await getDocs(query(col, limit(450)));
+  // Deleting a document does NOT delete its sub-collections — do it
+  // explicitly, for the registrations and for the photographs alike.
+  for (const name of [REGISTRATIONS, PHOTOS]) {
+    const col = collection(db, WORKSHOPS, id, name);
+    let snap = await getDocs(query(col, limit(450)));
+    while (!snap.empty) {
+      const batch = writeBatch(db);
+      snap.docs.forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+      snap = await getDocs(query(col, limit(450)));
+    }
   }
   await deleteDoc(doc(db, WORKSHOPS, id));
   await removePublicWorkshop(id);

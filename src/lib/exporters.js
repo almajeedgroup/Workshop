@@ -14,7 +14,7 @@ import { amountCollected, paymentCounts } from './stats.js';
 import { WORKSHOP_FIELDS, REGISTRATION_FIELDS, CURRENCY } from './schema.js';
 
 function cell(field, value) {
-  if (field.type === 'list') return Array.isArray(value) ? value.join('; ') : (value ?? '');
+  if (field.type === 'list' || field.type === 'multi') return Array.isArray(value) ? value.join('; ') : (value ?? '');
   if (field.type === 'number') return value === null || value === undefined || value === '' ? '' : Number(value);
   // An uploaded image is a data URL far longer than a spreadsheet cell can
   // hold, and unreadable if it fitted. Record that one is set instead.

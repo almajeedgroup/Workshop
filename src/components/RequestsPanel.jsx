@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { normalizePhone } from '../lib/parser.js';
 import { formatDateRange } from '../lib/tickets.js';
-import { ISSUER, CURRENCY } from '../lib/schema.js';
+import { ISSUER, CURRENCY, isFreeWorkshop, workshopFee } from '../lib/schema.js';
 import QrCode from './QrCode.jsx';
 
 /** The receipt an accepted registrant is sent, on WhatsApp. */
@@ -16,7 +16,7 @@ export function receiptMessage(workshop, request, ticketId) {
     formatDateRange(workshop) ? `*Date:* ${formatDateRange(workshop)}` : '',
     workshop.time ? `*Time:* ${workshop.time}` : '',
     workshop.venue ? `*Venue:* ${workshop.venue}` : '',
-    workshop.feeAmount ? `*Fee:* ${CURRENCY}${workshop.feeAmount}` : '',
+    isFreeWorkshop(workshop) ? '*Fee:* Free' : (workshopFee(workshop) ? `*Fee:* ${CURRENCY}${workshopFee(workshop)}` : ''),
     request.paymentRef ? `*Payment reference:* ${request.paymentRef}` : '',
     '', 'Please carry your ticket (printed or on your phone) for entry.',
     `Enquiries: ${ISSUER.phones.join(' / ')}`,
@@ -54,7 +54,7 @@ export default function RequestsPanel({
   // which looks to everyone like a QR that failed to load.
   const hasQrImage = !!(workshop.paymentQrUrl || ISSUER.paymentQrImage);
   const hasUpi = !!(workshop.paymentUpi || ISSUER.upiId);
-  const feePayable = Number(workshop.feeAmount) > 0;
+  const feePayable = !isFreeWorkshop(workshop) && workshopFee(workshop) > 0;
 
   return (
     <div className="panel">
@@ -99,7 +99,7 @@ export default function RequestsPanel({
           students to telephone instead. Add one on <strong>Edit</strong>: upload the QR
           from your bank under <strong>Payment QR Image</strong>, or type a{' '}
           <strong>Payment UPI</strong> ID and the QR is generated with the{' '}
-          {CURRENCY}{workshop.feeAmount} already filled in.
+          {CURRENCY}{workshopFee(workshop)} already filled in.
         </div>
       )}
 

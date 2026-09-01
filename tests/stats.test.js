@@ -75,3 +75,14 @@ test('seats: a workshop with no limit reports none', () => {
   assert.equal(seatsLeft({}, 10), null);
   assert.equal(seatsLeft({ seatLimit: '' }, 10), null);
 });
+
+test('collected: a free course collects nothing, whatever the stale amount says', () => {
+  const regs = [
+    { paymentStatus: 'Paid', amountPaid: '' },
+    { paymentStatus: 'Paid', amountPaid: '' },
+  ];
+  // The amount left behind from before the course was made free must not be
+  // counted as money taken.
+  assert.equal(amountCollected({ feeType: 'Free', feeAmount: 500 }, regs), 0);
+  assert.equal(amountCollected({ feeType: 'Paid', feeAmount: 500 }, regs), 1000);
+});

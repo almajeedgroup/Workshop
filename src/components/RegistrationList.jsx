@@ -37,6 +37,7 @@ export default function RegistrationList({
             <th>Contact</th>
             <th>Payment</th>
             <th className="no-print">Ticket</th>
+            <th className="no-print">ID Card</th>
             {onDelete && <th className="no-print">Remove</th>}
           </tr>
         </thead>
@@ -101,6 +102,10 @@ export default function RegistrationList({
 
                 <td className="no-print">
                   <Link className="chip" to={`/w/${workshop.id}/t/${r.id}`}>Open</Link>
+                </td>
+
+                <td className="no-print">
+                  <Link className="chip" to={`/w/${workshop.id}/card/${r.id}`}>Card</Link>
                 </td>
 
                 {onDelete && (

@@ -1,0 +1,149 @@
+/* Participant ID cards.
+
+   Laid out in millimetres against a real CR80 portrait card — 54mm x 85.6mm,
+   the size every lanyard holder on sale is cut for — so what is on screen is
+   the size that comes out of the printer.
+
+   Colour comes entirely from custom properties set per card by the component,
+   so a colourway is data, not a stylesheet variant. */
+
+.idc-scope{
+  --card-w:54mm; --card-h:85.6mm;
+  --idc-body:'Poppins','Segoe UI',Helvetica,Arial,sans-serif;
+}
+
+.idc{
+  position:relative; width:var(--card-w); height:var(--card-h); flex:none;
+  background:var(--wash); color:var(--ink); font-family:var(--idc-body);
+  border-radius:3mm; overflow:hidden; display:flex; flex-direction:column;
+  box-shadow:0 2mm 6mm rgba(0,0,0,.18);
+}
+.idc *{box-sizing:border-box; margin:0; padding:0}
+
+/* ---- the coloured band across the head ---- */
+.idc .idc-band{
+  background:var(--band); color:var(--on-band);
+  padding:2.6mm 3mm 2.4mm; text-align:center; flex:none;
+}
+/* The crests come from four organisations and do not share a background:
+   two are transparent, two are on white. Dropped straight onto the coloured
+   band the white ones read as loose tiles, so they all sit on one white
+   plate — which looks deliberate and, more to the point, identical whichever
+   crests the course picked. */
+.idc .idc-crests{
+  display:flex; align-items:center; justify-content:center; gap:1.6mm;
+  background:#fff; border-radius:1.4mm; padding:1mm 1.6mm; min-height:7mm;
+}
+.idc .idc-crests img{height:6.4mm; width:auto; display:block}
+.idc .idc-org{
+  margin-top:1.6mm; font-size:4.1pt; font-weight:600; letter-spacing:.09em;
+  text-transform:uppercase; line-height:1.35; opacity:.94;
+}
+
+/* ---- the role chip straddling the band's edge ---- */
+.idc .idc-role{
+  align-self:center; margin-top:-2mm; flex:none; z-index:2; position:relative;
+  background:var(--accent); color:var(--on-band); border-radius:2mm;
+  padding:.9mm 3mm; font-size:5pt; font-weight:700; letter-spacing:.16em;
+  text-transform:uppercase; white-space:nowrap; max-width:46mm;
+  overflow:hidden; text-overflow:ellipsis;
+}
+
+/* ---- the body ---- */
+.idc .idc-main{
+  flex:1; min-height:0; display:flex; flex-direction:column; align-items:center;
+  padding:2.2mm 3.4mm 1.5mm; text-align:center;
+}
+
+.idc .idc-photo{
+  width:20mm; height:24mm; flex:none; border-radius:1.6mm; overflow:hidden;
+  background:#fff; border:.4mm solid var(--band);
+  display:flex; align-items:center; justify-content:center;
+}
+.idc .idc-photo img{width:100%; height:100%; object-fit:cover; display:block}
+.idc .idc-photo span{font-size:4.4pt; letter-spacing:.1em; text-transform:uppercase; opacity:.42}
+
+.idc .idc-name{
+  margin-top:2mm; font-size:9pt; font-weight:700; line-height:1.15;
+  letter-spacing:.005em; width:100%; overflow-wrap:break-word;
+}
+.idc .idc-rule{width:16mm; height:.5mm; background:var(--band); margin:1.4mm auto 0; border-radius:.5mm}
+
+.idc .idc-rows{
+  margin-top:1.6mm; width:100%; display:grid; grid-template-columns:auto 1fr;
+  gap:.5mm 1.8mm; text-align:left; font-size:5pt; line-height:1.3;
+}
+.idc .idc-rows dt{font-weight:600; opacity:.55; white-space:nowrap}
+.idc .idc-rows dd{font-weight:500; overflow-wrap:anywhere}
+
+.idc .idc-note{
+  margin-top:auto; padding-top:1.4mm; font-size:4.3pt; line-height:1.4;
+  opacity:.62; text-align:center; width:100%; overflow-wrap:break-word;
+}
+
+/* ---- the foot, carrying the ticket number ---- */
+.idc .idc-foot{
+  flex:none; background:var(--band); color:var(--on-band);
+  padding:1.5mm 3mm; display:flex; align-items:center; justify-content:space-between;
+  gap:2mm; font-size:5pt; letter-spacing:.09em;
+}
+.idc .idc-foot b{font-weight:700; font-size:6pt; letter-spacing:.06em; white-space:nowrap}
+/* The ID number is the one thing on the card that must never break across
+   two lines — it is what a card is checked against at the door. */
+.idc .idc-foot span{
+  opacity:.85; text-transform:uppercase; font-weight:600; font-size:4.2pt;
+  white-space:nowrap;
+}
+.idc.back .idc-foot b{font-size:4.6pt; letter-spacing:.02em; min-width:0; overflow:hidden; text-overflow:ellipsis}
+
+/* ---- the back ---- */
+.idc.back .idc-main{align-items:stretch; text-align:left; padding-top:2.6mm}
+.idc.back .idc-title{
+  font-size:7.2pt; font-weight:700; line-height:1.2; text-align:center;
+  overflow-wrap:break-word;
+}
+.idc.back .idc-rows{margin-top:2mm; font-size:5pt}
+.idc.back .idc-sub{
+  margin-top:1.8mm; padding-top:1.6mm; border-top:.3mm solid rgba(0,0,0,.14);
+}
+
+/* ------------------------------------------------------------------ *
+ * Screen: the two faces side by side
+ * ------------------------------------------------------------------ */
+.idc-pair{display:flex; gap:8mm; flex-wrap:wrap; justify-content:center}
+
+/* ------------------------------------------------------------------ *
+ * The printed sheet — 3 x 3 on A4 portrait
+ * ------------------------------------------------------------------ */
+/* Exactly A4. `box-sizing` matters more here than anywhere else in the file:
+   left as content-box the padding is ADDED to the 210mm, the sheet comes out
+   250mm x 329mm, and the printer quietly scales every card off size. */
+.idc-sheet{
+  box-sizing:border-box; position:relative;
+  width:210mm; height:297mm; background:#fff; padding:14mm 18mm;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  box-shadow:0 6mm 20mm rgba(0,0,0,.2); margin:0 auto 10mm;
+}
+/* Lifted out of the flow so the on-screen sheet is the same height as the
+   printed one — the label is a screen aid and must not push cards down. */
+.idc-sheet-head{
+  position:absolute; top:4mm; left:18mm; right:18mm;
+  font-family:var(--idc-body); font-size:8pt; font-weight:600;
+  letter-spacing:.14em; text-transform:uppercase; color:#555;
+  display:flex; justify-content:space-between; gap:6mm;
+}
+.idc-grid{
+  display:grid; grid-template-columns:repeat(3, var(--card-w));
+  gap:4mm; justify-content:center;
+}
+/* A cut line, so cards can be trimmed without eyeballing the edge. */
+.idc-grid .idc{box-shadow:none; outline:.2mm dashed rgba(0,0,0,.28); outline-offset:.8mm}
+
+@media print{
+  @page{size:A4 portrait; margin:0}
+  html,body{background:#fff}
+  .idc-sheet{box-shadow:none; margin:0; break-after:page; page-break-after:always}
+  .idc-sheet:last-child{break-after:auto; page-break-after:auto}
+  .idc-scope *{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+  .idc{box-shadow:none}
+}

@@ -132,6 +132,12 @@ label { display: block; }
 
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0 18px; }
 
+/* A tick-list of options — which crests a card carries, and the like. */
+.checks { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 4px 0 2px; }
+.check { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; font-size: 13px; }
+.check input { width: 15px; height: 15px; margin: 0; accent-color: var(--ink); cursor: pointer; }
+.check span { user-select: none; }
+
 /* ---------------- tables ---------------- */
 
 .table-wrap { overflow-x: auto; border: var(--hair); }

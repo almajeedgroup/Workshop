@@ -84,6 +84,27 @@ service cloud.firestore {
         allow read, delete: if isAdmin();
         allow create, update: if isAdmin() && sane(request.resource.data, 'name');
       }
+
+      // Participant photographs for ID cards, kept apart from the
+      // registration itself.
+      //
+      // Two reasons, and both matter. A photo is 20-60KB, and the workshop
+      // screen reads every registration each time it opens — carrying them
+      // on the record would mean a course of forty pulling megabytes down
+      // before the table appeared. And a face is the most personal thing in
+      // this database: its own collection is what lets the rule here stay
+      // administrator-only while certificates next door are world-readable.
+      //
+      // The document holds ONE field. `hasOnly` is right here in a way it
+      // would not be for workshops: there is no schema to freeze, and an
+      // unexpected key is a good reason to refuse the write.
+      match /registrationPhotos/{registrationId} {
+        allow read, delete: if isAdmin();
+        allow create, update: if isAdmin()
+          && request.resource.data.keys().hasOnly(['photo'])
+          && request.resource.data.photo is string
+          && request.resource.data.photo.size() <= 400000;
+      }
     }
 
     // ---- Certificates -------------------------------------------------

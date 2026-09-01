@@ -23,7 +23,7 @@ import {
   query, where, serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase.js';
-import { ISSUER } from './schema.js';
+import { ISSUER, isFreeWorkshop, workshopFee } from './schema.js';
 
 const PUBLIC_WORKSHOPS = 'publicWorkshops';
 const REQUESTS = 'registrationRequests';
@@ -50,7 +50,8 @@ export function publicWorkshopRecord(workshop) {
     audience: str(workshop.audience),
     topics: str(workshop.topics),
     seatLimit: num(workshop.seatLimit),
-    feeAmount: num(workshop.feeAmount),
+    feeType: isFreeWorkshop(workshop) ? 'Free' : 'Paid',
+    feeAmount: workshopFee(workshop),
     contactNumbers: Array.isArray(workshop.contactNumbers) ? workshop.contactNumbers.filter(Boolean) : [],
     paymentUpi: str(workshop.paymentUpi) || ISSUER.upiId || '',
     paymentQrUrl: str(workshop.paymentQrUrl) || ISSUER.paymentQrImage || '',

@@ -1,16 +1,20 @@
-import { WORKSHOP_FIELDS } from '../lib/schema.js';
+import { visibleWorkshopFields } from '../lib/schema.js';
 import ImageField from './ImageField.jsx';
 
 /**
- * Renders one input per schema field. Because it loops over WORKSHOP_FIELDS,
+ * Renders one input per schema field. Because it loops over the schema,
  * adding a field to schema.js makes it appear here automatically.
+ *
+ * Fields carrying a `showWhen` appear only when it holds for the workshop
+ * being edited — a free course has no fee to set and no QR to pay into, and
+ * showing those boxes anyway is how a stale amount survives the switch.
  */
 export default function WorkshopForm({ value, onChange }) {
   const set = (key, v) => onChange({ ...value, [key]: v });
 
   return (
     <div className="grid2">
-      {WORKSHOP_FIELDS.map((f) => {
+      {visibleWorkshopFields(value).map((f) => {
         const v = value[f.key];
         const id = `f-${f.key}`;
         const wide = f.type === 'longtext';
@@ -32,7 +36,9 @@ export default function WorkshopForm({ value, onChange }) {
             {f.type === 'enum' && (
               <select id={id} value={v ?? ''} onChange={(e) => set(f.key, e.target.value)}>
                 <option value="">—</option>
-                {f.options.map((o) => <option key={o} value={o}>{o}</option>)}
+                {f.options.map((o) => (
+                  <option key={o} value={o}>{f.optionLabels?.[o] ?? o}</option>
+                ))}
               </select>
             )}
 
@@ -62,6 +68,28 @@ export default function WorkshopForm({ value, onChange }) {
               </>
             )}
 
+            {f.type === 'multi' && (
+              <div className="checks" role="group" aria-label={f.label}>
+                {f.options.map((opt) => {
+                  const list = Array.isArray(v) ? v : [];
+                  const on = list.includes(opt);
+                  return (
+                    <label key={opt} className="check">
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={() => set(
+                          f.key,
+                          on ? list.filter((x) => x !== opt) : [...list, opt],
+                        )}
+                      />
+                      <span>{f.optionLabels?.[opt] ?? opt}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+
             {f.type === 'image' && (
               <ImageField id={id} value={v ?? ''} onChange={(nv) => set(f.key, nv)} hint={f.hint} />
             )}
@@ -69,6 +97,9 @@ export default function WorkshopForm({ value, onChange }) {
             {f.type === 'text' && (
               <input id={id} value={v ?? ''} onChange={(e) => set(f.key, e.target.value)} />
             )}
+
+            {/* ImageField renders its own hint, next to its preview. */}
+            {f.hint && f.type !== 'image' && <div className="hint">{f.hint}</div>}
           </div>
         );
       })}

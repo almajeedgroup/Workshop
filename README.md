@@ -26,6 +26,8 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 | **Payments** | Mark Paid / Pending / Waived / Refunded inline; running totals and amount collected. |
 | **Seats** | Seat limit tracked, with a warning when it is reached or exceeded. |
 | **Duplicates** | A pasted candidate who is already registered is flagged before anything is saved. |
+| **Free or paid** | Each course is set Free or Paid when it is established; a free course shows no fee, no QR and no payment chase. |
+| **ID cards** | Every registrant gets a two-sided colour ID card — colourway and crests chosen for the course, editable per person, printed nine to an A4 sheet. |
 | **Delete** | Remove a single registration, or a whole workshop and everything under it. |
 | **Self-registration** | Students scan a QR on the poster, fill the form, pay by UPI, and land in a queue for review. |
 | **Certify** | Award Completion, Participation, Excellence or Appreciation certificates, in bulk, from the workshop's own screen. |
@@ -40,14 +42,20 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 workshops/{workshopId}
     title, code, ticketPrefix, startDate, endDate, time, durationHours,
     mode, venue, presentedBy, collaborators, resourcePersons[],
-    coordinators[], audience, seatLimit, feeAmount, contactNumbers[],
+    coordinators[], audience, seatLimit, feeType, feeAmount,
+    contactNumbers[], paymentUpi, paymentQrUrl, registrationOpen,
+    idCardTheme, idCardCrests[], idCardLabel, idCardNote,
     topics, outcome,
     lastTicketSeq, searchText, createdAt, updatedAt
 
     registrations/{registrationId}
         name, dob, qualification, courseName, whatsapp, area, email,
         paymentStatus, amountPaid, paymentMode, paymentRef,
-        ticketId, notes, nameLower, searchText
+        ticketId, idRole, bloodGroup, emergencyContact, idValidUntil,
+        notes, nameLower, searchText
+
+    registrationPhotos/{registrationId}   <- ADMIN ONLY, never public
+        photo                              (one field, nothing else)
 
 admins/{uid}            <- the access allow-list, managed from the Console
 
@@ -374,7 +382,83 @@ key they do not expect. A hidden honeypot field must arrive empty.
 
 ---
 
-## 8. Project layout
+## 8. Free or paid, and ID cards
+
+Both are settled when the course is **established**, on the Edit screen, and
+every ticket, card and public page follows from there.
+
+### Course Type
+
+**Free** or **Paid**. Choosing Free does more than blank a number:
+
+- the fee, the payment UPI and the payment QR boxes disappear from the edit
+  screen, so a stale amount cannot survive the switch;
+- the public registration page drops the whole payment card and the payment
+  reference box, and says the programme is free;
+- the ticket prints *Fee: Free — no payment due* instead of a receipt reading
+  "Pending", which is what got free registrants chased for money;
+- amount collected stays at zero however the old fee was left behind.
+
+A workshop saved before this field existed has no Course Type. It is read as
+free only if it charges nothing — so nothing changes underneath a paid course
+that predates the setting.
+
+### ID cards
+
+Every registrant has a two-sided card: the person on the front, the programme
+on the back. CR80 portrait, 54mm x 85.6mm — what every lanyard holder on sale
+is cut for.
+
+**Chosen for the whole course**, on Edit:
+
+| Field | What it does |
+|---|---|
+| **ID Card Colour** | Saffron, Emerald, Indigo, Maroon, Teal or Slate. |
+| **ID Card Logos** | Which of Al-Majeed School, Kabir IND PU College, Islamic Information Centre and Beyond Guidance appear. All four if none are ticked. |
+| **ID Card Role** | The word under the crests — PARTICIPANT, DELEGATE, VOLUNTEER. |
+| **ID Card Note** | A line along the foot of the back — a return address, a condition of entry. |
+
+**Editable per person**, from the *Card* link on the registration list:
+photograph, role on that one card, blood group, emergency contact, and valid-
+until. Everything else is read from the registration and the workshop, so a
+course of forty prints identically unless you deliberately change one.
+
+The colour and the crests are deliberately *not* editable per person. One card
+in a different colour from the other thirty-nine is a mistake, not a feature.
+
+### Printing them
+
+**ID Cards** on the workshop page lays every card out on A4, nine to a sheet,
+with cut lines.
+
+Fronts and backs come out on **separate sheets in the same order**, not
+duplexed. Cards at this scale go into a laminating pouch as two pieces anyway,
+and two sheets in identical order cannot be collated wrong — whereas flipping
+a stack for manual duplex pairs each back with the card from the opposite
+column, which you only discover after cutting.
+
+In the print dialog: scale **100%** (not "fit to page", which shrinks the
+cards off size) and background graphics **on**, or the coloured bands print
+white.
+
+### Photographs
+
+A photograph is the most personal thing this database holds, so it does not
+live on the registration. `workshops/{id}/registrationPhotos/{regId}` holds
+one field and nothing else, is administrator-only with no public read of any
+kind, and is deleted with the person's record and with the workshop.
+
+The second reason is speed: the workshop screen reads every registration each
+time it opens, and photos on those documents would mean a course of forty
+pulling megabytes down before the table appeared. They are read one at a time
+on a card's own page, and in a single batch only when a sheet is printed.
+
+Pictures are shrunk to 320px and stored as PNG data URLs, capped at 400KB by
+the rules — comfortably inside Firestore's 1MiB per document.
+
+---
+
+## 9. Project layout
 
 ```
 src/
@@ -386,6 +470,8 @@ src/
   lib/db.js                Firestore reads/writes, ticket-ID allocation
   lib/publicdb.js          the public workshop copy and the request queue
   lib/imagefile.js         shrinking a picked image to fit in a document
+  lib/idcards.js           card colourways, crests, and what each face says
+  lib/photodb.js           participant photographs, kept off the registration
   lib/exporters.js         which sheets to build (loaded on demand)
   lib/xlsx.js              the .xlsx and .csv file formats themselves
   lib/certificates.js      the four awards, their wording and their IDs
@@ -393,19 +479,21 @@ src/
   lib/certlinks.js         public certificate and verification URLs
   components/              WorkshopForm, RegistrationEditor, RegistrationList,
                            TicketDocument, RequestsPanel, QrCode, ImageField,
+                           IdCard,
                            CertificateDocument, CertificateStage
   components/site/         PublicShell, SiteHeader, SiteFooter, Icons
   pages/                   the admin tool: Login, List, Import, Workshop,
-                           Edit, Ticket, CertificateAllot
+                           Edit, Ticket, CertificateAllot, IdCard, IdCards
   pages/site/              the public site: Home, Programmes, Certificates,
                            About, Contact, Register
   AuthContext.jsx          sign-in + admin allow-list check
   styles.css               the admin tool; monochrome only
   site.css                 the public site
   certificate.css          the certificate; the one place with colour
+  idcard.css               the ID card, in millimetres against a real card
 public/fonts, public/crests  certificate typefaces and crests
 tests/                     parser, tickets, dedupe, stats, xlsx,
-                           certificates, imagefile
+                           certificates, imagefile, idcards
 firestore.rules            access control
 firebase.json              hosting, caching and security headers
 ```
@@ -424,14 +512,16 @@ Values are written as inline strings, never formulas, so a name such as
 way to say "this is text", so there such a value is prefixed with an
 apostrophe — otherwise Excel would run it on open.
 
-## 9. Deleting
+## 10. Deleting
 
 - **One registration** — *Remove* column on the workshop page. Asks first. The
-  ticket number is retired, not reissued.
+  ticket number is retired, not reissued, and the photograph goes with the
+  record rather than being left behind in its own collection.
 - **A whole workshop** — *Remove* column on the Records list, or the Delete
   button on the workshop page. Asks first, and takes every registration under
-  it with it. The public copy of the workshop goes too, so its registration
-  link stops working.
+  it with it — registrations and photographs alike, since Firestore does not
+  delete a sub-collection with its parent. The public copy of the workshop
+  goes too, so its registration link stops working.
 - **A registration request** — *Delete* on the requests panel, for entries you
   never want to see again. Rejecting keeps the record instead.
 
@@ -440,23 +530,24 @@ click to confirm.
 
 ---
 
-## 10. Tests
+## 11. Tests
 
 ```bash
 npm test
 ```
 
-Runs the parser, ticket and duplicate-detection suites (`tests/`) on Node's
-built-in test runner — no extra dependencies, no config. The parser is
-heuristic and fails **silently** when it fails at all, so anything you teach it
-belongs in `tests/parser.test.js` alongside a paste that used to break it.
+Runs 126 assertions on Node's built-in test runner — no extra dependencies,
+no config — over the parser, ticket allocation, duplicate detection, totals,
+the spreadsheet writer, certificates, image shrinking and ID cards. The parser
+is heuristic and fails **silently** when it fails at all, so anything you teach
+it belongs in `tests/parser.test.js` alongside a paste that used to break it.
 
 The Firestore layer in `src/lib/db.js` is not covered here; testing it needs
 the Firebase emulator.
 
 ---
 
-## 11. Notes
+## 12. Notes
 
 - Search and filtering happen on the client, so no composite Firestore indexes
   are needed. Comfortable into the low thousands of records. Past that, the
@@ -478,7 +569,7 @@ the Firebase emulator.
 
 ---
 
-## 12. Verifying the security rules
+## 13. Verifying the security rules
 
 `firestore.rules` is the only thing standing between the public internet and
 every student's phone number, so it is worth testing rather than trusting.
@@ -495,10 +586,16 @@ npx firebase emulators:exec --only firestore --project demo-workshops "node veri
 This is kept out of `package.json` on purpose: it needs firebase-tools and a
 Java runtime, and `npm test` is deliberately dependency-free.
 
-The current rules were checked this way — 28 assertions covering: signed-out
+The current rules were checked this way — 43 assertions covering: signed-out
 and not-on-the-list accounts are refused everything; a listed administrator
 can read and write workshops and registrations but cannot add, read or delete
 another administrator; the owner address has **no** data access until it adds
 itself to the allow-list, cannot add anyone else, and cannot claim a record
 under a different email; oversized and bloated documents are rejected; and
 every unmatched path is closed.
+
+Fifteen of those cover participant photographs specifically, since they are
+the most personal thing stored: no read of any kind by a stranger or an
+anonymous visitor, no listing, no write, no delete; a document carrying any
+field but `photo` refused; a non-string refused; and the 400KB cap enforced
+at the boundary rather than trusted from the browser.

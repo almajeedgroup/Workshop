@@ -3,6 +3,8 @@
  * report the same numbers.
  */
 
+import { workshopFee } from './schema.js';
+
 /**
  * What was actually taken.
  *
@@ -12,7 +14,7 @@
  * recorded zero as "missing" quietly overstated the money collected.
  */
 export function amountCollected(workshop, registrations) {
-  const fee = Number(workshop?.feeAmount) || 0;
+  const fee = workshopFee(workshop);
   return registrations
     .filter((r) => r.paymentStatus === 'Paid')
     .reduce((sum, r) => {

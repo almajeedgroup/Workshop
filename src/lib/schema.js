@@ -75,6 +75,62 @@ export const BOOTSTRAP_ADMIN_EMAIL = 'almajeed.work@gmail.com';
  * Workshop
  * ------------------------------------------------------------------ */
 
+/**
+ * ID card colourways and crests, by key.
+ *
+ * The definitions themselves live in `lib/idcards.js` — the colours, the
+ * crest files and how a card is laid out. Only the keys are needed here, and
+ * importing the module would make schema.js depend on something that depends
+ * on it.
+ */
+export const ID_CARD_THEME_KEYS = ['saffron', 'emerald', 'indigo', 'maroon', 'teal', 'slate'];
+export const ID_CARD_THEME_LABELS = {
+  saffron: 'Saffron', emerald: 'Emerald', indigo: 'Indigo',
+  maroon: 'Maroon', teal: 'Teal', slate: 'Slate',
+};
+export const ID_CARD_CREST_KEYS = ['almajeed', 'kabir', 'iic', 'beyond'];
+export const ID_CARD_CREST_LABELS = {
+  almajeed: 'Al-Majeed School',
+  kabir: 'Kabir IND PU College',
+  iic: 'Islamic Information Centre',
+  beyond: 'Beyond Guidance',
+};
+
+/** Blood groups a card may carry. Free text gets typed six different ways. */
+export const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+
+/**
+ * Whether a course charges. Chosen when the course is established, because
+ * it decides what the public form asks for and what the organiser has to
+ * chase afterwards.
+ */
+export const FEE_TYPES = ['Free', 'Paid'];
+
+/**
+ * Is this a free course?
+ *
+ * Explicit `feeType` wins. Workshops created before the field existed have
+ * none, so they fall back to what they charge — which is how they behaved
+ * already, and keeps a paid workshop from silently becoming free.
+ */
+export function isFreeWorkshop(w) {
+  if (!w) return false;
+  if (w.feeType === 'Free') return true;
+  if (w.feeType === 'Paid') return false;
+  return !(Number(w.feeAmount) > 0);
+}
+
+/** What a candidate owes, as a number. Always 0 on a free course. */
+export function workshopFee(w) {
+  if (isFreeWorkshop(w)) return 0;
+  return Number(w?.feeAmount) || 0;
+}
+
+/** The fields to show for a given workshop, honouring every `showWhen`. */
+export function visibleWorkshopFields(w) {
+  return WORKSHOP_FIELDS.filter((f) => typeof f.showWhen !== 'function' || f.showWhen(w));
+}
+
 export const WORKSHOP_FIELDS = [
   {
     key: 'title',
@@ -181,9 +237,22 @@ export const WORKSHOP_FIELDS = [
     aliases: ['seat limit', 'seats', 'limited seats', 'max participants', 'maximum participants', 'capacity', 'intake', 'only first'],
   },
   {
+    key: 'feeType',
+    label: 'Course Type',
+    type: 'enum',
+    options: FEE_TYPES,
+    inTable: true,
+    aliases: ['course type', 'fee type', 'free or paid', 'paid or free', 'type of course'],
+    hint: 'Free hides the fee, the payment QR and the payment columns everywhere.',
+  },
+  {
     key: 'feeAmount',
     label: `Registration Fee (${CURRENCY})`,
     type: 'number',
+    // Meaningless on a free course, and a stale amount left behind after
+    // switching to Free is exactly how a free workshop ends up asking for
+    // money on its public page.
+    showWhen: (w) => !isFreeWorkshop(w),
     aliases: ['fee', 'fees', 'registration fee', 'cost', 'charges', 'amount', 'course fee'],
   },
   {
@@ -196,6 +265,7 @@ export const WORKSHOP_FIELDS = [
     key: 'paymentUpi',
     label: 'Payment UPI ID',
     type: 'text',
+    showWhen: (w) => !isFreeWorkshop(w),
     aliases: ['upi', 'upi id', 'payment upi', 'vpa', 'pay to'],
     hint: 'Fees are collected here. Leave blank to use the organisation default.',
   },
@@ -203,6 +273,7 @@ export const WORKSHOP_FIELDS = [
     key: 'paymentQrUrl',
     label: 'Payment QR Image',
     type: 'image',
+    showWhen: (w) => !isFreeWorkshop(w),
     aliases: ['payment qr', 'qr image', 'payment qr image'],
     hint: 'The QR students scan to pay. Shown instead of the UPI QR when set. '
       + 'A bank QR carries no amount, so the form asks them to type the fee in.',
@@ -214,6 +285,39 @@ export const WORKSHOP_FIELDS = [
     options: ['Open', 'Closed'],
     aliases: ['registration open', 'public registration', 'registration status'],
     hint: 'Open lets students register themselves from the QR code on the poster.',
+  },
+  {
+    key: 'idCardTheme',
+    label: 'ID Card Colour',
+    type: 'enum',
+    options: ID_CARD_THEME_KEYS,
+    optionLabels: ID_CARD_THEME_LABELS,
+    aliases: ['id card colour', 'id card color', 'card colour', 'card color', 'id colour'],
+    hint: 'The colourway every participant card for this course is printed in.',
+  },
+  {
+    key: 'idCardCrests',
+    label: 'ID Card Logos',
+    type: 'multi',
+    options: ID_CARD_CREST_KEYS,
+    optionLabels: ID_CARD_CREST_LABELS,
+    aliases: ['id card logos', 'card logos', 'logos', 'crests'],
+    hint: 'Whose crests appear on the card. All four if none are ticked.',
+  },
+  {
+    key: 'idCardLabel',
+    label: 'ID Card Role',
+    type: 'text',
+    aliases: ['id card role', 'card role', 'card label', 'id card label'],
+    hint: 'Printed under the crest strip — PARTICIPANT, DELEGATE, VOLUNTEER. '
+      + 'One person can be given a different role on their own card.',
+  },
+  {
+    key: 'idCardNote',
+    label: 'ID Card Note',
+    type: 'longtext',
+    aliases: ['id card note', 'card note', 'card instructions'],
+    hint: 'A line along the foot of the back — a return address, a condition of entry.',
   },
   {
     key: 'topics',
@@ -321,6 +425,34 @@ export const REGISTRATION_FIELDS = [
     hint: 'Allocated automatically on save — leave blank.',
   },
   {
+    key: 'idRole',
+    label: 'ID Card Role',
+    type: 'text',
+    aliases: ['id role', 'id card role', 'role', 'designation'],
+    hint: 'Overrides the course-wide role on this one card.',
+  },
+  {
+    key: 'bloodGroup',
+    label: 'Blood Group',
+    type: 'enum',
+    options: BLOOD_GROUPS,
+    aliases: ['blood group', 'blood', 'bloodgroup', 'blood type'],
+  },
+  {
+    key: 'emergencyContact',
+    label: 'Emergency Contact',
+    type: 'tel',
+    aliases: ['emergency contact', 'emergency', 'emergency no', 'emergency number',
+              'guardian contact', 'parent contact', 'in case of emergency'],
+  },
+  {
+    key: 'idValidUntil',
+    label: 'ID Valid Until',
+    type: 'date',
+    aliases: ['id valid until', 'valid until', 'valid till', 'card valid until'],
+    hint: 'Defaults to the last day of the course.',
+  },
+  {
     key: 'notes',
     label: 'Notes',
     type: 'text',
@@ -348,7 +480,7 @@ export const registrationFieldByKey = Object.fromEntries(REGISTRATION_FIELDS.map
 
 function blank(fields) {
   const out = {};
-  for (const f of fields) out[f.key] = f.type === 'list' ? [] : '';
+  for (const f of fields) out[f.key] = (f.type === 'list' || f.type === 'multi') ? [] : '';
   return out;
 }
 

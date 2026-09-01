@@ -13,7 +13,9 @@ import {
 } from '../lib/publicdb.js';
 import RequestsPanel from '../components/RequestsPanel.jsx';
 import { amountCollected, paymentCounts, seatsLeft as seatsLeftFor } from '../lib/stats.js';
-import { WORKSHOP_FIELDS, ISSUER, CURRENCY } from '../lib/schema.js';
+import {
+  visibleWorkshopFields, ISSUER, CURRENCY, workshopFee,
+} from '../lib/schema.js';
 import { formatDateRange } from '../lib/tickets.js';
 
 function shown(field, w) {
@@ -86,8 +88,8 @@ export default function WorkshopPage() {
     setError('');
     try {
       const patch = { ...reg, paymentStatus: status };
-      if (status === 'Paid' && !patch.amountPaid && workshop.feeAmount) {
-        patch.amountPaid = workshop.feeAmount;
+      if (status === 'Paid' && !patch.amountPaid && workshopFee(workshop)) {
+        patch.amountPaid = workshopFee(workshop);
       }
       await updateRegistration(id, reg.id, patch);
       setRegs((prev) => prev.map((r) => (r.id === reg.id ? { ...r, ...patch } : r)));
@@ -286,6 +288,7 @@ export default function WorkshopPage() {
         <div className="btn-row">
           <Link className="btn" to="/records">← Records</Link>
           <Link className="btn" to={`/w/${id}/edit`}>Edit</Link>
+          <Link className="btn" to={`/w/${id}/cards`}>ID Cards</Link>
           <Link className="btn" to={`/w/${id}/certificates`}>Certificates</Link>
           <button onClick={() => window.print()}>Print / PDF</button>
         </div>
@@ -320,7 +323,7 @@ export default function WorkshopPage() {
       <div className="panel">
         <h2 className="no-print">Details</h2>
         <dl className="kv">
-          {WORKSHOP_FIELDS.map((f) => {
+          {visibleWorkshopFields(workshop).map((f) => {
             const v = shown(f, workshop);
             if (!v) return null;
             return (

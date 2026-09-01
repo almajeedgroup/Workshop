@@ -5,7 +5,7 @@ import {
 } from '../../lib/publicdb.js';
 import { formatDateRange } from '../../lib/tickets.js';
 import { normalizePhone } from '../../lib/parser.js';
-import { ISSUER, CURRENCY } from '../../lib/schema.js';
+import { ISSUER, CURRENCY, isFreeWorkshop } from '../../lib/schema.js';
 import QrCode from '../../components/QrCode.jsx';
 import {
   IconCheckCircle, IconAlert, IconArrow, IconPin, IconUsers, IconShield,
@@ -53,7 +53,8 @@ export default function RegisterPage() {
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
-  const fee = workshop?.feeAmount;
+  const free = isFreeWorkshop(workshop);
+  const fee = free ? 0 : workshop?.feeAmount;
   // A bank-issued QR (BharatQR, a merchant standee) is an image and carries
   // card rails a plain UPI link cannot, so it wins where both are set.
   const qrImage = qrBroken ? '' : (workshop?.paymentQrUrl || '');
@@ -153,12 +154,13 @@ export default function RegisterPage() {
               <dt>Workshop</dt><dd>{workshop.title}</dd>
               {formatDateRange(workshop) && <><dt>Dates</dt><dd>{formatDateRange(workshop)}</dd></>}
               {workshop.venue && <><dt>Venue</dt><dd>{workshop.venue}</dd></>}
-              {fee ? <><dt>Fee</dt><dd>{CURRENCY}{fee}</dd></> : null}
+              <dt>Fee</dt><dd>{free ? 'Free' : fee ? `${CURRENCY}${fee}` : '—'}</dd>
             </dl>
 
             <p style={{ marginTop: 18, fontSize: 14.5 }}>
-              Your seat is confirmed once the office has checked the payment. The ticket comes
-              to your WhatsApp number.
+              {free
+                ? 'Your seat is confirmed once the office has reviewed your entry. The ticket comes to your WhatsApp number.'
+                : 'Your seat is confirmed once the office has checked the payment. The ticket comes to your WhatsApp number.'}
             </p>
 
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 22 }}>
@@ -270,10 +272,15 @@ export default function RegisterPage() {
                 />
               </div>
 
-              {/* payment */}
+              {/* payment — a free course shows none of this */}
               <div className="card" data-reveal>
-                <h3>Payment</h3>
-                {fee ? (
+                <h3>{free ? 'Fee' : 'Payment'}</h3>
+                {free ? (
+                  <p style={{ marginTop: 6, fontSize: 15 }}>
+                    This is a <strong style={{ color: 'var(--ink)' }}>free</strong> programme.
+                    Nothing is payable — just send the form.
+                  </p>
+                ) : fee ? (
                   <p style={{ marginTop: 6, fontSize: 15 }}>
                     Registration fee <strong style={{ color: 'var(--ink)' }}>{CURRENCY}{fee}</strong>.
                   </p>
@@ -281,7 +288,7 @@ export default function RegisterPage() {
                   <p style={{ marginTop: 6, fontSize: 15 }}>No fee is payable for this workshop.</p>
                 )}
 
-                {qrImage ? (
+                {free ? null : qrImage ? (
                   <div style={{
                     marginTop: 18, padding: 14, borderRadius: 14, background: '#fff',
                     border: '1px solid var(--hair)', textAlign: 'center',
@@ -335,7 +342,7 @@ export default function RegisterPage() {
                   </div>
                 )}
 
-                <label style={{ display: 'block', marginTop: 20 }}>
+                <label style={{ display: free ? 'none' : 'block', marginTop: 20 }}>
                   <span style={{
                     display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: '.1em',
                     textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: 6,
