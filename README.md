@@ -551,7 +551,7 @@ src/
   pages/site/              the public site: Home, Programmes, Certificates,
                            About, Contact, Register
   AuthContext.jsx          sign-in + admin allow-list check
-  styles.css               the admin tool; monochrome only
+  styles.css               the admin tool; near-black + the four colours
   site.css                 the public site
   certificate.css          the certificate; the one place with colour
   idcard.css               the ID card, in millimetres against a real card
@@ -639,7 +639,47 @@ the Firebase emulator.
 
 ---
 
-## 13. Attribution
+## 13. Colour
+
+The admin tool is near-black on white with four colours that carry meaning.
+
+| | Hex | Where |
+|---|---|---|
+| Jade Green | `#00CA72` | Flag segment 1; the primary button |
+| Tangerine Yellow | `#FFCC00` | Flag segment 2; the rule under a table heading |
+| Radical Red | `#FB275D` | Flag segment 3; warnings, delete, the required-field star |
+| Dodger Blue | `#1E90FF` | Flag segment 4; notices, the focus ring |
+| Near-black | `#0A0A0A` | All text, keylines and rules |
+| White | `#FFFFFF` | Page background |
+
+**None of the four can hold text on white.** Measured against `#FFFFFF` they
+come out at 2.17, 1.51, 3.78 and 3.24 to one, and 4.5 is the floor. So they
+are used as fills, rules and marks with near-black on top — which does clear
+the floor on all four (9.14, 13.09, 5.23, 6.12 to one).
+
+Where a colour has to *be* the text — a delete button, the required star —
+`--jade-ink`, `--tangerine-ink`, `--red-ink` and `--blue-ink` are used
+instead. Each is the same hue scaled toward black until it reaches 4.5:1 on
+white, so it still reads as the same colour. Reach for the bright one first.
+
+### The flag
+
+`--flag` is one segment of each colour, in palette order. It rules off the
+masthead, a page heading and the login panel — and nothing else. Four colours
+on every edge is wallpaper; on three edges it is a signal.
+
+It is painted as a background rather than a border-image, because only the
+bottom edge is wanted and `border-image` applies its slice to all four sides.
+
+Colour is never the only signal: the delete button is dashed as well as red,
+and a warning notice is dashed as well as red-edged.
+
+The public site (`site.css`) and the certificate (`certificate.css`) keep
+their own schemes, and the ID card keeps its six colourways.
+
+---
+
+## 14. Attribution
 
 Al-Majeed School of Research Methodology and Innovation is named **in
 association with** on everything this system produces: the ticket and its
@@ -661,7 +701,7 @@ different ways across the code — with a comma after "Research", with `&`, and
 with `and` — which on a certificate and the ticket for the same course is the
 sort of thing people notice.
 
-## 14. Notes
+## 15. Notes
 
 - Search and filtering happen on the client, so no composite Firestore indexes
   are needed. Comfortable into the low thousands of records. Past that, the
@@ -683,7 +723,7 @@ sort of thing people notice.
 
 ---
 
-## 15. Verifying the security rules
+## 16. Verifying the security rules
 
 `firestore.rules` is the only thing standing between the public internet and
 every student's phone number, so it is worth testing rather than trusting.

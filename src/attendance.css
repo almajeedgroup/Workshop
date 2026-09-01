@@ -5,7 +5,7 @@
    that gets signed across two rows, and then the sheet proves nothing. */
 
 .att-scope{
-  --att-ink:#111; --att-line:#000; --att-soft:#555; --att-wash:#f2f2f2;
+  --att-ink:#0A0A0A; --att-line:#0A0A0A; --att-soft:#555; --att-wash:#f2f2f2;
   --att-body:'Poppins','Segoe UI',Helvetica,Arial,sans-serif;
 }
 
