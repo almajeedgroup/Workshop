@@ -641,38 +641,52 @@ the Firebase emulator.
 
 ## 13. Colour
 
-The admin tool is near-black on white with four colours that carry meaning.
+Black text on a white page, and the four colours on everything else.
 
 | | Hex | Where |
 |---|---|---|
-| Jade Green | `#00CA72` | Flag segment 1; the primary button |
-| Tangerine Yellow | `#FFCC00` | Flag segment 2; the rule under a table heading |
-| Radical Red | `#FB275D` | Flag segment 3; warnings, delete, the required-field star |
-| Dodger Blue | `#1E90FF` | Flag segment 4; notices, the focus ring |
-| Near-black | `#0A0A0A` | All text, keylines and rules |
+| Jade Green | `#00CA72` | Flag segment 1; the primary button; the ticket band; chips under the pointer |
+| Tangerine Yellow | `#FFCC00` | Flag segment 2; table headings; the import preview header; solid tags |
+| Radical Red | `#FB275D` | Flag segment 3; the delete button; warning notices |
+| Dodger Blue | `#1E90FF` | Flag segment 4; the current page; buttons and links under the pointer; the focus ring; notices |
+| Near-black | `#0A0A0A` | **All** text, keylines and rules |
 | White | `#FFFFFF` | Page background |
 
-**None of the four can hold text on white.** Measured against `#FFFFFF` they
-come out at 2.17, 1.51, 3.78 and 3.24 to one, and 4.5 is the floor. So they
-are used as fills, rules and marks with near-black on top — which does clear
-the floor on all four (9.14, 13.09, 5.23, 6.12 to one).
+**The colours are never text.** Measured against white they come out at 2.17,
+1.51, 3.78 and 3.24 to one, and 4.5 is the floor for readable text —
+tangerine is nowhere near it. So they are fills, borders and bars, always
+with black on top, which clears the floor on all four: 9.14, 13.09, 5.23 and
+6.12 to one. Nothing in `styles.css` sets `color` to a palette colour, and
+nothing should.
 
-Where a colour has to *be* the text — a delete button, the required star —
-`--jade-ink`, `--tangerine-ink`, `--red-ink` and `--blue-ink` are used
-instead. Each is the same hue scaled toward black until it reaches 4.5:1 on
-white, so it still reads as the same colour. Reach for the bright one first.
+Each colour means something, so the interface stays readable at a glance:
+
+- **jade** — the action that moves work forward
+- **red** — the one that destroys, and anything wrong
+- **blue** — where you are, where you are going, what has focus
+- **tangerine** — headings and labels over data
+
+Colour is never the only signal: the delete button is dashed as well as red,
+and a warning notice is dashed as well as red.
 
 ### The flag
 
 `--flag` is one segment of each colour, in palette order. It rules off the
-masthead, a page heading and the login panel — and nothing else. Four colours
-on every edge is wallpaper; on three edges it is a signal.
+masthead, a page heading and the login panel — the three places that divide
+the screen, and nowhere else. Four colours on every edge is wallpaper.
 
 It is painted as a background rather than a border-image, because only the
 bottom edge is wanted and `border-image` applies its slice to all four sides.
 
-Colour is never the only signal: the delete button is dashed as well as red,
-and a warning notice is dashed as well as red-edged.
+The statistics strip and the numbered badges in the logo picker walk the same
+four in the same order, so a row of figures reads as four things rather than
+one long strip.
+
+### Printing
+
+Every coloured fill carries `print-color-adjust: exact`, or the buttons, bars
+and the ticket band come out of the printer white and the sheet loses half
+its meaning.
 
 The public site (`site.css`) and the certificate (`certificate.css`) keep
 their own schemes, and the ID card keeps its six colourways.
