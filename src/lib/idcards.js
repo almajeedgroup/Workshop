@@ -87,18 +87,27 @@ export const idCardCrestByKey = Object.fromEntries(ID_CARD_CRESTS.map((c) => [c.
 export const ID_CARD_CREST_OPTIONS = ID_CARD_CRESTS.map((c) => ({ value: c.key, label: c.label }));
 
 /**
- * The crests to print, in the catalogue's own order rather than the order
- * they were ticked — so two courses that chose the same set look the same.
+ * The crests to print, in the order the organiser arranged them.
  *
- * A workshop saved before this field existed has nothing set. It gets all
- * four, which is what the certificate already prints, rather than a blank
- * strip where the crests belong.
+ * Order is the organiser's to set, not the catalogue's. Which crest leads is
+ * a statement about who is hosting — a course run by the college with the
+ * centre supporting it should not be forced to print them the other way
+ * round.
+ *
+ * Unknown keys are dropped rather than left as gaps, and a key repeated by a
+ * bad edit is printed once. A workshop saved before this field existed has
+ * nothing set: it gets all four in catalogue order, which is what the
+ * certificate already prints, rather than a blank strip.
  */
 export function cardCrests(workshop) {
   const chosen = workshop?.idCardCrests;
   if (!Array.isArray(chosen) || chosen.length === 0) return ID_CARD_CRESTS;
-  const wanted = new Set(chosen);
-  const kept = ID_CARD_CRESTS.filter((c) => wanted.has(c.key));
+  const seen = new Set();
+  const kept = [];
+  for (const key of chosen) {
+    const crest = idCardCrestByKey[key];
+    if (crest && !seen.has(key)) { seen.add(key); kept.push(crest); }
+  }
   return kept.length ? kept : ID_CARD_CRESTS;
 }
 

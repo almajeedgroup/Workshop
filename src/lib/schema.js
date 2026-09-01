@@ -95,6 +95,13 @@ export const ID_CARD_CREST_LABELS = {
   iic: 'Islamic Information Centre',
   beyond: 'Beyond Guidance',
 };
+/** Thumbnails for the picker, so an order is arranged by sight not by name. */
+export const ID_CARD_CREST_IMAGES = {
+  almajeed: '/crests/al-majeed.png',
+  kabir: '/crests/kabir-college.png',
+  iic: '/crests/islamic-information-centre.png',
+  beyond: '/crests/beyond-guidance.png',
+};
 
 /** Blood groups a card may carry. Free text gets typed six different ways. */
 export const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -301,8 +308,10 @@ export const WORKSHOP_FIELDS = [
     type: 'multi',
     options: ID_CARD_CREST_KEYS,
     optionLabels: ID_CARD_CREST_LABELS,
+    optionPreviews: ID_CARD_CREST_IMAGES,
     aliases: ['id card logos', 'card logos', 'logos', 'crests'],
-    hint: 'Whose crests appear on the card. All four if none are ticked.',
+    hint: 'Whose crests appear on the card, and in what order — left to right. '
+      + 'All four, as listed, if you choose none.',
   },
   {
     key: 'idCardLabel',

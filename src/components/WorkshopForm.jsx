@@ -1,5 +1,6 @@
 import { visibleWorkshopFields } from '../lib/schema.js';
 import ImageField from './ImageField.jsx';
+import OrderedChoice from './OrderedChoice.jsx';
 
 /**
  * Renders one input per schema field. Because it loops over the schema,
@@ -69,25 +70,13 @@ export default function WorkshopForm({ value, onChange }) {
             )}
 
             {f.type === 'multi' && (
-              <div className="checks" role="group" aria-label={f.label}>
-                {f.options.map((opt) => {
-                  const list = Array.isArray(v) ? v : [];
-                  const on = list.includes(opt);
-                  return (
-                    <label key={opt} className="check">
-                      <input
-                        type="checkbox"
-                        checked={on}
-                        onChange={() => set(
-                          f.key,
-                          on ? list.filter((x) => x !== opt) : [...list, opt],
-                        )}
-                      />
-                      <span>{f.optionLabels?.[opt] ?? opt}</span>
-                    </label>
-                  );
-                })}
-              </div>
+              <OrderedChoice
+                value={v}
+                options={f.options}
+                labels={f.optionLabels}
+                previews={f.optionPreviews}
+                onChange={(nv) => set(f.key, nv)}
+              />
             )}
 
             {f.type === 'image' && (

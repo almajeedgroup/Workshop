@@ -55,18 +55,48 @@ test('crests: a workshop that chose none gets all four', () => {
 });
 
 test('crests: only the chosen ones appear', () => {
-  assert.deepEqual(cardCrests({ idCardCrests: ['beyond', 'iic'] }).map((c) => c.key), ['iic', 'beyond']);
+  assert.deepEqual(cardCrests({ idCardCrests: ['beyond', 'iic'] }).map((c) => c.key), ['beyond', 'iic']);
 });
 
-test('crests: order is the catalogue order, not the order they were ticked', () => {
-  const a = cardCrests({ idCardCrests: ['beyond', 'almajeed'] }).map((c) => c.key);
-  const b = cardCrests({ idCardCrests: ['almajeed', 'beyond'] }).map((c) => c.key);
-  assert.deepEqual(a, b);
-  assert.deepEqual(a, ['almajeed', 'beyond']);
+test('crests: the order chosen is the order printed', () => {
+  assert.deepEqual(
+    cardCrests({ idCardCrests: ['beyond', 'almajeed'] }).map((c) => c.key),
+    ['beyond', 'almajeed'],
+  );
+  assert.deepEqual(
+    cardCrests({ idCardCrests: ['almajeed', 'beyond'] }).map((c) => c.key),
+    ['almajeed', 'beyond'],
+  );
+});
+
+test('crests: every arrangement of all four survives intact', () => {
+  const perms = (xs) => (xs.length <= 1 ? [xs]
+    : xs.flatMap((x, i) => perms([...xs.slice(0, i), ...xs.slice(i + 1)]).map((p) => [x, ...p])));
+  for (const order of perms(ID_CARD_CREST_KEYS)) {
+    assert.deepEqual(cardCrests({ idCardCrests: order }).map((c) => c.key), order);
+  }
 });
 
 test('crests: keys that mean nothing do not empty the strip', () => {
   assert.equal(cardCrests({ idCardCrests: ['nonsense'] }).length, 4);
+});
+
+test('crests: an unknown key is dropped without disturbing the rest', () => {
+  assert.deepEqual(
+    cardCrests({ idCardCrests: ['iic', 'nonsense', 'kabir'] }).map((c) => c.key),
+    ['iic', 'kabir'],
+  );
+});
+
+test('crests: a key repeated by a bad edit is printed once', () => {
+  assert.deepEqual(
+    cardCrests({ idCardCrests: ['iic', 'kabir', 'iic'] }).map((c) => c.key),
+    ['iic', 'kabir'],
+  );
+});
+
+test('crests: choosing none gives all four in catalogue order', () => {
+  assert.deepEqual(cardCrests({}).map((c) => c.key), ID_CARD_CREST_KEYS);
 });
 
 /* ---- what a card says -------------------------------------------- */

@@ -67,7 +67,7 @@ export default function ImageField({ id, value, onChange, hint }) {
             alt="Selected image"
             style={{
               width: 150, height: 150, objectFit: 'contain', background: '#fff',
-              border: '1px solid var(--hair, #ddd)', borderRadius: 8, display: 'block',
+              border: 'var(--hair, 1px solid #ddd)', borderRadius: 8, display: 'block',
             }}
           />
           <div className="hint" style={{ marginTop: 6 }}>

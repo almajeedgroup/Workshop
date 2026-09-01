@@ -414,7 +414,7 @@ is cut for.
 | Field | What it does |
 |---|---|
 | **ID Card Colour** | Saffron, Emerald, Indigo, Maroon, Teal or Slate. |
-| **ID Card Logos** | Which of Al-Majeed School, Kabir IND PU College, Islamic Information Centre and Beyond Guidance appear. All four if none are ticked. |
+| **ID Card Logos** | Which of Al-Majeed School, Kabir IND PU College, Islamic Information Centre and Beyond Guidance appear, **and in what order** — see below. |
 | **ID Card Role** | The word under the crests — PARTICIPANT, DELEGATE, VOLUNTEER. |
 | **ID Card Note** | A line along the foot of the back — a return address, a condition of entry. |
 
@@ -425,6 +425,21 @@ course of forty prints identically unless you deliberately change one.
 
 The colour and the crests are deliberately *not* editable per person. One card
 in a different colour from the other thirty-nine is a mistake, not a feature.
+
+### Arranging the crests
+
+**ID Card Logos** is a list you arrange, not a set of tick-boxes. Add the
+organisations you want with the **+** buttons, then move each one with **←**
+and **→**. The numbered order is exactly what prints across the top of the
+card, left to right.
+
+Which crest leads is a statement about who is hosting — a course run by the
+college with the centre supporting it should not be forced to print them the
+other way round — so the order is yours, not the software's.
+
+Choose none and all four print in the order listed. Unknown entries left by an
+old edit are dropped rather than printed as gaps, and a repeated one prints
+once.
 
 ### Printing them
 
@@ -479,7 +494,7 @@ src/
   lib/certlinks.js         public certificate and verification URLs
   components/              WorkshopForm, RegistrationEditor, RegistrationList,
                            TicketDocument, RequestsPanel, QrCode, ImageField,
-                           IdCard,
+                           IdCard, OrderedChoice,
                            CertificateDocument, CertificateStage
   components/site/         PublicShell, SiteHeader, SiteFooter, Icons
   pages/                   the admin tool: Login, List, Import, Workshop,
@@ -536,7 +551,7 @@ click to confirm.
 npm test
 ```
 
-Runs 126 assertions on Node's built-in test runner — no extra dependencies,
+Runs 130 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking and ID cards. The parser
 is heuristic and fails **silently** when it fails at all, so anything you teach
