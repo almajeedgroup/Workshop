@@ -342,6 +342,69 @@ table input:focus { outline: 3px solid var(--blue); outline-offset: -2px; }
 .stat .n { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .stat .l { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
 
+/* ---------------- status as colour ---------------- */
+
+/* Payment status carries its own colour, so forty rows read as a block of
+   colour rather than forty words. It stays a <select>: a coloured pill you
+   can tab to and change with the keyboard beats a prettier control that
+   cannot be. Black on all four clears 4.5:1 — see the Colour section. */
+select.status {
+  width: auto; min-width: 104px; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em; padding: 4px 8px;
+  border: var(--hair); cursor: pointer;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+select.status[data-status='Paid']     { background: var(--jade); }
+select.status[data-status='Pending']  { background: var(--tangerine); }
+select.status[data-status='Waived']   { background: var(--blue); }
+select.status[data-status='Refunded'] { background: var(--red); }
+
+/* ---------------- seat pressure ---------------- */
+
+/* The app knew when a limit had been passed and said so — afterwards. This
+   is the part somebody can act on: a course visibly filling up. */
+.seats { display: flex; align-items: center; gap: 9px; }
+.seat-bar {
+  flex: 1; min-width: 70px; max-width: 220px; height: 8px;
+  background: var(--faint); border: var(--hair); overflow: hidden;
+}
+.seat-bar span {
+  display: block; height: 100%; background: var(--jade);
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+.seat-bar[data-level='nearly'] span { background: var(--tangerine); }
+.seat-bar[data-level='full'] span   { background: var(--blue); }
+.seat-bar[data-level='over'] span   { background: var(--red); }
+.seats .n { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+/* ---------------- the console ---------------- */
+
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.tile { border: var(--hair); padding: 14px 16px; border-top: 6px solid var(--jade); }
+.tile[data-tone='tangerine'] { border-top-color: var(--tangerine); }
+.tile[data-tone='red']       { border-top-color: var(--red); }
+.tile[data-tone='blue']      { border-top-color: var(--blue); }
+.tile .n { display: block; font-size: 26px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.tile .l { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-top: 3px; }
+.tile a { text-decoration: none; }
+
+/* One card per workshop that needs something, with why. */
+.todo { display: grid; gap: 10px; }
+.todo-row { border: var(--hair); border-left: 6px solid var(--tangerine); padding: 12px 14px; }
+.todo-row[data-tone='jade']      { border-left-color: var(--jade); }
+.todo-row[data-tone='tangerine'] { border-left-color: var(--tangerine); }
+.todo-row[data-tone='red']       { border-left-color: var(--red); }
+.todo-row[data-tone='blue']      { border-left-color: var(--blue); }
+.todo-row .why { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.why .r {
+  font-size: 11px; padding: 2px 8px; border: var(--hair);
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+.why .r[data-tone='jade']      { background: var(--jade); }
+.why .r[data-tone='tangerine'] { background: var(--tangerine); }
+.why .r[data-tone='red']       { background: var(--red); }
+.why .r[data-tone='blue']      { background: var(--blue); }
+
 /* ---------------- inline action chips ---------------- */
 
 .actions { display: flex; gap: 4px; flex-wrap: wrap; }

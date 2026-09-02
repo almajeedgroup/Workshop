@@ -91,6 +91,8 @@ export default function RegistrationList({
 
                 <td>
                   <select
+                    className="status"
+                    data-status={r.paymentStatus || 'Pending'}
                     value={r.paymentStatus || 'Pending'}
                     disabled={busyId === r.id}
                     aria-label={`Payment status for ${r.name}`}

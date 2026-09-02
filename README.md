@@ -18,6 +18,7 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 
 | | |
 |---|---|
+| **Console** | The screen that answers "what needs me today" — waiting requests, unpaid fees, courses filling up, across every workshop. |
 | **Import** | Paste the poster (emoji and all) or labelled text; review the parsed result; save. |
 | **Register** | Paste WhatsApp replies in the `*Name:* …` format — as many as you like at once. |
 | **Ticket** | Every registrant gets a sequential Ticket ID and a printable ticket + IIC payment receipt. |
@@ -39,7 +40,55 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 
 ---
 
-## 2. Data model
+## 2. The console
+
+Signing in lands on **Console**. The workshop screen could always answer "how
+is this course going"; nothing could answer "which course needs me", short of
+opening all of them — which is what somebody running four at once opens the
+app to ask.
+
+Five figures across the top: workshops, registered, collected, requests
+waiting, awaiting payment. Then **Needs attention** — one row per workshop
+that has something outstanding, with the reasons as coloured chips, ordered
+so the most pressing sits at the top:
+
+| | Ordered | Colour |
+|---|---|---|
+| Registration requests waiting | first — nobody has looked at these | Blue |
+| Over the seat limit | second — already a problem | Red |
+| Fees not paid | third | Tangerine |
+| Nearly full, or full | last — a warning, not yet a problem | Tangerine / Blue |
+
+Only what is outstanding appears. A course that is full, paid up and has
+nothing waiting is not news, and listing it would bury the three that are.
+
+**Coming up** lists courses that have not finished yet, soonest first.
+
+### Seats as a bar
+
+`seatPressure()` in `src/lib/stats.js` turns a seat limit into something you
+can see filling: jade under three quarters, tangerine at three quarters,
+blue when exactly full, red past the limit. The app already knew when a limit
+had been **passed** and said so — afterwards. The bar is the part somebody
+can act on.
+
+It never draws past its own track however far over a course has gone; the
+label says "2 over 12" instead. A 200%-wide bar tells you nothing the label
+does not.
+
+A workshop with no seat limit gets no bar. An empty track beside every
+uncapped course would imply a limit that is not there.
+
+### Colour must not contradict itself
+
+A reason chip takes the colour of the bar beside it, not a colour picked from
+its own category. A green "nearly full" next to an amber bar is two answers
+to the same question — so `needsAttention()` returns a `tone` per reason, and
+a test pins it to what `seatPressure()` says.
+
+---
+
+## 3. Data model
 
 ```
 workshops/{workshopId}
@@ -106,7 +155,7 @@ once allocated.
 
 ---
 
-## 3. First-time setup
+## 4. First-time setup
 
 ### 3.1 Create the Firebase project
 
@@ -218,7 +267,7 @@ console for `Refused to connect` after any such change.
 
 ---
 
-## 4. Deploy
+## 5. Deploy
 
 ```bash
 npm run deploy
@@ -238,7 +287,7 @@ First time only, run `firebase login` before it.
 
 ---
 
-## 5. What the parser understands
+## 6. What the parser understands
 
 | Input | Example |
 |---|---|
@@ -263,7 +312,7 @@ labels". Add that spelling to the `aliases` array for the right field in
 
 ---
 
-## 6. Sending tickets
+## 7. Sending tickets
 
 The ticket page gives you three routes:
 
@@ -296,7 +345,7 @@ trade-off; ask before enabling it.
 
 ---
 
-## 7. Self-registration
+## 8. Self-registration
 
 Students scan a QR code on the poster, fill the form themselves, pay, and land
 in a queue you review by hand. Nothing is admitted automatically: you decide
@@ -419,7 +468,7 @@ key they do not expect. A hidden honeypot field must arrive empty.
 
 ---
 
-## 8. Free or paid, and ID cards
+## 9. Free or paid, and ID cards
 
 Both are settled when the course is **established**, on the Edit screen, and
 every ticket, card and public page follows from there.
@@ -510,7 +559,7 @@ the rules — comfortably inside Firestore's 1MiB per document.
 
 ---
 
-## 9. Certificate designs
+## 10. Certificate designs
 
 A design is **how** a certificate looks; a type is **what** it says. They are
 kept apart on purpose — a Youth Parliament course can award all four types on
@@ -572,7 +621,7 @@ date of birth, no email, no address, ever.
 
 ---
 
-## 10. Attendance sheets
+## 11. Attendance sheets
 
 **Attendance** on the workshop page produces the register, ready to print and
 sign. It is the one document in this system that exists to be written *on*,
@@ -616,7 +665,7 @@ sheet helps nobody.
 
 ---
 
-## 11. Project layout
+## 12. Project layout
 
 ```
 src/
@@ -624,7 +673,8 @@ src/
   lib/parser.js            text -> structured records
   lib/tickets.js           ticket IDs, share links, ticket & receipt text
   lib/dedupe.js            spotting a candidate who is already registered
-  lib/stats.js             registration counts, amount collected, seats left
+  lib/stats.js             registration counts, amount collected, seat pressure
+  lib/overview.js          the console's figures and what needs attention
   lib/db.js                Firestore reads/writes, ticket-ID allocation
   lib/publicdb.js          the public workshop copy and the request queue
   lib/imagefile.js         shrinking a picked image to fit in a document
@@ -639,10 +689,10 @@ src/
   components/              WorkshopForm, RegistrationEditor, RegistrationList,
                            TicketDocument, RequestsPanel, QrCode, ImageField,
                            IdCard, OrderedChoice, AttendanceSheet,
-                           FittedName,
+                           FittedName, SeatBar,
                            CertificateDocument, CertificateStage
   components/site/         PublicShell, SiteHeader, SiteFooter, Icons
-  pages/                   the admin tool: Login, List, Import, Workshop,
+  pages/                   the admin tool: Console, Login, List, Import, Workshop,
                            Edit, Ticket, CertificateAllot, IdCard, IdCards,
                            Attendance
   pages/site/              the public site: Home, Programmes, Certificates,
@@ -656,7 +706,7 @@ src/
 public/fonts, public/crests  certificate typefaces and crests
 tests/                     parser, tickets, dedupe, stats, xlsx,
                            certificates, imagefile, idcards, attendance,
-                           exporters, association, requests
+                           exporters, association, requests, overview
 firestore.rules            access control
 firebase.json              hosting, caching and security headers
 ```
@@ -700,7 +750,7 @@ Values are written as inline strings, never formulas, so a name such as
 way to say "this is text", so there such a value is prefixed with an
 apostrophe — otherwise Excel would run it on open.
 
-## 12. Deleting
+## 13. Deleting
 
 - **One registration** — *Remove* column on the workshop page. Asks first. The
   ticket number is retired, not reissued, and the photograph goes with the
@@ -718,13 +768,13 @@ click to confirm.
 
 ---
 
-## 13. Tests
+## 14. Tests
 
 ```bash
 npm test
 ```
 
-Runs 196 assertions on Node's built-in test runner — no extra dependencies,
+Runs 218 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards and
 attendance sheets. The parser
@@ -736,7 +786,7 @@ the Firebase emulator.
 
 ---
 
-## 14. Colour
+## 15. Colour
 
 Black text on a white page, and the four colours on everything else.
 
@@ -790,7 +840,7 @@ their own schemes, and the ID card keeps its six colourways.
 
 ---
 
-## 15. Attribution
+## 16. Attribution
 
 Al-Majeed School of Research Methodology and Innovation is named **in
 association with** on everything this system produces: the ticket and its
@@ -812,7 +862,7 @@ different ways across the code — with a comma after "Research", with `&`, and
 with `and` — which on a certificate and the ticket for the same course is the
 sort of thing people notice.
 
-## 16. Notes
+## 17. Notes
 
 - Search and filtering happen on the client, so no composite Firestore indexes
   are needed. Comfortable into the low thousands of records. Past that, the
@@ -834,7 +884,7 @@ sort of thing people notice.
 
 ---
 
-## 17. Verifying the security rules
+## 18. Verifying the security rules
 
 `firestore.rules` is the only thing standing between the public internet and
 every student's phone number, so it is worth testing rather than trusting.

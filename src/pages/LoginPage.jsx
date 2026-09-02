@@ -33,7 +33,9 @@ export default function LoginPage() {
   const [busy, setBusy] = useState('');
 
   if (loading) return <main><p className="count">Loading…</p></main>;
-  if (user) return <Navigate to="/records" replace />;
+  // The console answers "what needs me today", which is what somebody
+  // signing in wants before a list of every course ever run.
+  if (user) return <Navigate to="/console" replace />;
 
   const submit = async (e) => {
     e.preventDefault();

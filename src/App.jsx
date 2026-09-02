@@ -11,6 +11,7 @@ import CertificatesPage from './pages/site/CertificatesPage.jsx';
 import ContactPage from './pages/site/ContactPage.jsx';
 import RegisterPage from './pages/site/RegisterPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
+import ConsolePage from './pages/ConsolePage.jsx';
 import ListPage from './pages/ListPage.jsx';
 import ImportPage from './pages/ImportPage.jsx';
 import WorkshopPage from './pages/WorkshopPage.jsx';
@@ -116,7 +117,7 @@ export default function App() {
   const { pathname } = useLocation();
   // The public site has its own chrome and must not inherit the admin
   // masthead. Admin routes all sit under these prefixes.
-  const isAdminArea = /^\/(login|records|import|new|w)(\/|$)/.test(pathname);
+  const isAdminArea = /^\/(login|console|records|import|new|w)(\/|$)/.test(pathname);
 
   if (!isConfigured) {
     return (
@@ -145,6 +146,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
 
         {/* Administrators only */}
+        <Route path="/console" element={<Protected><ConsolePage /></Protected>} />
         <Route path="/records" element={<Protected><ListPage /></Protected>} />
         <Route path="/import" element={<Protected><ImportPage /></Protected>} />
         <Route path="/new" element={<Protected><EditPage mode="new" /></Protected>} />

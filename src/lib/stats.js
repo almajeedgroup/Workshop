@@ -42,3 +42,40 @@ export function seatsLeft(workshop, registrationCount) {
   if (!workshop?.seatLimit) return null;
   return Number(workshop.seatLimit) - registrationCount;
 }
+
+/**
+ * How full a workshop is, for showing as a bar rather than a number.
+ *
+ * The app already knew when a limit had been PASSED, and said so — after the
+ * fact. What it never showed was a course filling up, which is the only point
+ * at which anybody can do something about it.
+ *
+ * `level` is what the bar is coloured by:
+ *   open    under three quarters
+ *   nearly  three quarters or more, still under the limit
+ *   full    exactly at the limit
+ *   over    past it
+ */
+export function seatPressure(workshop, registrationCount) {
+  const limit = Number(workshop?.seatLimit) || 0;
+  const taken = Math.max(0, Number(registrationCount) || 0);
+  if (!limit) return null;
+
+  const left = limit - taken;
+  const ratio = taken / limit;
+  let level = 'open';
+  if (left < 0) level = 'over';
+  else if (left === 0) level = 'full';
+  else if (ratio >= 0.75) level = 'nearly';
+
+  return {
+    limit,
+    taken,
+    left,
+    ratio,
+    // The bar never draws past its own track, however far over the limit a
+    // course has gone — a 200%-wide bar tells you nothing the label does not.
+    filled: Math.min(1, ratio),
+    level,
+  };
+}

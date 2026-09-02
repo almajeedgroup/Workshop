@@ -154,6 +154,23 @@ export async function listRequests(workshopId) {
 }
 
 /**
+ * Every request still waiting, across every workshop.
+ *
+ * The workshop screen answers "what is waiting for THIS course". Nobody
+ * could ask "what is waiting at all" without opening each one in turn,
+ * which is the question the console exists to answer.
+ *
+ * Requests are one flat collection with a workshopId on each, so this is a
+ * single query rather than one per workshop.
+ */
+export async function listPendingRequests() {
+  const snap = await getDocs(query(collection(db, REQUESTS), where('status', '==', 'new')));
+  return snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+}
+
+/**
  * Record a decision. `extra` carries the ticket number issued on acceptance,
  * so the receipt sent afterwards can quote it.
  */
