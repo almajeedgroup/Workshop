@@ -51,6 +51,9 @@ export default function WorkshopPage() {
   const [requests, setRequests] = useState([]);
   const [reqBusy, setReqBusy] = useState('');
   const [toggling, setToggling] = useState(false);
+  // Both belong to the requests panel, and are shown inside it.
+  const [reqError, setReqError] = useState('');
+  const [duplicate, setDuplicate] = useState(null);
 
   const reload = async () => {
     const [w, r, q] = await Promise.all([getWorkshop(id), getRegistrations(id), listRequests(id)]);
@@ -170,15 +173,29 @@ export default function WorkshopPage() {
    * registration and get its ticket number. Payment stays Pending until it is
    * marked by hand on the list below.
    */
-  const acceptRequest = async (request) => {
+  /**
+   * A match against somebody already registered WARNS; it does not refuse.
+   *
+   * dedupe.js says it plainly — "nothing here blocks a save, it reports and
+   * the operator decides, two cousins really can share a phone" — and every
+   * other route into the register honours that. Accept did not: it refused
+   * outright and told you to add the person by hand, which loses the link
+   * back to their request. Families share an email address and a phone, and
+   * a sibling should not need retyping.
+   */
+  const acceptRequest = async (request, force = false) => {
     setReqBusy(request.id);
     setError('');
+    setReqError('');
     try {
-      const { duplicates } = splitDuplicates([requestToRegistration(request)], regs);
-      if (duplicates.length) {
-        setError(`${request.name} looks already registered — ${describeDuplicate(duplicates[0])}. Reject the request, or add them by hand if this really is somebody else.`);
-        return;
+      if (!force) {
+        const { duplicates } = splitDuplicates([requestToRegistration(request)], regs);
+        if (duplicates.length) {
+          setDuplicate({ id: request.id, message: describeDuplicate(duplicates[0]) });
+          return;
+        }
       }
+      setDuplicate(null);
       const [saved] = await addRegistrations(id, [requestToRegistration(request)]);
       await setRequestStatus(request.id, 'accepted', { ticketId: saved?.ticketId || '' });
       await reload();
@@ -187,7 +204,9 @@ export default function WorkshopPage() {
         'Payment is Pending until you mark it below.'
       );
     } catch (e) {
-      setError(e.message);
+      // Beside the button that failed. The page-level notice sits above the
+      // statistics, which is off-screen when you are working in this panel.
+      setReqError(e.message);
     } finally {
       setReqBusy('');
     }
@@ -195,12 +214,14 @@ export default function WorkshopPage() {
 
   const rejectRequest = async (request) => {
     setReqBusy(request.id);
+    setReqError('');
+    setDuplicate(null);
     try {
       await setRequestStatus(request.id, 'rejected');
       await reload();
       setNotice(`${request.name}'s request marked rejected.`);
     } catch (e) {
-      setError(e.message);
+      setReqError(e.message);
     } finally {
       setReqBusy('');
     }
@@ -213,13 +234,13 @@ export default function WorkshopPage() {
    */
   const putBackRequest = async (request) => {
     setReqBusy(request.id);
-    setError('');
+    setReqError('');
     try {
       await restoreRequest(request.id);
       await reload();
       setNotice(`${request.name} is back in the queue, with everything they entered.`);
     } catch (e) {
-      setError(e.message);
+      setReqError(e.message);
     } finally {
       setReqBusy('');
     }
@@ -227,13 +248,14 @@ export default function WorkshopPage() {
 
   const removeRequest = async (request) => {
     setReqBusy(request.id);
-    setError('');
+    setReqError('');
+    setDuplicate(null);
     try {
       await deleteRequest(request.id);
       await reload();
       setNotice(`${request.name}'s request was deleted. That one cannot be restored.`);
     } catch (e) {
-      setError(e.message);
+      setReqError(e.message);
     } finally {
       setReqBusy('');
     }
@@ -366,6 +388,9 @@ export default function WorkshopPage() {
         onReject={rejectRequest}
         onDelete={removeRequest}
         onRestore={putBackRequest}
+        error={reqError}
+        duplicate={duplicate}
+        onDismissDuplicate={() => setDuplicate(null)}
         onToggleOpen={toggleRegistration}
         busyId={reqBusy}
         toggling={toggling}

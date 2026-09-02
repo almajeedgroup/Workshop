@@ -35,7 +35,7 @@ export function receiptMessage(workshop, request, ticketId) {
  */
 export default function RequestsPanel({
   workshop, requests, registerLink, onAccept, onReject, onDelete, onRestore,
-  onToggleOpen, busyId, toggling,
+  onToggleOpen, busyId, toggling, error, duplicate, onDismissDuplicate,
 }) {
   const [showQr, setShowQr] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -77,6 +77,8 @@ export default function RequestsPanel({
           <button onClick={copy}>{copied ? 'Copied ✓' : 'Copy link'}</button>
         </div>
       </div>
+
+      {error && <div className="notice warn">{error}</div>}
 
       <div className={`notice${open ? '' : ' warn'}`}>
         <div className="btn-row" style={{ alignItems: 'center' }}>
@@ -158,18 +160,41 @@ export default function RequestsPanel({
                   </td>
                   <td style={{ fontFamily: 'var(--mono)', fontSize: 12 }}>{r.paymentRef || '—'}</td>
                   <td className="no-print">
-                    <div className="actions">
-                      <button
-                        className="small primary"
-                        disabled={busyId === r.id}
-                        onClick={() => onAccept(r)}
-                      >
-                        {busyId === r.id ? '…' : 'Accept'}
-                      </button>
-                      <button className="small" disabled={busyId === r.id} onClick={() => onReject(r)}>
-                        Reject
-                      </button>
-                    </div>
+                    {duplicate?.id === r.id ? (
+                      /* A match is a warning, not a refusal — families share a
+                         phone and an email, and a sibling should not need
+                         retyping. The operator decides, as everywhere else. */
+                      <div>
+                        <div style={{ fontSize: 12, marginBottom: 6 }}>
+                          Looks already registered — {duplicate.message}.
+                        </div>
+                        <div className="actions">
+                          <button
+                            className="small primary"
+                            disabled={busyId === r.id}
+                            onClick={() => onAccept(r, true)}
+                          >
+                            {busyId === r.id ? '…' : 'Register anyway'}
+                          </button>
+                          <button className="small" disabled={busyId === r.id} onClick={onDismissDuplicate}>
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="actions">
+                        <button
+                          className="small primary"
+                          disabled={busyId === r.id}
+                          onClick={() => onAccept(r)}
+                        >
+                          {busyId === r.id ? '…' : 'Accept'}
+                        </button>
+                        <button className="small" disabled={busyId === r.id} onClick={() => onReject(r)}>
+                          Reject
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}

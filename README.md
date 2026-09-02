@@ -327,10 +327,23 @@ Pending requests appear on the workshop page under **Registration requests**:
 
 | Action | What happens |
 |---|---|
-| **Accept** | Becomes a real registration, gets the next ticket number, runs through duplicate detection first. |
+| **Accept** | Becomes a real registration and gets the next ticket number. A match against somebody already registered *warns*; it never refuses. |
 | **Reject** | Marked handled. **Nothing is thrown away** — every field they typed stays on the record. |
 | **Restore** | Puts a rejected request back in the queue, intact, to be decided again. |
 | **Remove** | Deletes it for good. The only irreversible action here, so it asks first. |
+
+### When somebody looks like a duplicate
+
+Accepting checks the person against everyone already registered — same
+WhatsApp number, same email, or same name and date of birth. A match is
+reported **next to their row**, naming who they matched and that person's
+ticket, with **Register anyway** beside it.
+
+It is a warning and never a refusal. `src/lib/dedupe.js` has said so since it
+was written — *"nothing here blocks a save; it reports, and the operator
+decides — two cousins really can share a phone"* — and families share an email
+address and a phone constantly. A sibling should not have to be retyped by
+hand, which is what refusing forced.
 
 ### Undoing a rejection
 
@@ -648,7 +661,7 @@ click to confirm.
 npm test
 ```
 
-Runs 180 assertions on Node's built-in test runner — no extra dependencies,
+Runs 182 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards and
 attendance sheets. The parser
