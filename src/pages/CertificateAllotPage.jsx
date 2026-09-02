@@ -8,6 +8,7 @@ import { certificateUrlFor } from '../lib/certlinks.js';
 import CertificateDocument from '../components/CertificateDocument.jsx';
 import CertificateStage from '../components/CertificateStage.jsx';
 import { verifyUrlFor } from '../lib/certlinks.js';
+import { certificateDesign } from '../lib/certificates.js';
 
 /**
  * Awarding certificates for one workshop.
@@ -72,6 +73,8 @@ export default function CertificateAllotPage() {
   const selectAll = () => setPicked(new Set(eligible.map(keyOf)));
   const selectPaid = () => setPicked(new Set(eligible.filter((r) => r.paymentStatus === 'Paid').map(keyOf)));
   const clearAll = () => setPicked(new Set());
+
+  const design = certificateDesign({ design: workshop?.certificateDesign });
 
   const issue = async () => {
     const chosen = regs.filter((r) => picked.has(keyOf(r)));
@@ -183,6 +186,14 @@ export default function CertificateAllotPage() {
         <div className="hint" style={{ marginTop: 10 }}>
           {certificateTypeByKey[type].title} — {certs.filter((c) => c.type === type && !c.revoked).length} issued
           so far for this workshop.
+        </div>
+
+        {/* The design belongs to the course, not to one award, so it is shown
+            here rather than chosen here — the same sheet for every award. */}
+        <div className="hint" style={{ marginTop: 6 }}>
+          Printed on the <strong>{design.label}</strong> sheet.{' '}
+          <Link to={`/w/${id}/edit`}>Change the design</Link> to use another for this course.
+          {' '}{design.note}
         </div>
       </div>
 

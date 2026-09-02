@@ -32,7 +32,7 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 | **ID cards** | Every registrant gets a two-sided colour ID card — colourway and crests chosen for the course, editable per person, printed nine to an A4 sheet. |
 | **Delete** | Remove a single registration, or a whole workshop and everything under it. |
 | **Self-registration** | Students scan a QR on the poster, fill the form, pay by UPI, and land in a queue for review. |
-| **Certify** | Award Completion, Participation, Excellence or Appreciation certificates, in bulk, from the workshop's own screen. |
+| **Certify** | Award Completion, Participation, Excellence or Appreciation certificates, in bulk, on either of two designs. |
 | **Verify** | Every certificate carries an ID and a QR code that anyone can check publicly, without an account. |
 | **Student list** | One button, one clean sheet: a row per student and only the columns that say something. |
 | **Export** | Excel, CSV, printable PDF — for all workshops, one workshop, or its registrations. |
@@ -510,7 +510,50 @@ the rules — comfortably inside Firestore's 1MiB per document.
 
 ---
 
-## 9. Attendance sheets
+## 9. Certificate designs
+
+A design is **how** a certificate looks; a type is **what** it says. They are
+kept apart on purpose — a Youth Parliament course can award all four types on
+the parliament sheet without four more entries in `CERTIFICATE_TYPES`.
+
+| Design | |
+|---|---|
+| **Classic — tricolour** | Saffron and green wave edges, the chakra behind, a three-bar divider. The general-purpose sheet. |
+| **Parliament — red** | A red double keyline, a diamond divider, and a panel carrying the course code, duration, time, venue and topics. Made for the Youth Parliament, and suited to any course that records those. |
+
+Choose it on the workshop's **Edit** screen under **Certificate Design**, and
+every certificate for that course is printed on it. The allotment screen says
+which sheet will be used before you issue.
+
+### What the parliament sheet adds
+
+It prints the workshop's **Topics / Highlights** as a single red line under
+the body text, and a facts panel below that:
+
+- **Workshop Code** — the workshop's Code
+- **Duration** — the hours, with the dates
+- **Time** — the time, with the mode
+- **Venue**
+
+Each is dropped when the course did not record it, rather than printed with a
+blank beside it, so a workshop with only a title still produces a clean sheet.
+
+### The design is stored, not looked up
+
+Every certificate records the design it was printed on. That is what makes the
+public verification page show the sheet that was actually awarded, rather than
+whatever the workshop was changed to afterwards — or nothing at all, once the
+workshop is deleted.
+
+The same goes for the facts: the code, duration, time, venue and topics are
+copied onto the certificate as it is issued. They are course details, not
+personal ones, so they are safe on a document anybody can read. The whitelist
+in `certificateRecord()` is still the privacy boundary — no phone number, no
+date of birth, no email, no address, ever.
+
+---
+
+## 10. Attendance sheets
 
 **Attendance** on the workshop page produces the register, ready to print and
 sign. It is the one document in this system that exists to be written *on*,
@@ -554,7 +597,7 @@ sheet helps nobody.
 
 ---
 
-## 10. Project layout
+## 11. Project layout
 
 ```
 src/
@@ -637,7 +680,7 @@ Values are written as inline strings, never formulas, so a name such as
 way to say "this is text", so there such a value is prefixed with an
 apostrophe — otherwise Excel would run it on open.
 
-## 11. Deleting
+## 12. Deleting
 
 - **One registration** — *Remove* column on the workshop page. Asks first. The
   ticket number is retired, not reissued, and the photograph goes with the
@@ -655,13 +698,13 @@ click to confirm.
 
 ---
 
-## 12. Tests
+## 13. Tests
 
 ```bash
 npm test
 ```
 
-Runs 182 assertions on Node's built-in test runner — no extra dependencies,
+Runs 191 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards and
 attendance sheets. The parser
@@ -673,7 +716,7 @@ the Firebase emulator.
 
 ---
 
-## 13. Colour
+## 14. Colour
 
 Black text on a white page, and the four colours on everything else.
 
@@ -727,7 +770,7 @@ their own schemes, and the ID card keeps its six colourways.
 
 ---
 
-## 14. Attribution
+## 15. Attribution
 
 Al-Majeed School of Research Methodology and Innovation is named **in
 association with** on everything this system produces: the ticket and its
@@ -749,7 +792,7 @@ different ways across the code — with a comma after "Research", with `&`, and
 with `and` — which on a certificate and the ticket for the same course is the
 sort of thing people notice.
 
-## 15. Notes
+## 16. Notes
 
 - Search and filtering happen on the client, so no composite Firestore indexes
   are needed. Comfortable into the low thousands of records. Past that, the
@@ -771,7 +814,7 @@ sort of thing people notice.
 
 ---
 
-## 16. Verifying the security rules
+## 17. Verifying the security rules
 
 `firestore.rules` is the only thing standing between the public internet and
 every student's phone number, so it is worth testing rather than trusting.

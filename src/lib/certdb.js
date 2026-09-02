@@ -29,7 +29,8 @@ import { matchKeys } from './dedupe.js';
 import { ticketPrefixFor } from './tickets.js';
 import {
   certificateTypeCode, formatCertificateId, highestCertificateSeq,
-  compareCertificateIds, certificateTypeByKey,
+  compareCertificateIds, certificateTypeByKey, certificateDesignByKey,
+  DEFAULT_CERTIFICATE_DESIGN,
 } from './certificates.js';
 
 const CERTIFICATES = 'certificates';
@@ -51,19 +52,32 @@ function str(v) {
  * ever written, whatever the caller passes in.
  */
 export function certificateRecord({
-  certificateId, type, recipientName, workshopId, workshopTitle,
-  workshopDates, venue, presentedBy, ticketId, holderKey, issuedOn,
+  certificateId, type, design, recipientName, workshopId, workshopTitle,
+  workshopDates, venue, presentedBy, workshopCode, duration, time, topics,
+  ticketId, holderKey, issuedOn,
 }) {
   return {
     certificateId: str(certificateId),
     type: str(type),
     typeLabel: certificateTypeByKey[type]?.label || '',
+    // Which sheet this was printed on. Stored, not looked up: a certificate
+    // in somebody's hands must keep looking like itself after the workshop
+    // is redesigned, or deleted.
+    design: certificateDesignByKey[design] ? str(design) : DEFAULT_CERTIFICATE_DESIGN,
     recipientName: str(recipientName),
     workshopId: str(workshopId),
     workshopTitle: str(workshopTitle),
     workshopDates: str(workshopDates),
     venue: str(venue),
     presentedBy: str(presentedBy),
+    // Facts the parliament sheet prints. Course details, not personal ones,
+    // so they are safe on a publicly readable document.
+    workshopCode: str(workshopCode),
+    duration: str(duration),
+    time: str(time),
+    // One line on the sheet, so it is bounded here rather than trusted to
+    // whatever was typed into the workshop's Topics box.
+    topics: str(topics).slice(0, 200),
     ticketId: str(ticketId),
     holderKey: str(holderKey),
     issuedOn: str(issuedOn),
@@ -202,11 +216,18 @@ export async function issueCertificates(workshop, registrations, typeKey, { issu
       certificateId: ids[i],
       type: typeKey,
       recipientName: r.name,
+      design: workshop.certificateDesign,
       workshopId: workshop.id,
       workshopTitle: workshop.title,
       workshopDates: dates,
       venue: workshop.venue,
       presentedBy: workshop.presentedBy,
+      workshopCode: workshop.code,
+      duration: workshop.durationHours
+        ? `${workshop.durationHours} hours${dates ? ` · ${dates}` : ''}`
+        : dates,
+      time: [workshop.time, workshop.mode].filter(Boolean).join(' · '),
+      topics: workshop.topics,
       ticketId: r.ticketId,
       holderKey: resolved[i].holderKey,
       issuedOn: issuedDate,

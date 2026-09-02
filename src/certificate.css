@@ -95,6 +95,105 @@
 .cert-stage{display:flex;flex-direction:column;align-items:center;gap:22px;padding:22px 12px 40px;overflow-x:auto}
 .cert-fit{transform-origin:top center}
 
+/* ------------------------------------------------------------------ *
+ * The parliament sheet
+ * ------------------------------------------------------------------ *
+ *
+ * A second design, not a variant of the first: red rather than tricolour, a
+ * double keyline instead of wave edges, and a panel of facts — code,
+ * duration, time, venue — that the classic sheet has no room for.
+ *
+ * Everything is scoped under `.sheet.parliament`, so the two live in one
+ * stylesheet without either having to undo the other. The shared pieces
+ * (crests, org line, name, signatures, foot) are inherited and only what
+ * differs is restated.
+ */
+.sheet.parliament{
+  --pink:#EB2F14; --pink-dp:#A11D08; --pink-ink:#14181C;
+  background:#FFFFFF; color:var(--pink-ink);
+}
+
+/* The double keyline that frames the whole sheet. */
+.sheet.parliament .frame{
+  position:absolute; top:7mm; left:7mm; right:7mm; bottom:7mm;
+  border:.9mm solid var(--pink); pointer-events:none;
+}
+.sheet.parliament .frame::after{
+  content:''; position:absolute; top:2.2mm; left:2.2mm; right:2.2mm; bottom:2.2mm;
+  border:.25mm solid var(--pink);
+}
+
+/* 14mm at the foot, not 12: the frame's inner keyline sits 9.2mm in, and the
+   certificate ID has to clear it. At 12mm the ID and the QR crossed the red
+   line — the content had already outgrown the sheet, so `margin-top:auto` on
+   the signatures had collapsed to nothing and the foot simply overflowed. */
+.sheet.parliament .inner{padding:13mm 26mm 14mm}
+.sheet.parliament .chakra{top:53%; width:122mm; height:122mm; opacity:.05}
+
+.sheet.parliament .org{color:var(--pink-ink); font-size:8.4pt}
+.sheet.parliament .org b{color:var(--pink-dp)}
+
+/* Poppins, not Anton: the display face of the classic sheet is a condensed
+   poster type, and this design wants the same family as its body text. */
+.sheet.parliament h1{
+  font-family:var(--cbody); font-weight:700; font-size:28.5pt;
+  letter-spacing:.02em; margin-top:3.5mm; color:var(--pink-ink);
+}
+
+/* The divider: two rules with a diamond between them. */
+.sheet.parliament .redrule{
+  display:flex; justify-content:center; align-items:center; gap:2.5mm; margin-top:2.5mm;
+}
+.sheet.parliament .redrule u{
+  display:block; width:24mm; height:.5mm; background:var(--pink); text-decoration:none;
+}
+.sheet.parliament .redrule i{
+  display:block; width:2.2mm; height:2.2mm; background:var(--pink); transform:rotate(45deg);
+}
+
+.sheet.parliament .lead{margin-top:3mm; font-size:9.2pt}
+.sheet.parliament .name{
+  font-size:44pt; width:126mm; min-height:11mm; color:var(--pink-ink); margin-top:1.5mm;
+}
+.sheet.parliament .crule{width:126mm; height:.6mm; background:var(--pink)}
+
+.sheet.parliament .cbody{
+  max-width:222mm; margin-top:2.5mm; font-size:10.3pt; line-height:1.55; color:#33383e;
+}
+/* Justified, but with the last line centred — it keeps the paragraph block
+   square without leaving a ragged orphan under a centred heading. */
+.sheet.parliament .cbody p{text-align:justify; text-align-last:center; -moz-text-align-last:center}
+.sheet.parliament .cbody p+p{margin-top:2.4mm}
+.sheet.parliament .cbody strong{font-weight:700; color:var(--pink-ink); letter-spacing:.02em}
+
+/* The topics, set as a single spaced line rather than a list. */
+.sheet.parliament .skills{
+  margin-top:2.8mm; font-size:9pt; font-weight:600; letter-spacing:.045em;
+  color:var(--pink-dp); text-transform:uppercase;
+}
+
+/* Code, duration and time across, venue underneath. */
+.sheet.parliament .facts{margin-top:3mm}
+.sheet.parliament .facts .row1{
+  display:flex; justify-content:center; align-items:center; gap:6mm; flex-wrap:wrap;
+}
+.sheet.parliament .facts .row1 i{display:block; width:.3mm; height:5.5mm; background:var(--chair)}
+.sheet.parliament .facts span{font-size:9.9pt; font-weight:600; color:var(--pink-ink)}
+.sheet.parliament .facts b{
+  font-size:7.2pt; font-weight:600; letter-spacing:.19em; text-transform:uppercase;
+  color:#8a8f96; margin-right:2mm;
+}
+.sheet.parliament .facts .venue{margin-top:2.6mm; font-size:9.2pt; font-weight:400; color:#4a4f55}
+.sheet.parliament .facts .venue b{color:#8a8f96}
+
+/* The facts panel is 13mm the classic sheet does not carry, so the gap above
+   the signatures gives it back. `margin-top:auto` then has room to work
+   again and pushes them to the foot, as it is meant to. */
+.sheet.parliament .signs{padding-top:5mm}
+.sheet.parliament .sig b{font-size:9.9pt}
+.sheet.parliament .cfoot{border-top:.3mm solid var(--chair)}
+.sheet.parliament .verify .t a{color:var(--pink-dp)}
+
 @media print{
   @page{size:A4 landscape;margin:0}
   html,body{background:#fff}

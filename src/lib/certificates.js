@@ -64,6 +64,46 @@ export const certificateTypeByKey = Object.fromEntries(
 
 export const DEFAULT_CERTIFICATE_TYPE = 'completion';
 
+/* ------------------------------------------------------------------ *
+ * Designs
+ * ------------------------------------------------------------------ *
+ *
+ * A design is HOW a certificate looks; a type is WHAT it says. They are kept
+ * apart on purpose — a Youth Parliament course can award completion,
+ * participation, excellence and appreciation, all on the parliament sheet,
+ * without four more entries in CERTIFICATE_TYPES.
+ *
+ * The design is chosen on the workshop, so every certificate for one course
+ * matches, and it is STORED on each certificate as it is issued. That second
+ * part matters: the public verification page must show the sheet that was
+ * actually awarded, not whatever the workshop was changed to afterwards.
+ */
+export const CERTIFICATE_DESIGNS = [
+  {
+    key: 'classic',
+    label: 'Classic — tricolour',
+    note: 'Saffron and green edges, the chakra behind. The general-purpose sheet.',
+  },
+  {
+    key: 'parliament',
+    label: 'Parliament — red',
+    note: 'A red double keyline and a facts panel. Made for the Youth Parliament, '
+      + 'and suited to any course with a code, a duration and a list of topics.',
+  },
+];
+
+export const DEFAULT_CERTIFICATE_DESIGN = 'classic';
+
+export const certificateDesignByKey = Object.fromEntries(
+  CERTIFICATE_DESIGNS.map((d) => [d.key, d])
+);
+
+/** The design to draw, falling back rather than rendering nothing. */
+export function certificateDesign(cert) {
+  return certificateDesignByKey[cert?.design]
+    || certificateDesignByKey[DEFAULT_CERTIFICATE_DESIGN];
+}
+
 /** The signatories printed along the foot of every certificate. */
 export const SIGNATORIES = [
   { name: 'Dr. Zoheb Javeed Khan', role: 'President', org: 'Islamic Information Centre' },

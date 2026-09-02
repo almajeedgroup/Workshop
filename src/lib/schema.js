@@ -92,6 +92,13 @@ export const BOOTSTRAP_ADMIN_EMAIL = 'almajeed.work@gmail.com';
  * importing the module would make schema.js depend on something that depends
  * on it.
  */
+/** Certificate designs, by key. Defined in lib/certificates.js. */
+export const CERTIFICATE_DESIGN_KEYS = ['classic', 'parliament'];
+export const CERTIFICATE_DESIGN_LABELS = {
+  classic: 'Classic — tricolour',
+  parliament: 'Parliament — red',
+};
+
 export const ID_CARD_THEME_KEYS = ['saffron', 'emerald', 'indigo', 'maroon', 'teal', 'slate'];
 export const ID_CARD_THEME_LABELS = {
   saffron: 'Saffron', emerald: 'Emerald', indigo: 'Indigo',
@@ -326,6 +333,16 @@ export const WORKSHOP_FIELDS = [
     options: ['Open', 'Closed'],
     aliases: ['registration open', 'public registration', 'registration status'],
     hint: 'Open lets students register themselves from the QR code on the poster.',
+  },
+  {
+    key: 'certificateDesign',
+    label: 'Certificate Design',
+    type: 'enum',
+    options: CERTIFICATE_DESIGN_KEYS,
+    optionLabels: CERTIFICATE_DESIGN_LABELS,
+    aliases: ['certificate design', 'certificate template', 'certificate style'],
+    hint: 'The sheet every certificate for this course is printed on. '
+      + 'Parliament shows the code, duration, time and topics.',
   },
   {
     key: 'idCardTheme',
