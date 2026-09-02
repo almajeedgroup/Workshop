@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { normalizePhone } from '../lib/parser.js';
-import { formatDateRange } from '../lib/tickets.js';
+import { formatDate, formatDateRange } from '../lib/tickets.js';
 import {
   ISSUER, CURRENCY, isFreeWorkshop, workshopFee, associationLine,
 } from '../lib/schema.js';
@@ -34,14 +34,17 @@ export function receiptMessage(workshop, request, ticketId) {
  * hand afterwards, on the list below.
  */
 export default function RequestsPanel({
-  workshop, requests, registerLink, onAccept, onReject, onDelete, onToggleOpen,
-  busyId, toggling,
+  workshop, requests, registerLink, onAccept, onReject, onDelete, onRestore,
+  onToggleOpen, busyId, toggling,
 }) {
   const [showQr, setShowQr] = useState(false);
   const [copied, setCopied] = useState(false);
+  // Removing is the only thing here that cannot be undone, so it asks.
+  const [confirmingId, setConfirmingId] = useState('');
 
   const pending = requests.filter((r) => r.status === 'new');
   const handled = requests.filter((r) => r.status !== 'new');
+  const rejected = handled.filter((r) => r.status === 'rejected');
 
   const copy = async () => {
     try {
@@ -184,23 +187,57 @@ export default function RequestsPanel({
         <details style={{ marginTop: 16 }}>
           <summary style={{ cursor: 'pointer', fontSize: 12, textTransform: 'uppercase', letterSpacing: '.06em' }}>
             {handled.length} already handled
+            {rejected.length > 0 ? ` · ${rejected.length} rejected, restorable` : ''}
           </summary>
+
+          <div className="hint" style={{ marginTop: 10 }}>
+            Rejecting never threw anything away — everything these people typed is still
+            here. <strong>Restore</strong> puts a rejected request back in the queue above,
+            to be accepted or rejected again. <strong>Remove</strong> is the one action on
+            this screen that cannot be undone.
+          </div>
+
+          {/* The same columns as the queue above: restoring somebody is a
+              decision, and it cannot be made from a name and a status. */}
           <div className="table-wrap" style={{ marginTop: 10 }}>
             <table>
               <thead>
-                <tr><th>Reference</th><th>Name</th><th>Status</th><th className="no-print" /></tr>
+                <tr>
+                  <th>Reference</th><th>Name</th><th>Contact</th>
+                  <th>Qualification</th><th>Payment ref.</th>
+                  <th>Status</th><th className="no-print">Undo</th>
+                </tr>
               </thead>
               <tbody>
                 {handled.map((r) => (
                   <tr key={r.id}>
                     <td style={{ fontFamily: 'var(--mono)', whiteSpace: 'nowrap' }}>{r.ref || '—'}</td>
-                    <td>{r.name}</td>
                     <td>
-                      {r.status}
+                      {r.name}
+                      {r.area && <div className="count">{r.area}</div>}
+                      {r.dob && <div className="count">{formatDate(r.dob)}</div>}
+                    </td>
+                    <td>
+                      <div className="count">{r.whatsapp}</div>
+                      {r.email && <div className="count">{r.email}</div>}
+                    </td>
+                    <td>
+                      {r.qualification || '—'}
+                      {r.courseName && <div className="count">{r.courseName}</div>}
+                    </td>
+                    <td style={{ fontFamily: 'var(--mono)', fontSize: 12 }}>
+                      {r.paymentRef || '—'}
+                      {r.paymentMode && <div className="count">{r.paymentMode}</div>}
+                    </td>
+                    <td>
+                      <span className={`tag${r.status === 'accepted' ? ' solid' : ''}`}>{r.status}</span>
+                      {r.ticketId && (
+                        <div className="count" style={{ marginTop: 3 }}>{r.ticketId}</div>
+                      )}
                       {r.whatsapp && r.status === 'accepted' && (
                         <a
                           className="chip"
-                          style={{ marginLeft: 8 }}
+                          style={{ marginTop: 4, display: 'inline-block' }}
                           href={`https://wa.me/${normalizePhone(r.whatsapp)}?text=${encodeURIComponent(receiptMessage(workshop, r, r.ticketId))}`}
                           target="_blank"
                           rel="noreferrer"
@@ -210,9 +247,40 @@ export default function RequestsPanel({
                       )}
                     </td>
                     <td className="no-print">
-                      <button className="small" disabled={busyId === r.id} onClick={() => onDelete(r)}>
-                        Remove
-                      </button>
+                      {confirmingId === r.id ? (
+                        <div className="actions">
+                          <button
+                            className="small danger"
+                            disabled={busyId === r.id}
+                            onClick={() => { setConfirmingId(''); onDelete(r); }}
+                          >
+                            {busyId === r.id ? '…' : 'Delete for good'}
+                          </button>
+                          <button className="small" disabled={busyId === r.id} onClick={() => setConfirmingId('')}>
+                            Keep
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="actions">
+                          {r.status === 'rejected' && (
+                            <button
+                              className="small primary"
+                              disabled={busyId === r.id}
+                              onClick={() => onRestore(r)}
+                            >
+                              {busyId === r.id ? '…' : 'Restore'}
+                            </button>
+                          )}
+                          <button
+                            className="small"
+                            disabled={Boolean(busyId)}
+                            title={`Delete ${r.name}'s request permanently`}
+                            onClick={() => setConfirmingId(r.id)}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}

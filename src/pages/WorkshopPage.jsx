@@ -9,7 +9,7 @@ import { parseRegistrations } from '../lib/parser.js';
 import { splitDuplicates, describeDuplicate } from '../lib/dedupe.js';
 import {
   listRequests, setRequestStatus, deleteRequest, requestToRegistration,
-  setRegistrationOpen,
+  setRegistrationOpen, restoreRequest,
 } from '../lib/publicdb.js';
 import RequestsPanel from '../components/RequestsPanel.jsx';
 import { amountCollected, paymentCounts, seatsLeft as seatsLeftFor } from '../lib/stats.js';
@@ -206,11 +206,32 @@ export default function WorkshopPage() {
     }
   };
 
+  /**
+   * Undo a rejection. Everything the student typed is still on the record —
+   * rejecting only ever changed the status — so this puts it back in the
+   * queue with nothing lost.
+   */
+  const putBackRequest = async (request) => {
+    setReqBusy(request.id);
+    setError('');
+    try {
+      await restoreRequest(request.id);
+      await reload();
+      setNotice(`${request.name} is back in the queue, with everything they entered.`);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setReqBusy('');
+    }
+  };
+
   const removeRequest = async (request) => {
     setReqBusy(request.id);
+    setError('');
     try {
       await deleteRequest(request.id);
       await reload();
+      setNotice(`${request.name}'s request was deleted. That one cannot be restored.`);
     } catch (e) {
       setError(e.message);
     } finally {
@@ -344,6 +365,7 @@ export default function WorkshopPage() {
         onAccept={acceptRequest}
         onReject={rejectRequest}
         onDelete={removeRequest}
+        onRestore={putBackRequest}
         onToggleOpen={toggleRegistration}
         busyId={reqBusy}
         toggling={toggling}

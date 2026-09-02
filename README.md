@@ -328,8 +328,29 @@ Pending requests appear on the workshop page under **Registration requests**:
 | Action | What happens |
 |---|---|
 | **Accept** | Becomes a real registration, gets the next ticket number, runs through duplicate detection first. |
-| **Reject** | Marked handled, kept for the record, no ticket issued. |
-| **Delete** | Removed entirely. |
+| **Reject** | Marked handled. **Nothing is thrown away** — every field they typed stays on the record. |
+| **Restore** | Puts a rejected request back in the queue, intact, to be decided again. |
+| **Remove** | Deletes it for good. The only irreversible action here, so it asks first. |
+
+### Undoing a rejection
+
+Rejecting is a decision, not a deletion, and decisions get made in haste —
+somebody is turned away over a duplicate that turns out to be their sibling,
+or the office simply changes its mind.
+
+Open **already handled** under the queue. Rejected people are listed there
+with everything they entered — name, date of birth, qualification, course,
+WhatsApp, email, area, payment reference and mode — not just a name and a
+status, because you cannot reconsider a decision from a name and a status.
+
+**Restore** returns them to the pending list. It only puts the status back and
+clears what the decision added (a ticket number, the time it was decided);
+every field the student filled in was never touched, so nothing has to be
+reconstructed. Restore is offered on rejected requests only — an accepted one
+is already in the register, and putting it back would invite a duplicate.
+
+**Remove** is the exception: it really does destroy what the student typed, so
+it asks before doing it.
 
 Accepting is where the ticket number is issued — never before. Payment status
 starts as whatever the student claimed and is yours to confirm: mark **Paid**
@@ -559,7 +580,7 @@ src/
 public/fonts, public/crests  certificate typefaces and crests
 tests/                     parser, tickets, dedupe, stats, xlsx,
                            certificates, imagefile, idcards, attendance,
-                           exporters, association
+                           exporters, association, requests
 firestore.rules            access control
 firebase.json              hosting, caching and security headers
 ```
@@ -627,7 +648,7 @@ click to confirm.
 npm test
 ```
 
-Runs 175 assertions on Node's built-in test runner — no extra dependencies,
+Runs 180 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards and
 attendance sheets. The parser

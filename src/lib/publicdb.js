@@ -165,6 +165,39 @@ export async function setRequestStatus(requestId, status, extra = {}) {
   );
 }
 
+/**
+ * The patch that undoes a decision.
+ *
+ * Rejecting has never destroyed anything — the request keeps every field the
+ * student typed and only its status changes. So restoring is putting the
+ * status back and clearing what the decision added: the ticket number an
+ * acceptance recorded, and the time it was decided. Everything else is still
+ * there and is left alone.
+ *
+ * Separate from the write so it can be tested without a database.
+ */
+export function restorePatch() {
+  return { status: 'new', ticketId: '', decidedAt: null };
+}
+
+/**
+ * Put a handled request back in the queue.
+ *
+ * A rejection is a decision, not a deletion, and decisions get made in
+ * haste — somebody is rejected for a duplicate that turns out to be their
+ * sibling, or the office changes its mind. This returns them to the pending
+ * list with everything they typed intact, to be accepted or rejected again.
+ */
+export async function restoreRequest(requestId) {
+  await setDoc(doc(db, REQUESTS, requestId), restorePatch(), { merge: true });
+}
+
+/**
+ * Delete a request outright.
+ *
+ * The ONE irreversible thing on this screen: unlike rejecting, this really
+ * does destroy what the student typed. The panel asks before calling it.
+ */
 export async function deleteRequest(requestId) {
   await deleteDoc(doc(db, REQUESTS, requestId));
 }
