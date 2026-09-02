@@ -538,6 +538,25 @@ the body text, and a facts panel below that:
 Each is dropped when the course did not record it, rather than printed with a
 blank beside it, so a workshop with only a title still produces a clean sheet.
 
+### Long names
+
+The recipient's name is the one thing on a fixed sheet whose length nobody
+controls. It is **measured and shrunk until it fits on one line**, and its box
+has a fixed height — so a long name cannot move anything else on the page.
+
+Both matter. At a fixed size, "SYED RAYYAN HASANI" wrapped to three lines,
+pushed the signatures through the frame, and took the certificate ID and the
+QR code off the bottom of the sheet entirely, which is the pair that makes it
+verifiable at all.
+
+It is measured rather than estimated because width does not follow character
+count in a script face: that name sets 170mm wide where "Syed Rayyan Hasani"
+sets 129mm — the same eighteen characters. A weighted guess was 12% out on
+ordinary names, which is the difference between fitting and not.
+
+`src/components/FittedName.jsx` re-measures once the script webfont has
+loaded, since measuring before it lands measures the fallback.
+
 ### The design is stored, not looked up
 
 Every certificate records the design it was printed on. That is what makes the
@@ -620,6 +639,7 @@ src/
   components/              WorkshopForm, RegistrationEditor, RegistrationList,
                            TicketDocument, RequestsPanel, QrCode, ImageField,
                            IdCard, OrderedChoice, AttendanceSheet,
+                           FittedName,
                            CertificateDocument, CertificateStage
   components/site/         PublicShell, SiteHeader, SiteFooter, Icons
   pages/                   the admin tool: Login, List, Import, Workshop,
@@ -704,7 +724,7 @@ click to confirm.
 npm test
 ```
 
-Runs 191 assertions on Node's built-in test runner — no extra dependencies,
+Runs 196 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards and
 attendance sheets. The parser

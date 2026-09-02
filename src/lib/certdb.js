@@ -51,6 +51,22 @@ function str(v) {
  * Build the public certificate record. A whitelist: only these fields are
  * ever written, whatever the caller passes in.
  */
+/**
+ * The duration as a certificate should state it.
+ *
+ * `durationHours` is hours per day. On a single-day course that is simply
+ * the length; across several days it is a daily figure, and printing it bare
+ * beside a date range claims the whole course took three hours.
+ */
+export function durationLine(workshop, dates = '') {
+  const hours = Number(workshop?.durationHours) || 0;
+  const span = str(dates) || '';
+  const multiDay = Boolean(workshop?.endDate && workshop.endDate !== workshop.startDate);
+  if (!hours) return span;
+  const h = `${hours} hour${hours === 1 ? '' : 's'}${multiDay ? ' a day' : ''}`;
+  return span ? `${h} · ${span}` : h;
+}
+
 export function certificateRecord({
   certificateId, type, design, recipientName, workshopId, workshopTitle,
   workshopDates, venue, presentedBy, workshopCode, duration, time, topics,
@@ -223,9 +239,10 @@ export async function issueCertificates(workshop, registrations, typeKey, { issu
       venue: workshop.venue,
       presentedBy: workshop.presentedBy,
       workshopCode: workshop.code,
-      duration: workshop.durationHours
-        ? `${workshop.durationHours} hours${dates ? ` · ${dates}` : ''}`
-        : dates,
+      // "3 hours · 7 Sep – 12 Sep" reads as a six-day course that lasted
+      // three hours. Hours are per day whenever the course spans more than
+      // one, so the line has to say so.
+      duration: durationLine(workshop, dates),
       time: [workshop.time, workshop.mode].filter(Boolean).join(' · '),
       topics: workshop.topics,
       ticketId: r.ticketId,

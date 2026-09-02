@@ -1,5 +1,6 @@
 import { ISSUER } from '../lib/schema.js';
 import QrCode from './QrCode.jsx';
+import FittedName from './FittedName.jsx';
 import {
   certificateContent, certificateDesign, CRESTS, SIGNATORIES,
 } from '../lib/certificates.js';
@@ -142,7 +143,7 @@ function ClassicSheet({ cert, content, verifyUrl, host }) {
         <div className="tri"><i /><i /><i /></div>
 
         <div className="lead">{content.lead}</div>
-        <div className="name">{cert.recipientName}</div>
+        <FittedName text={cert.recipientName} max={42} />
         <div className="crule" />
 
         <div className="cbody">
@@ -183,7 +184,7 @@ function ParliamentSheet({ cert, content, verifyUrl, host }) {
         <div className="redrule"><u /><i /><u /></div>
 
         <div className="lead">{content.lead}</div>
-        <div className="name">{cert.recipientName}</div>
+        <FittedName text={cert.recipientName} max={44} />
         <div className="crule" />
 
         <div className="cbody">

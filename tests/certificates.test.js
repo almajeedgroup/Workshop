@@ -16,7 +16,7 @@ import {
   CERTIFICATE_DESIGNS, certificateDesign, DEFAULT_CERTIFICATE_DESIGN,
 } from '../src/lib/certificates.js';
 import { CERTIFICATE_DESIGN_KEYS, CERTIFICATE_DESIGN_LABELS } from '../src/lib/schema.js';
-import { certificateRecord } from '../src/lib/certdb.js';
+import { certificateRecord, durationLine } from '../src/lib/certdb.js';
 
 test('all four awards are defined, each with its own wording', () => {
   assert.deepEqual(
@@ -169,4 +169,42 @@ test('record: it still carries no personal detail beyond the name', () => {
   for (const leak of ['whatsapp', 'email', 'dob', 'area']) {
     assert.ok(!(leak in rec), `${leak} must never reach a public certificate`);
   }
+});
+
+/* ---- the duration line -------------------------------------------- *
+ *
+ * `durationHours` is hours PER DAY. Printed bare beside a date range it
+ * claimed a six-day course had lasted three hours.
+ */
+
+test('duration: a multi-day course says the hours are daily', () => {
+  assert.equal(
+    durationLine({ durationHours: 3, startDate: '2026-09-07', endDate: '2026-09-12' },
+      '7 Sep 2026 – 12 Sep 2026'),
+    '3 hours a day · 7 Sep 2026 – 12 Sep 2026',
+  );
+});
+
+test('duration: a one-day course states the hours plainly', () => {
+  assert.equal(durationLine({ durationHours: 3, startDate: '2026-09-07' }, '7 Sep 2026'),
+    '3 hours · 7 Sep 2026');
+  assert.equal(
+    durationLine({ durationHours: 3, startDate: '2026-09-07', endDate: '2026-09-07' }, '7 Sep 2026'),
+    '3 hours · 7 Sep 2026',
+  );
+});
+
+test('duration: one hour is not "1 hours"', () => {
+  assert.equal(durationLine({ durationHours: 1, startDate: '2026-09-07' }, '7 Sep 2026'),
+    '1 hour · 7 Sep 2026');
+});
+
+test('duration: no hours recorded leaves the dates alone', () => {
+  assert.equal(durationLine({}, '7 Sep 2026'), '7 Sep 2026');
+  assert.equal(durationLine({ durationHours: 0 }, '7 Sep 2026'), '7 Sep 2026');
+  assert.equal(durationLine(null, '7 Sep 2026'), '7 Sep 2026');
+});
+
+test('duration: hours with no dates still reads correctly', () => {
+  assert.equal(durationLine({ durationHours: 3 }, ''), '3 hours');
 });

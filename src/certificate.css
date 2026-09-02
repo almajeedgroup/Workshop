@@ -46,7 +46,18 @@
 .sheet .tri i:nth-child(3){background:var(--green)}
 
 .sheet .lead{margin-top:4mm;font-size:8.4pt;letter-spacing:.24em;text-transform:uppercase;color:var(--cmuted);font-weight:500}
-.sheet .name{font-family:var(--script);font-size:42pt;line-height:1.2;margin:1.5mm auto 0;padding:0 5mm;width:118mm;min-height:30mm;display:block}
+/* One line, and a FIXED height rather than a minimum.
+   `white-space:nowrap` is what lets FittedName measure: with wrapping on,
+   scrollWidth never exceeds clientWidth and there is nothing to shrink
+   against. The fixed height is what keeps the rest of the sheet still — a
+   name box that grows pushes the signatures through the frame and the
+   certificate ID off the page. */
+.sheet .name{
+  font-family:var(--script); font-size:42pt; line-height:1.15;
+  margin:1.5mm auto 0; padding:0 5mm; width:118mm; height:26mm;
+  display:flex; align-items:center; justify-content:center;
+  white-space:nowrap; overflow:hidden;
+}
 .sheet .crule{width:118mm;height:.6mm;background:var(--saffron);margin:.5mm auto 0}
 
 .sheet .cbody{max-width:216mm;margin:5mm auto 0;font-size:10pt;line-height:1.78;color:#33384a;font-weight:300}
@@ -153,7 +164,7 @@
 
 .sheet.parliament .lead{margin-top:3mm; font-size:9.2pt}
 .sheet.parliament .name{
-  font-size:44pt; width:126mm; min-height:11mm; color:var(--pink-ink); margin-top:1.5mm;
+  font-size:44pt; width:126mm; height:22mm; color:var(--pink-ink); margin-top:1.5mm;
 }
 .sheet.parliament .crule{width:126mm; height:.6mm; background:var(--pink)}
 
