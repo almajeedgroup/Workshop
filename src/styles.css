@@ -405,6 +405,59 @@ select.status[data-status='Refunded'] { background: var(--red); }
 .why .r[data-tone='red']       { background: var(--red); }
 .why .r[data-tone='blue']      { background: var(--blue); }
 
+/* ---------------- the board ---------------- */
+
+/* One workshop per group, with a coloured rail down the left. The rail is
+   the whole point: a column of colour that can be scanned without reading. */
+.board { display: grid; gap: 12px; }
+.grp { border: var(--hair); border-left: 6px solid var(--jade); background: var(--paper); }
+.grp[data-tone='tangerine'] { border-left-color: var(--tangerine); }
+.grp[data-tone='red']       { border-left-color: var(--red); }
+.grp[data-tone='blue']      { border-left-color: var(--blue); }
+/* Settled and finished: present, but not asking for anything. */
+.grp[data-tone='quiet']     { border-left-color: var(--faint); }
+.grp[data-finished] .grp-name > a { color: var(--muted); }
+
+.grp-head { display: flex; align-items: center; gap: 12px; padding: 10px 14px; flex-wrap: wrap; }
+.grp-head .spacer { flex: 1; }
+.grp-toggle {
+  border: 0; background: none; padding: 0; width: 20px; flex: none;
+  font-size: 13px; line-height: 1; cursor: pointer; color: var(--ink);
+}
+.grp-toggle:hover { background: none; }
+.grp-name { min-width: 180px; }
+.grp-name > a { font-weight: 700; font-size: 15px; text-decoration: none; }
+.grp-name > a:hover { text-decoration: underline; background: none; }
+
+.grp-figs { display: flex; gap: 16px; flex-wrap: wrap; }
+.fig { font-size: 12.5px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.fig b {
+  display: block; font-size: 9.5px; font-weight: 700; letter-spacing: 0.11em;
+  text-transform: uppercase; color: var(--muted);
+}
+
+.grp-why { padding: 0 14px 10px; }
+.grp-empty { padding: 14px; border-top: var(--hairline); font-size: 13px; color: var(--muted); }
+.grp-rows { border: 0; border-top: var(--hair); }
+
+/* The same colour language as the editable pill, without the control. */
+.pill {
+  display: inline-block; padding: 2px 8px; border: var(--hair);
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em;
+  background: var(--tangerine);
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+.pill[data-status='Paid']     { background: var(--jade); }
+.pill[data-status='Pending']  { background: var(--tangerine); }
+.pill[data-status='Waived']   { background: var(--blue); }
+.pill[data-status='Refunded'] { background: var(--red); }
+
+/* Visible to a screen reader, not on screen. */
+.vh {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
 /* ---------------- inline action chips ---------------- */
 
 .actions { display: flex; gap: 4px; flex-wrap: wrap; }

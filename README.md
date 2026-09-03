@@ -18,6 +18,7 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 
 | | |
 |---|---|
+| **Board** | Records as grouped workshops with their people underneath, each rail coloured by what the course needs. |
 | **Console** | The screen that answers "what needs me today" — waiting requests, unpaid fees, courses filling up, across every workshop. |
 | **Import** | Paste the poster (emoji and all) or labelled text; review the parsed result; save. |
 | **Register** | Paste WhatsApp replies in the `*Name:* …` format — as many as you like at once. |
@@ -88,7 +89,61 @@ a test pins it to what `seatPressure()` says.
 
 ---
 
-## 3. Data model
+## 3. The board
+
+**Records** opens as a board: one group per workshop, its registrations
+underneath, and a coloured rail down the left saying what that course needs.
+**Table** switches back to the flat list, and the choice is remembered.
+
+Groups start collapsed, because four courses of forty is a hundred and sixty
+rows and none of them answer the question you opened Records to ask. The
+header carries enough to judge a course without expanding it:
+
+- how many registered, and the seat bar
+- seats left, or how far over
+- paid of total, collected, and how many still owe — omitted entirely on a
+  free course, where a zero would only invite the question of what went wrong
+  with the takings
+- the same reason chips the console shows
+
+**Expand all** and **Collapse all** are there for when you do want the people.
+
+### The rail
+
+| | |
+|---|---|
+| Jade | Live and healthy |
+| Blue | A registration request is waiting |
+| Tangerine | Fees unpaid, or nearly full |
+| Red | Over the seat limit |
+| Grey | Finished and settled |
+
+Grey matters: blue already means "a request is waiting", so giving a finished,
+paid-up course the same rail would make the two indistinguishable at exactly
+the glance the board exists for.
+
+A group's rail comes from the same `needsAttention()` the console uses, and a
+test pins them together — a workshop that is red on one is red on the other.
+
+### Payment as colour
+
+Every row carries its payment status as a coloured pill, so a group reads as a
+block of colour rather than forty words: jade paid, tangerine pending, blue
+waived, red refunded.
+
+The pills on the board are **read-only**. The board is for seeing across every
+course at once; changing somebody's status belongs on the workshop screen,
+beside the rest of their details, where the select is editable.
+
+### What it costs
+
+The board needs every workshop's registrations, where the table needed only
+the workshops. They are fetched **once, and only when the board is actually
+shown** — switching to Table and back does not fetch again.
+
+---
+
+## 4. Data model
 
 ```
 workshops/{workshopId}
@@ -155,7 +210,7 @@ once allocated.
 
 ---
 
-## 4. First-time setup
+## 5. First-time setup
 
 ### 3.1 Create the Firebase project
 
@@ -267,7 +322,7 @@ console for `Refused to connect` after any such change.
 
 ---
 
-## 5. Deploy
+## 6. Deploy
 
 ```bash
 npm run deploy
@@ -287,7 +342,7 @@ First time only, run `firebase login` before it.
 
 ---
 
-## 6. What the parser understands
+## 7. What the parser understands
 
 | Input | Example |
 |---|---|
@@ -312,7 +367,7 @@ labels". Add that spelling to the `aliases` array for the right field in
 
 ---
 
-## 7. Sending tickets
+## 8. Sending tickets
 
 The ticket page gives you three routes:
 
@@ -345,7 +400,7 @@ trade-off; ask before enabling it.
 
 ---
 
-## 8. Self-registration
+## 9. Self-registration
 
 Students scan a QR code on the poster, fill the form themselves, pay, and land
 in a queue you review by hand. Nothing is admitted automatically: you decide
@@ -468,7 +523,7 @@ key they do not expect. A hidden honeypot field must arrive empty.
 
 ---
 
-## 9. Free or paid, and ID cards
+## 10. Free or paid, and ID cards
 
 Both are settled when the course is **established**, on the Edit screen, and
 every ticket, card and public page follows from there.
@@ -559,7 +614,7 @@ the rules — comfortably inside Firestore's 1MiB per document.
 
 ---
 
-## 10. Certificate designs
+## 11. Certificate designs
 
 A design is **how** a certificate looks; a type is **what** it says. They are
 kept apart on purpose — a Youth Parliament course can award all four types on
@@ -621,7 +676,7 @@ date of birth, no email, no address, ever.
 
 ---
 
-## 11. Attendance sheets
+## 12. Attendance sheets
 
 **Attendance** on the workshop page produces the register, ready to print and
 sign. It is the one document in this system that exists to be written *on*,
@@ -665,7 +720,7 @@ sheet helps nobody.
 
 ---
 
-## 12. Project layout
+## 13. Project layout
 
 ```
 src/
@@ -689,7 +744,7 @@ src/
   components/              WorkshopForm, RegistrationEditor, RegistrationList,
                            TicketDocument, RequestsPanel, QrCode, ImageField,
                            IdCard, OrderedChoice, AttendanceSheet,
-                           FittedName, SeatBar,
+                           FittedName, SeatBar, BoardGroup,
                            CertificateDocument, CertificateStage
   components/site/         PublicShell, SiteHeader, SiteFooter, Icons
   pages/                   the admin tool: Console, Login, List, Import, Workshop,
@@ -750,7 +805,7 @@ Values are written as inline strings, never formulas, so a name such as
 way to say "this is text", so there such a value is prefixed with an
 apostrophe — otherwise Excel would run it on open.
 
-## 13. Deleting
+## 14. Deleting
 
 - **One registration** — *Remove* column on the workshop page. Asks first. The
   ticket number is retired, not reissued, and the photograph goes with the
@@ -768,13 +823,13 @@ click to confirm.
 
 ---
 
-## 14. Tests
+## 15. Tests
 
 ```bash
 npm test
 ```
 
-Runs 218 assertions on Node's built-in test runner — no extra dependencies,
+Runs 230 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards and
 attendance sheets. The parser
@@ -786,7 +841,7 @@ the Firebase emulator.
 
 ---
 
-## 15. Colour
+## 16. Colour
 
 Black text on a white page, and the four colours on everything else.
 
@@ -840,7 +895,7 @@ their own schemes, and the ID card keeps its six colourways.
 
 ---
 
-## 16. Attribution
+## 17. Attribution
 
 Al-Majeed School of Research Methodology and Innovation is named **in
 association with** on everything this system produces: the ticket and its
@@ -862,7 +917,7 @@ different ways across the code — with a comma after "Research", with `&`, and
 with `and` — which on a certificate and the ticket for the same course is the
 sort of thing people notice.
 
-## 17. Notes
+## 18. Notes
 
 - Search and filtering happen on the client, so no composite Firestore indexes
   are needed. Comfortable into the low thousands of records. Past that, the
@@ -884,7 +939,7 @@ sort of thing people notice.
 
 ---
 
-## 18. Verifying the security rules
+## 19. Verifying the security rules
 
 `firestore.rules` is the only thing standing between the public internet and
 every student's phone number, so it is worth testing rather than trusting.

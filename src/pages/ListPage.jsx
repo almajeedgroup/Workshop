@@ -1,8 +1,23 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { listWorkshops, withRegistrations, deleteWorkshop } from '../lib/db.js';
+import { listPendingRequests } from '../lib/publicdb.js';
 import { WORKSHOP_FIELDS, ISSUER } from '../lib/schema.js';
 import { formatDateRange } from '../lib/tickets.js';
+import { boardGroups } from '../lib/overview.js';
+import BoardGroup from '../components/BoardGroup.jsx';
+
+/** Which view Records opens in, remembered between visits. */
+const VIEW_KEY = 'records.view';
+
+function rememberedView() {
+  try {
+    return localStorage.getItem(VIEW_KEY) === 'table' ? 'table' : 'board';
+  } catch {
+    // Private browsing, or storage refused. The default is fine.
+    return 'board';
+  }
+}
 
 const TABLE_FIELDS = WORKSHOP_FIELDS.filter((f) => f.inTable);
 
@@ -25,6 +40,10 @@ export default function ListPage() {
   const [notice, setNotice] = useState('');
   const [pendingId, setPendingId] = useState('');
   const [deletingId, setDeletingId] = useState('');
+  const [view, setView] = useState(rememberedView);
+  const [bundles, setBundles] = useState(null);
+  const [requests, setRequests] = useState([]);
+  const [openIds, setOpenIds] = useState(() => new Set());
 
   useEffect(() => {
     listWorkshops()
@@ -32,6 +51,22 @@ export default function ListPage() {
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
+
+  // The board needs every workshop's registrations; the table does not.
+  // Fetched only when the board is actually shown, and once.
+  useEffect(() => {
+    if (view !== 'board' || bundles) return;
+    let live = true;
+    Promise.all([withRegistrations(rows), listPendingRequests()])
+      .then(([b, q]) => { if (!live) return; setBundles(b); setRequests(q); })
+      .catch((e) => live && setError(e.message));
+    return () => { live = false; };
+  }, [view, bundles, rows]);
+
+  const chooseView = (next) => {
+    setView(next);
+    try { localStorage.setItem(VIEW_KEY, next); } catch { /* not worth failing over */ }
+  };
 
   const years = useMemo(
     () => [...new Set(rows.map((r) => (r.startDate || '').slice(0, 4)).filter(Boolean))].sort().reverse(),
@@ -49,6 +84,14 @@ export default function ListPage() {
   }, [rows, q, mode, year]);
 
   const totalSeats = filtered.reduce((s, r) => s + (Number(r.seatLimit) || 0), 0);
+
+  // Grouped from the FILTERED list, so the search box narrows the board the
+  // same way it narrows the table.
+  const groups = useMemo(() => {
+    if (!bundles) return [];
+    const keep = new Set(filtered.map((w) => w.id));
+    return boardGroups(bundles.filter((b) => keep.has(b.workshop.id)), requests);
+  }, [bundles, filtered, requests]);
 
   const doExport = async (kind) => {
     setBusy(kind);
@@ -109,6 +152,22 @@ export default function ListPage() {
       {notice && <div className="notice no-print">{notice}</div>}
 
       <div className="toolbar no-print">
+        <div className="btn-row" role="group" aria-label="View">
+          <button
+            className={view === 'board' ? 'primary' : undefined}
+            aria-pressed={view === 'board'}
+            onClick={() => chooseView('board')}
+          >
+            Board
+          </button>
+          <button
+            className={view === 'table' ? 'primary' : undefined}
+            aria-pressed={view === 'table'}
+            onClick={() => chooseView('table')}
+          >
+            Table
+          </button>
+        </div>
         <input
           placeholder="Search title, venue, resource person…"
           value={q}
@@ -144,6 +203,36 @@ export default function ListPage() {
             ? <>No workshops stored yet. <Link to="/import">Import your first one from text.</Link></>
             : 'No records match these filters.'}
         </div>
+      ) : view === 'board' ? (
+        bundles === null ? (
+          <p className="count">Loading registrations…</p>
+        ) : (
+          <>
+            <div className="btn-row no-print" style={{ marginBottom: 10 }}>
+              <button onClick={() => setOpenIds(new Set(filtered.map((w) => w.id)))}>
+                Expand all
+              </button>
+              <button onClick={() => setOpenIds(new Set())} disabled={openIds.size === 0}>
+                Collapse all
+              </button>
+            </div>
+            <div className="board">
+              {groups.map((g) => (
+                <BoardGroup
+                  key={g.workshop.id}
+                  group={g}
+                  open={openIds.has(g.workshop.id)}
+                  onToggle={() => setOpenIds((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(g.workshop.id)) next.delete(g.workshop.id);
+                    else next.add(g.workshop.id);
+                    return next;
+                  })}
+                />
+              ))}
+            </div>
+          </>
+        )
       ) : (
         <div className="table-wrap">
           <table>

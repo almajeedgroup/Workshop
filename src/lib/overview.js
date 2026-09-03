@@ -142,3 +142,72 @@ export function upcoming(bundles, today = new Date().toISOString().slice(0, 10),
       payments: paymentCounts(b.registrations),
     }));
 }
+
+/* ------------------------------------------------------------------ *
+ * The board
+ * ------------------------------------------------------------------ */
+
+/**
+ * One group per workshop: the people under it, and the figures that let the
+ * group be judged without opening it.
+ *
+ * The header has to carry enough that a collapsed group is still worth
+ * looking at — a count, how full, how much is paid, and why it needs
+ * attention. Otherwise a collapsed board is a list of titles, and an
+ * expanded one is four hundred rows.
+ *
+ * `tone` is the colour of the group's rail. It comes from the same reasons
+ * the console shows, so a workshop that is red there is red here.
+ */
+export function boardGroups(bundles, requests = [], today = new Date().toISOString().slice(0, 10)) {
+  const attentionBy = new Map(
+    needsAttention(bundles, requests).map((row) => [row.workshop.id, row]),
+  );
+
+  return bundles.map(({ workshop, registrations }) => {
+    const attention = attentionBy.get(workshop.id);
+    const end = workshop.endDate || workshop.startDate || '';
+    const finished = Boolean(end) && end < today;
+
+    return {
+      workshop,
+      rows: registrations,
+      reasons: attention ? attention.reasons : [],
+      // A settled course is grey, not blue. Blue is already "a request is
+      // waiting" — giving a finished, paid-up course the same rail makes the
+      // two indistinguishable at exactly the glance the board is for.
+      tone: attention ? attention.reasons[0].tone : (finished ? 'quiet' : 'jade'),
+      finished,
+      seats: seatPressure(workshop, registrations.length),
+      payments: paymentCounts(registrations),
+      collected: amountCollected(workshop, registrations),
+      free: isFreeWorkshop(workshop),
+      owing: unpaidCount(workshop, registrations),
+    };
+  });
+}
+
+/**
+ * The summary strip under a group, as label/value pairs.
+ *
+ * Money is left out entirely on a free course rather than shown as zero —
+ * a zero invites the question of what went wrong with the takings.
+ */
+export function groupSummary(group) {
+  const out = [
+    ['Registered', String(group.rows.length)],
+  ];
+  if (group.seats) {
+    out.push(['Seats', group.seats.left < 0
+      ? `${-group.seats.left} over ${group.seats.limit}`
+      : `${group.seats.left} left of ${group.seats.limit}`]);
+  }
+  if (group.free) {
+    out.push(['Fee', 'Free']);
+  } else {
+    out.push(['Paid', `${group.payments.paid} of ${group.payments.total}`]);
+    out.push(['Collected', String(group.collected)]);
+    if (group.owing) out.push(['Owing', String(group.owing)]);
+  }
+  return out;
+}
