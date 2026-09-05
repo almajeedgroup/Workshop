@@ -24,6 +24,7 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 | **Import** | Paste the poster (emoji and all) or labelled text; review the parsed result; save. |
 | **Register** | Paste WhatsApp replies in the `*Name:* …` format — as many as you like at once. |
 | **Ticket** | Every registrant gets a sequential Ticket ID and a printable ticket + IIC payment receipt. |
+| **Overlay** | Open anybody's ticket over the board without losing the groups you expanded to find them. |
 | **Send** | One click opens WhatsApp or email with the ticket already written out. |
 | **Contact** | Call or email any registrant directly from the list. |
 | **Payments** | Mark Paid / Pending / Waived / Refunded inline; running totals and amount collected. |
@@ -157,6 +158,36 @@ waived, red refunded.
 The pills on the board are **read-only**. The board is for seeing across every
 course at once; changing somebody's status belongs on the workshop screen,
 beside the rest of their details, where the select is editable.
+
+### The ticket, without leaving the board
+
+A row's **Ticket** chip opens the ticket as an overlay over the board rather
+than navigating away. Checking one person's ticket used to cost the whole
+board: you left, looked, came back, and every group you had expanded was
+collapsed again — the very state you had built up to answer your question.
+
+The overlay is a real dialog, not a styled `div`. `src/components/Overlay.jsx`
+portals to `document.body` (so no ancestor's `overflow` or stacking context
+can clip it), carries `role="dialog"` and `aria-modal`, takes focus on open
+and gives it back to the chip on close, locks the page behind it from
+scrolling, and closes on **Escape** or a click on the scrim. A click *inside*
+the panel does not close it.
+
+**Print / PDF** prints from the overlay directly: `body.overlay-open` hides
+the application shell and the dialog's own chrome, so what comes out is the
+ticket on its own page — the same output as the full ticket page. **Open full
+page** is still there for when you want the URL.
+
+### Completed
+
+A workshop whose last day has passed carries a blue **Completed** badge — on
+its board group and at the top of its own page. `isFinished()` lives beside
+the rest of the board logic in `src/lib/overview.js` and compares the end date
+(falling back to the start date, for a one-day course) against today.
+
+A workshop with no dates at all is **not** marked completed. It is undated,
+which is a different thing from finished, and guessing would stamp Completed
+on a course that has not been scheduled yet.
 
 ### What it costs
 

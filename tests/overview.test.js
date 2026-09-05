@@ -9,7 +9,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   headlineFigures, needsAttention, unpaidCount, upcoming, boardGroups, groupSummary,
-  shouldFetchBoard,
+  shouldFetchBoard, isFinished,
 } from '../src/lib/overview.js';
 import { seatPressure } from '../src/lib/stats.js';
 
@@ -360,4 +360,42 @@ test('board fetch: the whole mount sequence ends with the data loaded', () => {
 
   tick();                    // any later re-render
   assert.equal(fetches, 1, 'and not again');
+});
+
+/* ---- when a course is finished ------------------------------------ */
+
+test('finished: the LAST day decides, not the first', () => {
+  // A three-day course is still running on day two.
+  const w = { startDate: '2026-09-03', endDate: '2026-09-05' };
+  assert.equal(isFinished(w, '2026-09-04'), false);
+  assert.equal(isFinished(w, '2026-09-06'), true);
+});
+
+test('finished: the last day itself still counts as running', () => {
+  // Nothing should read as completed while people are still in the room.
+  assert.equal(isFinished({ startDate: '2026-09-03', endDate: '2026-09-05' }, '2026-09-05'), false);
+});
+
+test('finished: a one-day course uses its only date', () => {
+  assert.equal(isFinished({ startDate: '2026-09-05' }, '2026-09-05'), false);
+  assert.equal(isFinished({ startDate: '2026-09-05' }, '2026-09-06'), true);
+});
+
+test('finished: a course with no dates is never called finished', () => {
+  // Guessing would put a Completed badge on something that may not have
+  // started.
+  assert.equal(isFinished({}, '2026-09-05'), false);
+  assert.equal(isFinished({ startDate: '', endDate: '' }, '2026-09-05'), false);
+  assert.equal(isFinished(null, '2026-09-05'), false);
+});
+
+test('finished: the board agrees with isFinished for every group', () => {
+  const bundles = [
+    { workshop: paid({ id: 'past', startDate: '2026-01-01', endDate: '2026-01-02' }), registrations: [] },
+    { workshop: paid({ id: 'now', startDate: '2026-09-01', endDate: '2026-09-30' }), registrations: [] },
+    { workshop: paid({ id: 'undated', startDate: '', endDate: '' }), registrations: [] },
+  ];
+  for (const g of boardGroups(bundles, [], '2026-09-05')) {
+    assert.equal(g.finished, isFinished(g.workshop, '2026-09-05'), g.workshop.id);
+  }
 });

@@ -159,6 +159,22 @@ export function upcoming(bundles, today = new Date().toISOString().slice(0, 10),
  * `tone` is the colour of the group's rail. It comes from the same reasons
  * the console shows, so a workshop that is red there is red here.
  */
+/**
+ * Has the course finished?
+ *
+ * Its LAST day, not its first — a three-day course is still running on day
+ * two — and the last day itself counts, so a course does not read as
+ * completed while people are still in the room.
+ *
+ * A course with no dates recorded is never called finished: nothing is known
+ * about when it ran, and guessing would put a Completed badge on something
+ * that may not have started.
+ */
+export function isFinished(workshop, today = new Date().toISOString().slice(0, 10)) {
+  const end = workshop?.endDate || workshop?.startDate || '';
+  return Boolean(end) && end < today;
+}
+
 export function boardGroups(bundles, requests = [], today = new Date().toISOString().slice(0, 10)) {
   const attentionBy = new Map(
     needsAttention(bundles, requests).map((row) => [row.workshop.id, row]),
@@ -166,8 +182,7 @@ export function boardGroups(bundles, requests = [], today = new Date().toISOStri
 
   return bundles.map(({ workshop, registrations }) => {
     const attention = attentionBy.get(workshop.id);
-    const end = workshop.endDate || workshop.startDate || '';
-    const finished = Boolean(end) && end < today;
+    const finished = isFinished(workshop, today);
 
     return {
       workshop,

@@ -19,6 +19,7 @@ import {
   visibleWorkshopFields, ISSUER, CURRENCY, workshopFee,
 } from '../lib/schema.js';
 import { formatDateRange } from '../lib/tickets.js';
+import { isFinished } from '../lib/overview.js';
 
 function shown(field, w) {
   const v = w[field.key];
@@ -343,6 +344,7 @@ export default function WorkshopPage() {
           <div className="count" style={{ marginTop: 4 }}>
             {workshop.code && <span className="tag">{workshop.code}</span>}
             {workshop.mode && <span className="tag solid">{workshop.mode}</span>}
+            {isFinished(workshop) && <span className="badge done">Completed</span>}
             {formatDateRange(workshop)}
           </div>
         </div>
