@@ -20,6 +20,7 @@ import {
 } from './tickets.js';
 import { syncPublicWorkshop, removePublicWorkshop } from './publicdb.js';
 import { removePhoto, PHOTOS } from './photodb.js';
+import { removeMarks, ATTENDANCE } from './attendancedb.js';
 
 const WORKSHOPS = 'workshops';
 const REGISTRATIONS = 'registrations';
@@ -263,6 +264,7 @@ export async function deleteRegistration(workshopId, regId) {
   // record unless it is deleted too — and a face left behind after the person
   // was removed is the one leftover that actually matters.
   await removePhoto(workshopId, regId);
+  await removeMarks(workshopId, regId);
 }
 
 /**
@@ -332,7 +334,7 @@ export async function syncRegistrations(workshopId, registrations, baseIds = nul
 export async function deleteWorkshop(id) {
   // Deleting a document does NOT delete its sub-collections — do it
   // explicitly, for the registrations and for the photographs alike.
-  for (const name of [REGISTRATIONS, PHOTOS]) {
+  for (const name of [REGISTRATIONS, PHOTOS, ATTENDANCE]) {
     const col = collection(db, WORKSHOPS, id, name);
     let snap = await getDocs(query(col, limit(450)));
     while (!snap.empty) {

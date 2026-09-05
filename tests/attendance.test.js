@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   courseDays, signatureColumns, needsPerDaySheets, attendanceRows,
   sheetSignatories, MAX_DAY_COLUMNS,
+  ATTENDANCE_MARKS, attendanceMark, nextMark, attendanceSummary, attendanceRate,
 } from '../src/lib/attendance.js';
 
 /* ---- which days the course runs ---------------------------------- */
@@ -152,4 +153,105 @@ test('signatories: three lines are always printed, named or blank', () => {
   const s = sheetSignatories({});
   assert.equal(s.length, 3);
   for (const line of s) assert.ok(line.role, 'every line is labelled');
+});
+
+/* ------------------------------------------------------------------ *
+ * Taking the register
+ * ------------------------------------------------------------------ */
+
+test('marks: unmarked is a state of its own, not a missing one', () => {
+  // A register that cannot tell "nobody reached them" from "they did not
+  // come" turns an unfinished job into an accusation.
+  assert.equal(attendanceMark('').key, '');
+  assert.equal(attendanceMark('').label, 'Unmarked');
+  assert.equal(attendanceMark(undefined).key, '');
+  assert.notEqual(attendanceMark('').key, attendanceMark('absent').key);
+});
+
+test('marks: an unknown mark falls back to unmarked rather than blank', () => {
+  assert.equal(attendanceMark('truant').key, '');
+  assert.ok(attendanceMark('truant').label);
+});
+
+test('marks: every mark carries a palette tone', () => {
+  for (const m of ATTENDANCE_MARKS) {
+    assert.ok(['jade', 'tangerine', 'red', 'none'].includes(m.tone), `${m.key} has tone ${m.tone}`);
+  }
+});
+
+test('cycle: one tap gets to present, and it comes back round', () => {
+  assert.equal(nextMark(''), 'present');
+  assert.equal(nextMark('present'), 'late');
+  assert.equal(nextMark('late'), 'absent');
+  assert.equal(nextMark('absent'), '', 'a mistake can be undone by tapping on');
+});
+
+test('cycle: an unknown mark rejoins the cycle rather than sticking', () => {
+  assert.equal(nextMark('truant'), 'present');
+  assert.equal(nextMark(undefined), 'present');
+});
+
+/* ---- the day's totals --------------------------------------------- */
+
+const people = [{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }];
+
+test('summary: counts every state, and unmarked among them', () => {
+  const s = attendanceSummary(people, { a: 'present', b: 'late', c: 'absent' });
+  assert.deepEqual(
+    { total: s.total, present: s.present, late: s.late, absent: s.absent, unmarked: s.unmarked },
+    { total: 4, present: 1, late: 1, absent: 1, unmarked: 1 },
+  );
+});
+
+test('summary: late counts as having attended', () => {
+  // Somebody who arrived twenty minutes in was there.
+  assert.equal(attendanceSummary(people, { a: 'present', b: 'late' }).attended, 2);
+});
+
+test('summary: nobody marked means everybody unmarked, not everybody absent', () => {
+  const s = attendanceSummary(people, {});
+  assert.equal(s.unmarked, 4);
+  assert.equal(s.absent, 0);
+});
+
+test('summary: a mark left behind for somebody since removed is ignored', () => {
+  const s = attendanceSummary(people, { a: 'present', gone: 'present' });
+  assert.equal(s.total, 4);
+  assert.equal(s.attended, 1);
+});
+
+test('summary: an empty register is not an error', () => {
+  assert.equal(attendanceSummary([], {}).total, 0);
+  assert.equal(attendanceSummary().total, 0);
+});
+
+/* ---- how much of the course somebody attended ---------------------- */
+
+test('rate: only days actually taken count towards the total', () => {
+  // Six days with two taken is two days of attendance, not a third of the
+  // course — reporting it as a third understates everybody until the last
+  // day is marked.
+  const byDay = {
+    '2026-09-03': { a: 'present' },
+    '2026-09-04': { a: 'absent' },
+    '2026-09-05': {},
+  };
+  assert.deepEqual(attendanceRate(byDay, 'a'), { attended: 1, days: 2, ratio: 0.5 });
+});
+
+test('rate: late days count as attended', () => {
+  const byDay = { d1: { a: 'late' }, d2: { a: 'present' } };
+  assert.equal(attendanceRate(byDay, 'a').attended, 2);
+});
+
+test('rate: somebody never marked has attended none of the days taken', () => {
+  const byDay = { d1: { b: 'present' }, d2: { b: 'present' } };
+  assert.deepEqual(attendanceRate(byDay, 'a'), { attended: 0, days: 2, ratio: 0 });
+});
+
+test('rate: nothing recorded yet reports nothing rather than zero', () => {
+  // Zero would read as "attended none", which is a different claim.
+  assert.equal(attendanceRate({}, 'a'), null);
+  assert.equal(attendanceRate({ d1: {} }, 'a'), null);
+  assert.equal(attendanceRate(undefined, 'a'), null);
 });

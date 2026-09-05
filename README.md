@@ -31,7 +31,7 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 | **Duplicates** | A pasted candidate who is already registered is flagged before anything is saved. |
 | **Free or paid** | Each course is set Free or Paid when it is established; a free course shows no fee, no QR and no payment chase. |
 | **Attribution** | Al-Majeed School is named *in association with* on every document the system produces. |
-| **Attendance** | A printable register with a signature box per participant per day, and signing lines for the presenter and coordinator. |
+| **Attendance** | Take the register on a phone, or print a sheet with a signature box per participant per day, and signing lines for the presenter and coordinator. |
 | **ID cards** | Every registrant gets a two-sided colour ID card — colourway and crests chosen for the course, editable per person, printed nine to an A4 sheet. |
 | **Delete** | Remove a single registration, or a whole workshop and everything under it. |
 | **Self-registration** | Students scan a QR on the poster, fill the form, pay by UPI, and land in a queue for review. |
@@ -750,6 +750,52 @@ sheet and the day two sheet.
 The crests are the ones chosen for this course's **ID Card Logos**, in the
 same order, so a course's paperwork reads as one set of documents.
 
+### Taking the register
+
+**Attendance → Take the register** marks people on the day. It is built for
+somebody standing at a door with a phone: one tap cycles a person through
+**Present → Late → Absent → Unmarked**, so the common case is a single tap
+and nothing opens. **Mark everyone present** then correcting the few is
+usually faster still.
+
+Rows are 63px tall. This is used standing up, where a small target is a
+mis-tap and a mis-tap is a wrong record.
+
+Marks appear immediately and are saved behind it. At a door, a tap that waits
+on the network before it changes colour gets tapped again.
+
+**Unmarked is a state of its own**, never the same as absent. A register that
+cannot tell "nobody reached them" from "they did not come" turns an
+unfinished job into an accusation — so it is counted and shown separately,
+and the totals say *Not yet marked*.
+
+### Printing what was taken
+
+Once a register exists, the print tab offers it as a **record to file** —
+the marks printed into the signature boxes, the heading reading *Attendance
+Record*, and the totals filled in — instead of empty boxes to sign. Untick it
+to get the blank sheet.
+
+### How it is stored
+
+    workshops/{id}/attendance/{YYYY-MM-DD}
+      { marks: { <registrationId>: 'present' | 'late' | 'absent' } }
+
+One document per day, holding a map. The obvious alternative — a document per
+person per day — is much worse: a course of forty over six days becomes 240
+documents to write and 240 to read back, against six either way. Taking a
+register is the one task here done standing up, so it is the one that must
+not be slow.
+
+Marks are written one field at a time, so two people taking the register on
+different phones do not overwrite each other. Unmarking **deletes** the field
+rather than storing an empty string, or "nobody got to them" stops being
+distinguishable from a blank mark.
+
+The register is administrator-only, capped at 2000 people per day, and
+rejects any field but `marks`. It is deleted with the workshop, and one
+person's marks go when their registration does.
+
 ### Courses longer than six days
 
 Six columns across A4 leaves about 22mm each, which is a signature; ten would
@@ -783,7 +829,8 @@ src/
   lib/publicdb.js          the public workshop copy and the request queue
   lib/imagefile.js         shrinking a picked image to fit in a document
   lib/idcards.js           card colourways, crests, and what each face says
-  lib/attendance.js        course days, signature columns, who signs the foot
+  lib/attendance.js        course days, signature columns, marks and totals
+  lib/attendancedb.js      the register: one document per day
   lib/photodb.js           participant photographs, kept off the registration
   lib/exporters.js         which sheets to build (loaded on demand)
   lib/xlsx.js              the .xlsx and .csv file formats themselves
@@ -794,7 +841,7 @@ src/
                            TicketDocument, RequestsPanel, QrCode, ImageField,
                            IdCard, OrderedChoice, AttendanceSheet,
                            FittedName, SeatBar, BoardGroup, Sidebar,
-                           RegistrationCards,
+                           RegistrationCards, AttendanceRegister,
                            CertificateDocument, CertificateStage
   components/site/         PublicShell, SiteHeader, SiteFooter, Icons
   pages/                   the admin tool: Console, Login, List, Import, Workshop,
@@ -880,7 +927,7 @@ click to confirm.
 npm test
 ```
 
-Runs 234 assertions on Node's built-in test runner — no extra dependencies,
+Runs 248 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards and
 attendance sheets. The parser
@@ -1007,7 +1054,7 @@ npx firebase emulators:exec --only firestore --project demo-workshops "node veri
 This is kept out of `package.json` on purpose: it needs firebase-tools and a
 Java runtime, and `npm test` is deliberately dependency-free.
 
-The current rules were checked this way — 43 assertions covering: signed-out
+The current rules were checked this way — 58 assertions covering: signed-out
 and not-on-the-list accounts are refused everything; a listed administrator
 can read and write workshops and registrations but cannot add, read or delete
 another administrator; the owner address has **no** data access until it adds
@@ -1015,7 +1062,10 @@ itself to the allow-list, cannot add anyone else, and cannot claim a record
 under a different email; oversized and bloated documents are rejected; and
 every unmatched path is closed.
 
-Fifteen of those cover participant photographs specifically, since they are
+Fifteen cover the attendance register — no read, list, write or delete by a
+stranger or an anonymous visitor, any field but `marks` refused, a non-map
+refused, and the 2000-per-day cap enforced at the boundary. Another fifteen
+cover participant photographs specifically, since they are
 the most personal thing stored: no read of any kind by a stranger or an
 anonymous visitor, no listing, no write, no delete; a document carrying any
 field but `photo` refused; a non-string refused; and the 400KB cap enforced

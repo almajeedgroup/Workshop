@@ -14,6 +14,95 @@
 import { formatDate } from './tickets.js';
 import { ISSUER } from './schema.js';
 
+/* ------------------------------------------------------------------ *
+ * Marks
+ * ------------------------------------------------------------------ */
+
+/**
+ * What a person can be marked as on a given day.
+ *
+ * Unmarked is a real state, not a missing one: it means nobody has been down
+ * the list yet, and it must be distinguishable from "marked absent". A
+ * register that cannot tell those apart is worse than no register — it turns
+ * an unfinished job into an accusation.
+ *
+ * The tone is the palette colour the mark is shown in, matching the payment
+ * pills: jade for good, tangerine for a caveat, red for a problem.
+ */
+export const ATTENDANCE_MARKS = [
+  { key: '', label: 'Unmarked', short: '—', tone: 'none' },
+  { key: 'present', label: 'Present', short: 'P', tone: 'jade' },
+  { key: 'late', label: 'Late', short: 'L', tone: 'tangerine' },
+  { key: 'absent', label: 'Absent', short: 'A', tone: 'red' },
+];
+
+export const attendanceMarkByKey = Object.fromEntries(
+  ATTENDANCE_MARKS.map((m) => [m.key, m])
+);
+
+/** The mark a key stands for, falling back to unmarked. */
+export function attendanceMark(key) {
+  return attendanceMarkByKey[key || ''] || attendanceMarkByKey[''];
+}
+
+/**
+ * The next mark when somebody taps.
+ *
+ * Cycling beats a menu at a door: the common case is one tap for present, and
+ * a second and third get you to late or absent without opening anything.
+ * It wraps back to unmarked so a mistake can be undone by tapping on.
+ */
+export function nextMark(current) {
+  const keys = ATTENDANCE_MARKS.map((m) => m.key);
+  // A value the app does not recognise is DISPLAYED as unmarked, so it has
+  // to cycle from there too. Reading its own index would send it back to
+  // unmarked — where it already appears to be — and the tap would look like
+  // it had done nothing.
+  const at = Math.max(0, keys.indexOf(attendanceMark(current).key));
+  return keys[(at + 1) % keys.length];
+}
+
+/**
+ * The day's totals.
+ *
+ * `rows` is who is expected — the register — so somebody nobody has reached
+ * yet is counted as unmarked rather than quietly dropped. Marks left behind
+ * for people since removed from the course are ignored.
+ */
+export function attendanceSummary(rows = [], marks = {}) {
+  const out = { total: rows.length, present: 0, late: 0, absent: 0, unmarked: 0 };
+  for (const r of rows) {
+    const key = marks[r.id] || '';
+    if (key === 'present') out.present += 1;
+    else if (key === 'late') out.late += 1;
+    else if (key === 'absent') out.absent += 1;
+    else out.unmarked += 1;
+  }
+  // Late is attendance. Somebody who arrived twenty minutes in was there.
+  out.attended = out.present + out.late;
+  return out;
+}
+
+/**
+ * How much of the course one person attended, across the days recorded.
+ *
+ * `byDay` is a map of date to that day's marks. Only days that have been
+ * REGISTERED count towards the denominator: a course of six days with two
+ * taken is two days' attendance, not a third of the course, and reporting it
+ * as a third would understate everybody until the last day was marked.
+ */
+export function attendanceRate(byDay = {}, registrationId) {
+  const days = Object.keys(byDay).filter((d) => Object.keys(byDay[d] || {}).length > 0);
+  if (days.length === 0) return null;
+
+  let attended = 0;
+  for (const d of days) {
+    const key = byDay[d]?.[registrationId] || '';
+    if (key === 'present' || key === 'late') attended += 1;
+  }
+  return { attended, days: days.length, ratio: attended / days.length };
+}
+
 /**
  * How many days can be signature columns before they get too narrow to sign
  * in. Past this the sheet takes one day at a time instead.

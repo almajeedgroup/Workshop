@@ -85,6 +85,22 @@ service cloud.firestore {
         allow create, update: if isAdmin() && sane(request.resource.data, 'name');
       }
 
+      // The attendance register: one document per day, holding a map of
+      // registration ID to mark.
+      //
+      // Administrator-only, like the registrations it refers to. The map is
+      // not shape-checked field by field — the keys are registration IDs and
+      // there is no fixed set of them — but the document is capped so a
+      // stolen session cannot store a book in it, and `hasOnly` keeps
+      // anything but `marks` out.
+      match /attendance/{day} {
+        allow read, delete: if isAdmin();
+        allow create, update: if isAdmin()
+          && request.resource.data.keys().hasOnly(['marks'])
+          && request.resource.data.marks is map
+          && request.resource.data.marks.keys().size() <= 2000;
+      }
+
       // Participant photographs for ID cards, kept apart from the
       // registration itself.
       //

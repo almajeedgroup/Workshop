@@ -519,6 +519,37 @@ select.status[data-status='Refunded'] { background: var(--red); }
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 
+/* ---------------- taking the register ---------------- */
+
+/* Rows are buttons, and deliberately tall: this is used standing up with a
+   phone, where a 24px target is a mis-tap and a mis-tap is a wrong record. */
+.att-tiles { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+.reg { display: grid; gap: 6px; }
+.reg-row {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 11px 14px; text-align: left; text-transform: none; letter-spacing: 0;
+  font-size: 14px; border-left-width: 6px;
+}
+.reg-row:hover:not(:disabled) { background: var(--paper); }
+.reg-row[data-tone='jade']      { border-left-color: var(--jade); }
+.reg-row[data-tone='tangerine'] { border-left-color: var(--tangerine); }
+.reg-row[data-tone='red']       { border-left-color: var(--red); }
+.reg-row[data-tone='none']      { border-left-color: var(--faint); }
+.reg-n { flex: none; width: 26px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.reg-who { flex: 1; min-width: 0; }
+.reg-who b { display: block; font-weight: 700; overflow-wrap: anywhere; }
+.reg-who small { display: block; font-size: 11px; color: var(--muted); font-weight: 400; margin-top: 1px; }
+.reg-mark {
+  flex: none; min-width: 78px; text-align: center; padding: 4px 10px;
+  border: var(--hair); font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+.reg-row[data-tone='jade'] .reg-mark      { background: var(--jade); }
+.reg-row[data-tone='tangerine'] .reg-mark { background: var(--tangerine); }
+.reg-row[data-tone='red'] .reg-mark       { background: var(--red); }
+.reg-row[data-tone='none'] .reg-mark      { background: var(--paper); color: var(--muted); }
+
 /* ---------------- the cards view ---------------- */
 
 /* Faces, for checking somebody against their card at the door. Wide enough

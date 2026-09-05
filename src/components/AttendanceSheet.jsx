@@ -1,7 +1,10 @@
 import { ISSUER, associationLine } from '../lib/schema.js';
 import { formatDate, formatDateRange } from '../lib/tickets.js';
 import { cardCrests } from '../lib/idcards.js';
-import { signatureColumns, attendanceRows, sheetSignatories } from '../lib/attendance.js';
+import {
+  signatureColumns, attendanceRows, sheetSignatories, attendanceMark,
+  attendanceSummary,
+} from '../lib/attendance.js';
 
 /**
  * The printable attendance register.
@@ -10,12 +13,17 @@ import { signatureColumns, attendanceRows, sheetSignatories } from '../lib/atten
  * the foot. The crests are the ones chosen for this course's ID cards, in the
  * same order, so a course's paperwork looks like one set of documents.
  */
-export default function AttendanceSheet({ workshop, registrations, day = '' }) {
+export default function AttendanceSheet({ workshop, registrations, day = '', byDay = null }) {
   const rows = attendanceRows(registrations);
   const cols = signatureColumns(workshop, day);
   const crests = cardCrests(workshop);
   const signatories = sheetSignatories(workshop);
   const dated = day ? formatDate(day) : formatDateRange(workshop);
+  // Only meaningful on a single-day sheet; a whole-course sheet has a column
+  // per day and no single set of totals to report.
+  const marked = byDay && day
+    ? attendanceSummary(rows, byDay[day] || {})
+    : { attended: 0, absent: 0, unmarked: 0 };
 
   return (
     <div className="att-scope">
@@ -27,7 +35,7 @@ export default function AttendanceSheet({ workshop, registrations, day = '' }) {
           <div className="att-titles">
             <div className="org">{ISSUER.name}</div>
             <div className="unit">{ISSUER.unitLine}</div>
-            <div className="doc">Attendance Sheet</div>
+            <div className="doc">Attendance {byDay ? 'Record' : 'Sheet'}</div>
           </div>
         </div>
 
@@ -70,7 +78,18 @@ export default function AttendanceSheet({ workshop, registrations, day = '' }) {
                         </div>
                       )}
                     </td>
-                    {cols.map((c) => <td key={c.key} className="sig" />)}
+                    {cols.map((c) => (
+                      <td key={c.key} className="sig">
+                        {/* With `byDay` this prints the register that was
+                            taken, as a record to file. Without it the boxes
+                            stay empty, to be signed on the day. */}
+                        {byDay && (
+                          <span className="mk" data-tone={attendanceMark(byDay[c.key]?.[r.id]).tone}>
+                            {attendanceMark(byDay[c.key]?.[r.id]).short}
+                          </span>
+                        )}
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
@@ -78,8 +97,18 @@ export default function AttendanceSheet({ workshop, registrations, day = '' }) {
 
             <div className="att-count">
               <span>Registered: <b>{rows.length}</b></span>
-              <span>Present: <b>______</b></span>
-              <span>Absent: <b>______</b></span>
+              {byDay ? (
+                <>
+                  <span>Present: <b>{marked.attended}</b></span>
+                  <span>Absent: <b>{marked.absent}</b></span>
+                  {marked.unmarked > 0 && <span>Not marked: <b>{marked.unmarked}</b></span>}
+                </>
+              ) : (
+                <>
+                  <span>Present: <b>______</b></span>
+                  <span>Absent: <b>______</b></span>
+                </>
+              )}
             </div>
           </>
         )}

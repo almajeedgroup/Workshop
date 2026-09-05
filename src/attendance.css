@@ -44,6 +44,11 @@
 /* ---- the register ---- */
 .att-table{width:100%; border-collapse:collapse; margin-top:4mm; font-size:9pt}
 .att-table th,.att-table td{border:.3mm solid var(--att-line); padding:1.6mm 2mm; vertical-align:middle}
+/* The admin stylesheet drops the bottom border of a table's last row, which
+   is right for a UI list and wrong for a document — it left the register's
+   final row open at the foot. That rule is more specific than `.att-table
+   td`, so the border has to be put back explicitly. */
+.att-table tbody tr:last-child td{border-bottom:.3mm solid var(--att-line)}
 .att-table th{
   background:var(--att-wash); font-size:7.5pt; font-weight:700; letter-spacing:.06em;
   text-transform:uppercase; text-align:left;
@@ -55,7 +60,19 @@
 .att-table .det{font-size:7.5pt; color:var(--att-soft); font-weight:400; margin-top:.4mm}
 /* The height IS the feature: 11mm is what a signature needs. */
 .att-table tbody tr{height:11mm}
-.att-table td.sig{padding:0}
+.att-table td.sig{padding:0; text-align:center}
+/* The recorded mark, when the sheet is printed as a record rather than to
+   be signed. Black on the fill, like everything else in the palette. */
+.att-table .mk{
+  display:inline-block; min-width:7mm; padding:.6mm 1.6mm; font-size:8pt; font-weight:700;
+  border:.2mm solid var(--att-line); -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+.att-table .mk[data-tone='jade']{background:#00CA72}
+.att-table .mk[data-tone='tangerine']{background:#FFCC00}
+.att-table .mk[data-tone='red']{background:#FB275D}
+/* #999 came out at 2.85:1 — a dash nobody can read is worse than a blank
+   box, because it looks like the printer failed rather than like a gap. */
+.att-table .mk[data-tone='none']{background:transparent; border-color:transparent; color:var(--att-soft)}
 
 .att-empty{margin-top:6mm; padding:8mm; border:.3mm dashed var(--att-line); text-align:center; font-size:9.5pt; color:var(--att-soft)}
 
