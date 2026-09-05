@@ -4,7 +4,7 @@ import { listWorkshops, withRegistrations, deleteWorkshop } from '../lib/db.js';
 import { listPendingRequests } from '../lib/publicdb.js';
 import { WORKSHOP_FIELDS, ISSUER } from '../lib/schema.js';
 import { formatDateRange } from '../lib/tickets.js';
-import { boardGroups } from '../lib/overview.js';
+import { boardGroups, shouldFetchBoard } from '../lib/overview.js';
 import BoardGroup from '../components/BoardGroup.jsx';
 
 /** Which view Records opens in, remembered between visits. */
@@ -41,7 +41,10 @@ export default function ListPage() {
   const [pendingId, setPendingId] = useState('');
   const [deletingId, setDeletingId] = useState('');
   const [view, setView] = useState(rememberedView);
-  const [bundles, setBundles] = useState(null);
+  const [bundles, setBundles] = useState([]);
+  // Tracked separately from `bundles`. Inferring it from the array meant an
+  // empty result counted as loaded, which is how the board came up blank.
+  const [boardLoaded, setBoardLoaded] = useState(false);
   const [requests, setRequests] = useState([]);
   const [openIds, setOpenIds] = useState(() => new Set());
 
@@ -52,16 +55,22 @@ export default function ListPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // The board needs every workshop's registrations; the table does not.
-  // Fetched only when the board is actually shown, and once.
+  // The board needs every workshop's registrations; the table does not. It
+  // waits for the workshops themselves — fetching before they arrive asks
+  // for the registrations of nothing.
   useEffect(() => {
-    if (view !== 'board' || bundles) return;
+    if (!shouldFetchBoard({ view, ready: !loading, loaded: boardLoaded })) return undefined;
     let live = true;
     Promise.all([withRegistrations(rows), listPendingRequests()])
-      .then(([b, q]) => { if (!live) return; setBundles(b); setRequests(q); })
+      .then(([b, q]) => {
+        if (!live) return;
+        setBundles(b);
+        setRequests(q);
+        setBoardLoaded(true);
+      })
       .catch((e) => live && setError(e.message));
     return () => { live = false; };
-  }, [view, bundles, rows]);
+  }, [view, loading, boardLoaded, rows]);
 
   const chooseView = (next) => {
     setView(next);
@@ -88,7 +97,6 @@ export default function ListPage() {
   // Grouped from the FILTERED list, so the search box narrows the board the
   // same way it narrows the table.
   const groups = useMemo(() => {
-    if (!bundles) return [];
     const keep = new Set(filtered.map((w) => w.id));
     return boardGroups(bundles.filter((b) => keep.has(b.workshop.id)), requests);
   }, [bundles, filtered, requests]);
@@ -117,6 +125,7 @@ export default function ListPage() {
     try {
       await deleteWorkshop(w.id);
       setRows((prev) => prev.filter((r) => r.id !== w.id));
+      setBundles((prev) => prev.filter((b) => b.workshop.id !== w.id));
       setNotice(`Deleted “${w.title || '(untitled)'}” and its registrations.`);
     } catch (e) {
       setError(e.message);
@@ -204,7 +213,7 @@ export default function ListPage() {
             : 'No records match these filters.'}
         </div>
       ) : view === 'board' ? (
-        bundles === null ? (
+        !boardLoaded ? (
           <p className="count">Loading registrations…</p>
         ) : (
           <>

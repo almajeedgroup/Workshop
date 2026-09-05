@@ -57,18 +57,22 @@ export default function WorkshopPage() {
   const [reqError, setReqError] = useState('');
   const [duplicate, setDuplicate] = useState(null);
   const [regView, setRegView] = useState('list');
-  const [photos, setPhotos] = useState(null);
+  const [photos, setPhotos] = useState({});
+  // Tracked on its own rather than inferred from `photos`. A course where
+  // nobody has a photograph loads an empty map, and an empty map is truthy —
+  // which is exactly how the board came up blank before it was fixed.
+  const [photosLoaded, setPhotosLoaded] = useState(false);
 
   // Photographs are heavy and only the cards view wants them, so they are
   // fetched when that view is first opened and not before.
   useEffect(() => {
-    if (regView !== 'cards' || photos) return undefined;
+    if (regView !== 'cards' || photosLoaded) return undefined;
     let live = true;
     getPhotos(id)
-      .then((p) => live && setPhotos(p))
+      .then((p) => { if (!live) return; setPhotos(p); setPhotosLoaded(true); })
       .catch((e) => live && setError(e.message));
     return () => { live = false; };
-  }, [regView, photos, id]);
+  }, [regView, photosLoaded, id]);
 
   const reload = async () => {
     const [w, r, q] = await Promise.all([getWorkshop(id), getRegistrations(id), listRequests(id)]);
@@ -544,7 +548,7 @@ export default function WorkshopPage() {
         </div>
 
         {regView === 'cards' ? (
-          photos === null
+          !photosLoaded
             ? <p className="count">Loading photographs…</p>
             : <RegistrationCards workshop={workshop} rows={filtered} photos={photos} />
         ) : (

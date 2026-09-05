@@ -161,8 +161,17 @@ beside the rest of their details, where the select is editable.
 ### What it costs
 
 The board needs every workshop's registrations, where the table needed only
-the workshops. They are fetched **once, and only when the board is actually
-shown** — switching to Table and back does not fetch again.
+the workshops. They are fetched **once, only when the board is actually
+shown, and only after the workshops themselves have arrived** — switching to
+Table and back does not fetch again.
+
+That last condition is not incidental. The first version guarded on the
+fetched array itself, which meant it fetched on mount — before the workshops
+had loaded, so for nothing — stored `[]`, and then skipped every later
+attempt because **an empty array is truthy**. The board rendered permanently
+empty. `shouldFetchBoard()` in `src/lib/overview.js` now states the condition
+in one place, with `loaded` tracked separately from the result, and a test
+walks the whole mount sequence.
 
 ---
 
@@ -927,7 +936,7 @@ click to confirm.
 npm test
 ```
 
-Runs 248 assertions on Node's built-in test runner — no extra dependencies,
+Runs 253 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards and
 attendance sheets. The parser

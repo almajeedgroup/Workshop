@@ -211,3 +211,21 @@ export function groupSummary(group) {
   }
   return out;
 }
+
+/**
+ * Whether the board still needs its data.
+ *
+ * A function rather than a condition written inline, because the inline one
+ * was wrong in a way that reads as correct: it guarded on the fetched array
+ * itself, and an empty array is TRUTHY. The board fetched on mount — before
+ * the workshops had arrived, so with nothing to fetch for — stored `[]`, and
+ * then skipped every later attempt because `[]` looked like "already have
+ * it". The board rendered permanently empty.
+ *
+ *   `ready`  the workshops have loaded, so there is something to fetch for
+ *   `loaded` this fetch has actually completed — tracked on its own, never
+ *            inferred from whether the result happens to be empty
+ */
+export function shouldFetchBoard({ view, ready, loaded }) {
+  return view === 'board' && Boolean(ready) && !loaded;
+}

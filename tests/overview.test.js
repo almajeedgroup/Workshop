@@ -9,6 +9,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   headlineFigures, needsAttention, unpaidCount, upcoming, boardGroups, groupSummary,
+  shouldFetchBoard,
 } from '../src/lib/overview.js';
 import { seatPressure } from '../src/lib/stats.js';
 
@@ -303,4 +304,60 @@ test('summary: a collapsed group still says enough to judge it by', () => {
     assert.ok(groupSummary(g).length >= 1);
     assert.equal(groupSummary(g)[0][0], 'Registered');
   }
+});
+
+/* ------------------------------------------------------------------ *
+ * Reported: "The boards page is not responding or displaying the
+ * details correctly."
+ *
+ * The board fetched on mount, before the workshops had loaded, so it
+ * fetched the registrations of nothing and stored []. The guard then read
+ * that array as "already have it" — because [] is truthy — and skipped
+ * every later attempt. The board rendered permanently empty.
+ * ------------------------------------------------------------------ */
+
+test('board fetch: waits until the workshops have arrived', () => {
+  // The exact sequence: mounted, workshops still loading.
+  assert.equal(shouldFetchBoard({ view: 'board', ready: false, loaded: false }), false);
+  // They arrive.
+  assert.equal(shouldFetchBoard({ view: 'board', ready: true, loaded: false }), true);
+});
+
+test('board fetch: an empty result does not count as loaded', () => {
+  // This is the bug. `loaded` is tracked on its own precisely so that a
+  // course list which is genuinely empty cannot be confused with one that
+  // was never fetched.
+  assert.equal(shouldFetchBoard({ view: 'board', ready: true, loaded: false }), true);
+  assert.equal(shouldFetchBoard({ view: 'board', ready: true, loaded: true }), false);
+});
+
+test('board fetch: nothing is fetched for the table view', () => {
+  assert.equal(shouldFetchBoard({ view: 'table', ready: true, loaded: false }), false);
+});
+
+test('board fetch: switching to the table and back does not refetch', () => {
+  let loaded = false;
+  const ready = true;
+  let fetches = 0;
+  const run = (view) => { if (shouldFetchBoard({ view, ready, loaded })) { fetches += 1; loaded = true; } };
+  run('board'); run('table'); run('board'); run('table'); run('board');
+  assert.equal(fetches, 1);
+});
+
+test('board fetch: the whole mount sequence ends with the data loaded', () => {
+  // Mount → workshops load → effect re-runs. Before the fix this fetched
+  // once, against an empty list, and never again.
+  const state = { view: 'board', ready: false, loaded: false };
+  let fetches = 0;
+  const tick = () => { if (shouldFetchBoard(state)) { fetches += 1; state.loaded = true; } };
+
+  tick();                    // mounted, workshops still loading
+  assert.equal(fetches, 0, 'nothing to fetch for yet');
+
+  state.ready = true;        // listWorkshops resolved
+  tick();
+  assert.equal(fetches, 1, 'fetched once the workshops were there');
+
+  tick();                    // any later re-render
+  assert.equal(fetches, 1, 'and not again');
 });
