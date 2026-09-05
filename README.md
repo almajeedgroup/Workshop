@@ -18,6 +18,7 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 
 | | |
 |---|---|
+| **Cards** | The registrations as faces, for checking somebody against their ID card at the door. |
 | **Board** | Records as grouped workshops with their people underneath, each rail coloured by what the course needs. |
 | **Console** | The screen that answers "what needs me today" — waiting requests, unpaid fees, courses filling up, across every workshop. |
 | **Import** | Paste the poster (emoji and all) or labelled text; review the parsed result; save. |
@@ -64,6 +65,28 @@ Only what is outstanding appears. A course that is full, paid up and has
 nothing waiting is not news, and listing it would bury the three that are.
 
 **Coming up** lists courses that have not finished yet, soonest first.
+
+### The shell
+
+Admin screens sit beside a left sidebar rather than under a top masthead. The
+masthead spent a whole line on navigation, the organisation, the signed-in
+address and a sign-out button, and left the content whatever was over — and
+width is exactly what a board of grouped workshops is spending.
+
+The count beside **Console** is the number of registration requests nobody
+has looked at. It is the one number worth carrying in the furniture:
+everything else can wait until a screen is opened, but a student who
+registered and heard nothing cannot.
+
+Under 860px the sidebar becomes a drawer behind a **Menu** button, with a
+scrim to click away and navigation closing it — without that it stays over
+the page the link just opened, which on a phone hides the whole thing. It is
+`display: none` when printing.
+
+A test reads the routes out of `App.jsx` and the links out of `Sidebar.jsx`
+and asserts they agree, both ways: no nav link to a route that does not
+exist, no admin route falling outside the regex that decides which shell
+renders. Either mistake looks like the app ignoring a click.
 
 ### Seats as a bar
 
@@ -306,6 +329,17 @@ To revoke access, delete their `admins` document. That works for the owner too,
 but they can re-add themselves by signing in again — to remove them for good,
 delete the account in **Authentication** as well, or change
 `BOOTSTRAP_ADMIN_EMAIL` in both files and redeploy.
+
+### Forgotten passwords
+
+The sign-in screen has **Email me a reset link**, which sends Firebase's own
+reset email. An administrator locked out previously had to be reset from the
+Console by somebody who could still get in — which is no help when the person
+locked out *is* that somebody.
+
+The confirmation is the same whether or not an account exists. Saying "no
+account for that address" on a sign-in screen tells anybody who asks which
+addresses are administrators here.
 
 ### 3.7 Hardening the deployment
 
@@ -597,6 +631,21 @@ In the print dialog: scale **100%** (not "fit to page", which shrinks the
 cards off size) and background graphics **on**, or the coloured bands print
 white.
 
+### Checking cards against faces
+
+The **Cards** button on a workshop's registration panel shows the register as
+faces: photograph, name, ticket number, and the details a card carries. This
+is the view you want at the door, when somebody hands you a card and you are
+checking it against the person holding it. A table of names cannot be checked
+against a face, and the print sheets are for making cards, not reading one.
+
+Somebody with no photograph still appears, marked as such. Leaving them out
+would make the gallery an incomplete register, which is the one thing it must
+not be.
+
+Photographs are fetched when that view is first opened and not before, so the
+list view stays as fast as it was.
+
 ### Photographs
 
 A photograph is the most personal thing this database holds, so it does not
@@ -744,7 +793,8 @@ src/
   components/              WorkshopForm, RegistrationEditor, RegistrationList,
                            TicketDocument, RequestsPanel, QrCode, ImageField,
                            IdCard, OrderedChoice, AttendanceSheet,
-                           FittedName, SeatBar, BoardGroup,
+                           FittedName, SeatBar, BoardGroup, Sidebar,
+                           RegistrationCards,
                            CertificateDocument, CertificateStage
   components/site/         PublicShell, SiteHeader, SiteFooter, Icons
   pages/                   the admin tool: Console, Login, List, Import, Workshop,
@@ -761,7 +811,8 @@ src/
 public/fonts, public/crests  certificate typefaces and crests
 tests/                     parser, tickets, dedupe, stats, xlsx,
                            certificates, imagefile, idcards, attendance,
-                           exporters, association, requests, overview
+                           exporters, association, requests, overview,
+                           navigation
 firestore.rules            access control
 firebase.json              hosting, caching and security headers
 ```
@@ -829,7 +880,7 @@ click to confirm.
 npm test
 ```
 
-Runs 230 assertions on Node's built-in test runner — no extra dependencies,
+Runs 234 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards and
 attendance sheets. The parser

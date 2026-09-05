@@ -31,9 +31,16 @@
   --red: #FB275D;
   --blue: #1E90FF;
 
-  /* One segment of each, in palette order. It rules off the masthead, a page
-     heading and the login panel — the three places that divide the screen. */
+  /* One segment of each, in palette order. It divides the sidebar from the
+     work, rules off a page heading, and crosses the login panel — the three
+     places the screen is divided. */
   --flag: linear-gradient(90deg,
+    var(--jade) 0 25%, var(--tangerine) 25% 50%,
+    var(--red) 50% 75%, var(--blue) 75% 100%);
+  /* The same four running downwards, for the sidebar's edge. The horizontal
+     one squeezed into a 3px-wide strip puts all four stops inside three
+     pixels, which paints as a single colour. */
+  --flag-down: linear-gradient(180deg,
     var(--jade) 0 25%, var(--tangerine) 25% 50%,
     var(--red) 50% 75%, var(--blue) 75% 100%);
 
@@ -46,7 +53,7 @@
 
 /* Every coloured fill prints. Without this the buttons, bars and bands come
    out of the printer white and the sheet loses half its meaning. */
-.masthead, .page-head, .rule, .stat, thead th, .tag.solid, .pick-n,
+.side, .side-badge, .page-head, .rule, .stat, thead th, .tag.solid, .pick-n,
 button, .btn, .navlink, .chip, .notice, .record-card > header, .ticket-band {
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
@@ -76,28 +83,82 @@ h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; }
 
 /* ---------------- layout ---------------- */
 
-.shell { display: flex; flex-direction: column; min-height: 100%; }
+/* Sidebar down the left, content to its right. It replaced a top masthead,
+   which spent a whole line on nav, organisation, address and sign-out, and
+   left the content whatever was over — and width is exactly what a board of
+   grouped workshops is spending. */
+.shell { display: flex; min-height: 100%; align-items: stretch; }
+.shell-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 
-/* The flag is painted as a background, not a border-image: only the bottom
-   edge is wanted, and border-image applies its slice to all four sides. */
-.masthead {
-  background-image: var(--flag);
+.side {
+  flex: none; width: 208px; padding: 16px 0 14px;
+  display: flex; flex-direction: column; gap: 2px;
+  /* The flag runs down the right edge here rather than along a bottom one:
+     it is still the boundary between the furniture and the work. */
+  background-image: var(--flag-down);
   background-repeat: no-repeat;
-  background-size: 100% 3px;
-  background-position: bottom left;
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
-  padding: 14px var(--gap) 16px;
-  display: flex;
-  align-items: baseline;
-  gap: 16px;
-  flex-wrap: wrap;
+  background-size: 3px 100%;
+  background-position: top right;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
-.masthead .brand { font-weight: 700; font-size: 15px; letter-spacing: -0.01em; white-space: nowrap; }
-.masthead .org { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
-.masthead .spacer { flex: 1; }
-.masthead nav { display: flex; gap: 4px; flex-wrap: wrap; }
-.masthead .who { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+.side .spacer { flex: 1; }
+
+.side-brand {
+  display: block; padding: 0 16px 14px; text-decoration: none;
+  font-weight: 700; font-size: 15px; letter-spacing: -0.01em;
+}
+.side-brand:hover { background: none; }
+.side-brand small {
+  display: block; font-size: 10px; font-weight: 400; letter-spacing: 0.09em;
+  text-transform: uppercase; color: var(--muted); margin-top: 4px; line-height: 1.5;
+}
+
+.side-nav { list-style: none; margin: 0; padding: 0 10px; display: grid; gap: 2px; }
+.side-link {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; text-decoration: none; font-size: 13px; font-weight: 600;
+  border: 1px solid transparent;
+}
+.side-link:hover { background: var(--blue); color: var(--ink); }
+.side-link[aria-current='page'] { background: var(--blue); color: var(--ink); border-color: var(--line); }
+.side-link span { flex: 1; }
+
+.side-badge {
+  flex: none; min-width: 20px; padding: 1px 6px; text-align: center;
+  background: var(--tangerine); color: var(--ink); font-size: 11px; font-weight: 700;
+  border: var(--hair); font-variant-numeric: tabular-nums;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+
+.side-foot { padding: 12px 16px 0; border-top: var(--hairline); margin: 0 6px; }
+.side-foot .who {
+  font-size: 10.5px; color: var(--muted); font-family: var(--mono);
+  overflow-wrap: anywhere; margin-bottom: 8px;
+}
+
+/* The drawer button only exists on narrow screens. */
+.side-open { display: none; }
+.side-scrim { display: none; }
+
+@media (max-width: 860px) {
+  .shell { flex-direction: column; }
+  .side-open {
+    display: inline-block; margin: 10px var(--gap) 0; align-self: flex-start;
+  }
+  .side {
+    position: fixed; z-index: 20; top: 0; bottom: 0; left: 0; width: 232px;
+    background-color: var(--paper); transform: translateX(-100%);
+    transition: transform .18s ease; box-shadow: 4px 0 18px rgba(0,0,0,.14);
+  }
+  .side.open { transform: none; }
+  .side-scrim {
+    display: block; position: fixed; inset: 0; z-index: 19;
+    background: rgba(10,10,10,.38);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .side { transition: none; }
+}
 
 .navlink {
   padding: 5px 10px;
@@ -111,7 +172,7 @@ h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; }
 .navlink:hover { background: var(--blue); color: var(--ink); }
 .navlink[aria-current='page'] { background: var(--blue); color: var(--ink); font-weight: 700; }
 
-main { flex: 1; padding: var(--gap); max-width: 1400px; width: 100%; margin: 0 auto; }
+main { flex: 1; padding: var(--gap); max-width: 1500px; width: 100%; margin: 0 auto; }
 
 .page-head {
   display: flex; align-items: flex-start; gap: 12px;
@@ -458,6 +519,27 @@ select.status[data-status='Refunded'] { background: var(--red); }
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 
+/* ---------------- the cards view ---------------- */
+
+/* Faces, for checking somebody against their card at the door. Wide enough
+   that a photograph is a photograph rather than a thumbnail. */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.card-p { border: var(--hair); display: flex; gap: 12px; padding: 12px; align-items: flex-start; }
+.card-photo {
+  flex: none; width: 74px; height: 92px; border: var(--hair); background: var(--paper);
+  display: grid; place-items: center; overflow: hidden;
+}
+.card-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card-photo span { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.card-body { min-width: 0; flex: 1; }
+.card-name { font-weight: 700; font-size: 14px; line-height: 1.25; overflow-wrap: anywhere; }
+.card-tid { font-family: var(--mono); font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.card-kv { display: grid; grid-template-columns: auto 1fr; gap: 1px 8px; margin-top: 8px; }
+.card-kv dt { font-size: 9.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.card-kv dd { margin: 0; font-size: 12px; overflow-wrap: anywhere; }
+.card-foot { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+.card-foot .spacer { flex: 1; }
+
 /* ---------------- inline action chips ---------------- */
 
 .actions { display: flex; gap: 4px; flex-wrap: wrap; }
@@ -507,7 +589,8 @@ select.status[data-status='Refunded'] { background: var(--red); }
 @media print {
   @page { margin: 16mm; }
   body { font-size: 11pt; }
-  .masthead, .foot, .no-print, .toolbar, .btn-row, button { display: none !important; }
+  .side, .side-open, .side-scrim, .foot, .no-print, .toolbar, .btn-row, button { display: none !important; }
+  .shell { display: block; }
   main { padding: 0; max-width: none; }
   .panel, .table-wrap, .record-card { border-color: var(--line); break-inside: auto; }
   .print-only { display: block !important; }

@@ -12,6 +12,8 @@ import {
   setRegistrationOpen, restoreRequest,
 } from '../lib/publicdb.js';
 import RequestsPanel from '../components/RequestsPanel.jsx';
+import RegistrationCards from '../components/RegistrationCards.jsx';
+import { getPhotos } from '../lib/photodb.js';
 import { amountCollected, paymentCounts, seatsLeft as seatsLeftFor } from '../lib/stats.js';
 import {
   visibleWorkshopFields, ISSUER, CURRENCY, workshopFee,
@@ -54,6 +56,19 @@ export default function WorkshopPage() {
   // Both belong to the requests panel, and are shown inside it.
   const [reqError, setReqError] = useState('');
   const [duplicate, setDuplicate] = useState(null);
+  const [regView, setRegView] = useState('list');
+  const [photos, setPhotos] = useState(null);
+
+  // Photographs are heavy and only the cards view wants them, so they are
+  // fetched when that view is first opened and not before.
+  useEffect(() => {
+    if (regView !== 'cards' || photos) return undefined;
+    let live = true;
+    getPhotos(id)
+      .then((p) => live && setPhotos(p))
+      .catch((e) => live && setError(e.message));
+    return () => { live = false; };
+  }, [regView, photos, id]);
 
   const reload = async () => {
     const [w, r, q] = await Promise.all([getWorkshop(id), getRegistrations(id), listRequests(id)]);
@@ -402,6 +417,21 @@ export default function WorkshopPage() {
           <span className="count">{filtered.length} of {regs.length}</span>
           <span className="spacer" />
           <div className="btn-row no-print">
+            <button
+              className={regView === 'list' ? 'primary' : undefined}
+              aria-pressed={regView === 'list'}
+              onClick={() => setRegView('list')}
+            >
+              List
+            </button>
+            <button
+              className={regView === 'cards' ? 'primary' : undefined}
+              aria-pressed={regView === 'cards'}
+              onClick={() => setRegView('cards')}
+              title="Photographs, for checking somebody against their card"
+            >
+              Cards
+            </button>
             <button onClick={() => setPasteOpen((o) => !o)}>
               {pasteOpen ? 'Close' : '+ Paste registrations'}
             </button>
@@ -513,13 +543,19 @@ export default function WorkshopPage() {
           {(q || payFilter) && <button onClick={() => { setQ(''); setPayFilter(''); }}>Clear</button>}
         </div>
 
-        <RegistrationList
-          workshop={workshop}
-          rows={filtered}
-          onPaymentChange={changePayment}
-          onDelete={deleteOne}
-          busyId={busyId}
-        />
+        {regView === 'cards' ? (
+          photos === null
+            ? <p className="count">Loading photographs…</p>
+            : <RegistrationCards workshop={workshop} rows={filtered} photos={photos} />
+        ) : (
+          <RegistrationList
+            workshop={workshop}
+            rows={filtered}
+            onPaymentChange={changePayment}
+            onDelete={deleteOne}
+            busyId={busyId}
+          />
+        )}
       </div>
 
       <div className="btn-row no-print">

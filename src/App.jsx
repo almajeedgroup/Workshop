@@ -3,6 +3,7 @@ import { useAuth } from './AuthContext.jsx';
 import { isConfigured } from './firebase.js';
 import { ISSUER } from './lib/schema.js';
 
+import Sidebar from './components/Sidebar.jsx';
 import PublicShell from './components/site/PublicShell.jsx';
 import HomePage from './pages/site/HomePage.jsx';
 import AboutPage from './pages/site/AboutPage.jsx';
@@ -37,31 +38,6 @@ function SetupNotice() {
         <p className="hint">See README.md for the full setup walkthrough.</p>
       </div>
     </main>
-  );
-}
-
-function Masthead() {
-  const { user, isAdmin, logout } = useAuth();
-  return (
-    <header className="masthead no-print">
-      <Link to="/" className="brand" style={{ textDecoration: 'none' }}>WORKSHOPS</Link>
-      <span className="org">{ISSUER.unitLine}</span>
-      <span className="spacer" />
-      {isAdmin && (
-        <nav>
-          <NavLink to="/records" end className="navlink">Records</NavLink>
-          <NavLink to="/import" className="navlink">Import Text</NavLink>
-          <NavLink to="/new" className="navlink">Add Manually</NavLink>
-        </nav>
-      )}
-      {!isAdmin && <NavLink to="/verify" className="navlink">Verify a certificate</NavLink>}
-      {user && (
-        <>
-          <span className="who">{user.email}</span>
-          <button className="small" onClick={logout}>Sign out</button>
-        </>
-      )}
-    </header>
   );
 }
 
@@ -116,13 +92,13 @@ const PUBLIC = [
 export default function App() {
   const { pathname } = useLocation();
   // The public site has its own chrome and must not inherit the admin
-  // masthead. Admin routes all sit under these prefixes.
+  // sidebar. Admin routes all sit under these prefixes.
   const isAdminArea = /^\/(login|console|records|import|new|w)(\/|$)/.test(pathname);
 
   if (!isConfigured) {
     return (
       <div className="shell">
-        <Masthead />
+        <Sidebar />
         <SetupNotice />
       </div>
     );
@@ -141,7 +117,8 @@ export default function App() {
 
   return (
     <div className="shell">
-      <Masthead />
+      <Sidebar />
+      <div className="shell-main">
       <Routes>
         <Route path="/login" element={<LoginPage />} />
 
@@ -163,6 +140,7 @@ export default function App() {
       <footer className="foot no-print">
         {ISSUER.name} · system by {ISSUER.operator}
       </footer>
+      </div>
     </div>
   );
 }

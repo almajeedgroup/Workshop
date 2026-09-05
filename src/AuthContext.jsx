@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import {
   onAuthStateChanged, signInWithEmailAndPassword, signOut,
-  GoogleAuthProvider, signInWithPopup,
+  GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail,
 } from 'firebase/auth';
 import { auth, isConfigured } from './firebase.js';
 import { BOOTSTRAP_ADMIN_EMAIL } from './lib/schema.js';
@@ -74,10 +74,19 @@ export function AuthProvider({ children }) {
     return credential;
   };
 
+  /**
+   * Send a reset link.
+   *
+   * An administrator locked out of the app previously had to be reset from
+   * the Firebase Console by somebody who could still get in — which is no
+   * help at all when the person locked out IS that somebody.
+   */
+  const resetPassword = (email) => sendPasswordResetEmail(auth, email.trim());
+
   const logout = () => signOut(auth);
 
   return (
-    <Ctx.Provider value={{ user, isAdmin, loading, login, loginWithGoogle, logout }}>
+    <Ctx.Provider value={{ user, isAdmin, loading, login, loginWithGoogle, resetPassword, logout }}>
       {children}
     </Ctx.Provider>
   );

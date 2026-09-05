@@ -11,6 +11,7 @@ const MESSAGES = {
   'auth/user-disabled': 'That account has been disabled.',
   'auth/too-many-requests': 'Too many attempts. Wait a few minutes and try again.',
   'auth/network-request-failed': 'Network error — check your connection.',
+  'auth/missing-email': 'Type your email address first, then ask for a reset link.',
 
   // Google sign-in
   'auth/popup-closed-by-user': 'The Google window was closed before sign-in finished.',
@@ -26,10 +27,11 @@ const MESSAGES = {
 };
 
 export default function LoginPage() {
-  const { user, login, loginWithGoogle, loading } = useAuth();
+  const { user, login, loginWithGoogle, resetPassword, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState('');
 
   if (loading) return <main><p className="count">Loading…</p></main>;
@@ -40,6 +42,7 @@ export default function LoginPage() {
   const submit = async (e) => {
     e.preventDefault();
     setError('');
+    setNotice('');
     setBusy('password');
     try {
       await login(email, password);
@@ -50,8 +53,37 @@ export default function LoginPage() {
     }
   };
 
+  /**
+   * Send a reset link to whatever is in the email box.
+   *
+   * The message is the same whether or not an account exists. Saying "no
+   * account for that address" on a sign-in screen tells anybody who asks
+   * which addresses are administrators here.
+   */
+  const reset = async () => {
+    setError('');
+    setNotice('');
+    if (!email.trim()) {
+      setError(MESSAGES['auth/missing-email']);
+      return;
+    }
+    setBusy('reset');
+    try {
+      await resetPassword(email);
+    } catch (err) {
+      if (err.code !== 'auth/user-not-found') {
+        setError(MESSAGES[err.code] || 'Could not send the reset link. Please try again.');
+        setBusy('');
+        return;
+      }
+    }
+    setNotice(`If an account exists for ${email.trim()}, a reset link is on its way. Check the spam folder too.`);
+    setBusy('');
+  };
+
   const google = async () => {
     setError('');
+    setNotice('');
     setBusy('google');
     try {
       await loginWithGoogle();
@@ -110,9 +142,19 @@ export default function LoginPage() {
           </div>
 
           {error && <div className="notice warn" role="alert">{error}</div>}
+          {notice && <div className="notice" role="status">{notice}</div>}
 
           <button className="primary" type="submit" disabled={Boolean(busy)} style={{ width: '100%' }}>
             {busy === 'password' ? 'Signing in…' : 'Sign in'}
+          </button>
+
+          <button
+            type="button"
+            onClick={reset}
+            disabled={Boolean(busy)}
+            style={{ width: '100%', marginTop: 8 }}
+          >
+            {busy === 'reset' ? 'Sending…' : 'Email me a reset link'}
           </button>
         </form>
 
