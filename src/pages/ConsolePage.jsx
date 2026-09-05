@@ -6,6 +6,7 @@ import { headlineFigures, needsAttention, upcoming } from '../lib/overview.js';
 import { formatDateRange } from '../lib/tickets.js';
 import { CURRENCY, isFreeWorkshop } from '../lib/schema.js';
 import SeatBar from '../components/SeatBar.jsx';
+import PhoneFixPanel from '../components/PhoneFixPanel.jsx';
 
 /** Which colour each figure carries. Meaning, not position. */
 const TONE = {
@@ -155,6 +156,8 @@ export default function ConsolePage() {
           </div>
         </div>
       )}
+
+      <PhoneFixPanel />
     </main>
   );
 }

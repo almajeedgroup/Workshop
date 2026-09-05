@@ -314,6 +314,11 @@ thead th {
 tbody tr:hover { background: #f4f4f4; }
 tbody tr:last-child td { border-bottom: 0; }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* The value a migration is about to replace. Struck through as well as
+   greyed, so which of the two columns is the old one does not depend on
+   reading the headings. */
+td.was { color: var(--muted); text-decoration: line-through; }
 table input { border: 0; padding: 3px 4px; }
 table input:focus { outline: 3px solid var(--blue); outline-offset: -2px; }
 

@@ -872,6 +872,8 @@ src/
   lib/attendance.js        course days, signature columns, marks and totals
   lib/attendancedb.js      the register: one document per day
   lib/photodb.js           participant photographs, kept off the registration
+  lib/phonefix.js          which stored numbers need reshaping, and into what
+  lib/phonefixdb.js        running that over the database, scan then apply
   lib/exporters.js         which sheets to build (loaded on demand)
   lib/xlsx.js              the .xlsx and .csv file formats themselves
   lib/certificates.js      the four awards, their wording and their IDs
@@ -881,8 +883,8 @@ src/
                            TicketDocument, RequestsPanel, QrCode, ImageField,
                            IdCard, OrderedChoice, AttendanceSheet,
                            FittedName, SeatBar, BoardGroup, Sidebar,
-                           RegistrationCards, AttendanceRegister,
-                           CertificateDocument, CertificateStage
+                           RegistrationCards, AttendanceRegister, Overlay,
+                           PhoneFixPanel, CertificateDocument, CertificateStage
   components/site/         PublicShell, SiteHeader, SiteFooter, Icons
   pages/                   the admin tool: Console, Login, List, Import, Workshop,
                            Edit, Ticket, CertificateAllot, IdCard, IdCards,
@@ -961,16 +963,69 @@ click to confirm.
 
 ---
 
-## 15. Tests
+## 15. Phone numbers
+
+Everything is stored as `+91 98452 89298` — country code, then the number.
+The sanitisers in `src/lib/db.js` and `src/lib/publicdb.js` put every `tel`
+field, and every list marked `phones: true`, into that shape on the way in,
+so the register, the tickets and duplicate detection all compare the same
+thing.
+
+Records written before that are however somebody typed them: `9845289298`,
+`09845289298`, `+919845289298`. Two spellings of one number is not untidiness
+— it is the office dialling a number that duplicate detection thinks it has
+never seen.
+
+**Console → Phone numbers** fixes those in place.
+
+- **Check** writes nothing. It reads every workshop, every registration and
+  every request, and lists exactly which fields it would rewrite and what
+  each becomes.
+- **Rewrite** applies it, in batches, as merge patches — so a document keeps
+  every field this has no opinion about, and `updatedAt` is deliberately left
+  alone: that date should say when a person last changed the record, not when
+  a formatter passed over it.
+
+It only ever moves a number **into** the standard shape, never out of one, so
+running it twice is safe: the second pass finds nothing.
+
+**What it will not touch.** Anything `formatPhone` cannot confidently read is
+returned exactly as it was given — a foreign number, or a note somebody typed
+into the field instead of a number. Mangling those would destroy information
+that a bad format merely makes ugly. Nor does it touch lists of *names*:
+resource persons and coordinators are lists too, and only a list the schema
+marks `phones: true` is treated as numbers.
+
+An Indian landline **is** migrated, and correctly — `080 2345 6789` becomes
+`+91 8023456789`, which is country code, then Bangalore's area code with the
+trunk `0` dropped, which is what that `0` is for.
+
+Handled requests are included, not just waiting ones: a rejected request can
+be restored and its number dialled, so it has to be right too.
+
+Where a workshop has a published registration page, its public mirror is
+rewritten in the same pass — otherwise the poster and the office would end up
+quoting different numbers. Where a workshop has **no** mirror, none is
+created; merging into a document that does not exist would publish a workshop
+consisting of nothing but a phone number.
+
+It runs from the app as the signed-in administrator, over the ordinary client
+SDK, so the security rules are the thing permitting it rather than something
+being bypassed. A `firebase-admin` script would have meant creating and
+looking after a permanent service-account key for a one-off tidy-up.
+
+---
+
+## 16. Tests
 
 ```bash
 npm test
 ```
 
-Runs 262 assertions on Node's built-in test runner — no extra dependencies,
+Runs 293 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
-the spreadsheet writer, certificates, image shrinking, ID cards and
-attendance sheets. The parser
+the spreadsheet writer, certificates, image shrinking, ID cards, attendance
+sheets and the phone-number migration. The parser
 is heuristic and fails **silently** when it fails at all, so anything you teach
 it belongs in `tests/parser.test.js` alongside a paste that used to break it.
 
@@ -979,7 +1034,7 @@ the Firebase emulator.
 
 ---
 
-## 16. Colour
+## 17. Colour
 
 Black text on a white page, and the four colours on everything else.
 
@@ -1033,7 +1088,7 @@ their own schemes, and the ID card keeps its six colourways.
 
 ---
 
-## 17. Attribution
+## 18. Attribution
 
 Al-Majeed School of Research Methodology and Innovation is named **in
 association with** on everything this system produces: the ticket and its
@@ -1055,7 +1110,7 @@ different ways across the code — with a comma after "Research", with `&`, and
 with `and` — which on a certificate and the ticket for the same course is the
 sort of thing people notice.
 
-## 18. Notes
+## 19. Notes
 
 - Search and filtering happen on the client, so no composite Firestore indexes
   are needed. Comfortable into the low thousands of records. Past that, the
@@ -1094,7 +1149,7 @@ sort of thing people notice.
 
 ---
 
-## 19. Verifying the security rules
+## 20. Verifying the security rules
 
 `firestore.rules` is the only thing standing between the public internet and
 every student's phone number, so it is worth testing rather than trusting.
