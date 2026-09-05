@@ -936,7 +936,7 @@ click to confirm.
 npm test
 ```
 
-Runs 253 assertions on Node's built-in test runner — no extra dependencies,
+Runs 262 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards and
 attendance sheets. The parser
@@ -1042,7 +1042,24 @@ sort of thing people notice.
 - Registrations that match someone already on the list (same WhatsApp number,
   same email, or same name and date of birth) are held back for a decision
   rather than being issued a second ticket.
-- Phone numbers are normalised to `+91` when a bare 10-digit number is given.
+- Phone numbers are stored one way — `+91 9339214522` — however they were
+  typed. A bare ten digits, a leading zero, `0091`, spaces, dashes or brackets
+  through the middle, or an existing `+91` all end up identical, so the same
+  number cannot appear in the register in four shapes.
+
+  It never guesses. A number it cannot confidently read as Indian — too short,
+  an odd length, or an explicit country code that is not `+91` — is stored
+  exactly as it was typed. Mangling somebody's landline into a mobile is worse
+  than leaving it untidy.
+
+  This applies to a workshop's **Enquiry Numbers**, a registrant's
+  **WhatsApp #** and **Emergency Contact**, and numbers arriving from the
+  public registration form. Lists of *names* — resource persons, coordinators
+  — are untouched; the field carries a `phones` flag to say which is which.
+
+  `formatPhone()` is for storage and display; `normalizePhone()` still returns
+  the digits-only form the `wa.me` links and duplicate detection use, and both
+  read the new shape.
 
 ---
 

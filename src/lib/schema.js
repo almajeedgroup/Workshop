@@ -307,6 +307,10 @@ export const WORKSHOP_FIELDS = [
     key: 'contactNumbers',
     label: 'Enquiry Numbers',
     type: 'list',
+    // A list of phone numbers rather than of names, so each entry is put
+    // into +91 form on save. Resource persons and coordinators are lists too
+    // and must not be touched.
+    phones: true,
     aliases: ['contact', 'contacts', 'contact number', 'contact numbers', 'enquiry', 'enquiries', 'phone', 'call', 'for registration'],
   },
   {

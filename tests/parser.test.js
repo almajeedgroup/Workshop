@@ -20,6 +20,7 @@ import {
   normalizeKey,
   SAMPLE_WORKSHOP_TEXT,
   SAMPLE_REGISTRATION_TEXT,
+  formatPhone,
 } from '../src/lib/parser.js';
 
 /* ------------------------------------------------------------------ *
@@ -265,4 +266,77 @@ test('phones: bare Indian numbers gain a country code', () => {
 test('labels normalise to a comparable form', () => {
   assert.equal(normalizeKey('No. of Participants'), 'no of participants');
   assert.equal(normalizeKey('  WhatsApp #  '), 'whatsapp');
+});
+
+/* ------------------------------------------------------------------ *
+ * Phone numbers as they are stored
+ *
+ * "Contact numbers should get saved with +91 code and if any number has
+ * +91 then no need."
+ * ------------------------------------------------------------------ */
+
+test('phone: a bare ten-digit number gains the country code', () => {
+  assert.equal(formatPhone('9339214522'), '+91 9339214522');
+});
+
+test('phone: a number that already has +91 is not given another', () => {
+  assert.equal(formatPhone('+91 9339214522'), '+91 9339214522');
+  assert.equal(formatPhone('+919339214522'), '+91 9339214522');
+  assert.equal(formatPhone('+91-9339214522'), '+91 9339214522');
+});
+
+test('phone: however it was typed, it is stored one way', () => {
+  const same = [
+    '9339214522', '+919339214522', '+91 9339214522', '+91 93392 14522',
+    '09339214522', '919339214522', '0091 9339214522', '93392-14522',
+    '(93392) 14522', '  9339214522  ', '+91 (93392) 14522',
+  ];
+  for (const typed of same) {
+    assert.equal(formatPhone(typed), '+91 9339214522', `${typed} should store the same way`);
+  }
+});
+
+test('phone: an Indian landline with its STD code works too', () => {
+  assert.equal(formatPhone('080 2222 3333'), '+91 8022223333');
+});
+
+test('phone: a foreign number is left exactly as it was typed', () => {
+  // +1, +44 and +971 are real numbers this office might hold, and none of
+  // them are ours to rewrite.
+  for (const foreign of ['+1 555 0100', '+44 20 7946 0958', '+971 50 123 4567']) {
+    assert.equal(formatPhone(foreign), foreign);
+  }
+});
+
+test('phone: anything it cannot confidently read is left alone', () => {
+  // Mangling a number into a mobile it is not is worse than leaving it
+  // untidy — so it never guesses.
+  for (const odd of ['12345', 'abc', '+91', '+911234', 'ask at the desk']) {
+    assert.equal(formatPhone(odd), odd);
+  }
+});
+
+test('phone: nothing in gives nothing out', () => {
+  assert.equal(formatPhone(''), '');
+  assert.equal(formatPhone(null), '');
+  assert.equal(formatPhone(undefined), '');
+  assert.equal(formatPhone('   '), '');
+});
+
+test('phone: formatting twice changes nothing the second time', () => {
+  for (const typed of ['9339214522', '+91 9339214522', '+44 20 7946 0958', '12345']) {
+    assert.equal(formatPhone(formatPhone(typed)), formatPhone(typed), typed);
+  }
+});
+
+test('phone: the stored form still makes a working WhatsApp link', () => {
+  // normalizePhone strips everything but digits, so the links and the
+  // duplicate check keep working against the new shape.
+  assert.equal(normalizePhone(formatPhone('9339214522')), '919339214522');
+  assert.equal(normalizePhone(formatPhone('+91 9339214522')), '919339214522');
+  assert.equal(
+    normalizePhone(formatPhone('9339214522')),
+    normalizePhone('9339214522'),
+    'a number stored the new way and one typed the old way still match',
+  );
 });

@@ -24,6 +24,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { ISSUER, isFreeWorkshop, workshopFee, associationLine } from './schema.js';
+import { formatPhone } from './parser.js';
 
 const PUBLIC_WORKSHOPS = 'publicWorkshops';
 const REQUESTS = 'registrationRequests';
@@ -131,6 +132,10 @@ export async function submitRegistrationRequest(workshopId, form) {
   const str = (v) => String(v ?? '').trim().slice(0, 200);
   const data = { workshopId: String(workshopId) };
   for (const key of REQUEST_FIELDS) data[key] = str(form[key]);
+  // Stored in the same +91 form as everything else, so a request and the
+  // registration it becomes are the same number — which is what duplicate
+  // detection compares, and what the office dials.
+  data.whatsapp = str(formatPhone(data.whatsapp));
 
   data.ref = newRequestRef();
   data.status = 'new';

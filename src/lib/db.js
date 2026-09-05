@@ -18,6 +18,7 @@ import {
 import {
   ticketPrefixFor, formatTicketId, compareTicketIds, highestTicketSeq,
 } from './tickets.js';
+import { formatPhone } from './parser.js';
 import { syncPublicWorkshop, removePublicWorkshop } from './publicdb.js';
 import { removePhoto, PHOTOS } from './photodb.js';
 import { removeMarks, ATTENDANCE } from './attendancedb.js';
@@ -33,8 +34,11 @@ function sanitizeWorkshop(w) {
   const out = {};
   for (const f of WORKSHOP_FIELDS) {
     const v = w[f.key];
-    if (f.type === 'list' || f.type === 'multi') out[f.key] = Array.isArray(v) ? v.filter(Boolean) : [];
-    else if (f.type === 'number') out[f.key] = v === '' || v === null || v === undefined ? null : Number(v);
+    if (f.type === 'list' || f.type === 'multi') {
+      const list = Array.isArray(v) ? v.filter(Boolean) : [];
+      out[f.key] = f.phones ? list.map((n) => formatPhone(n)) : list;
+    } else if (f.type === 'number') out[f.key] = v === '' || v === null || v === undefined ? null : Number(v);
+    else if (f.type === 'tel') out[f.key] = formatPhone(v);
     else out[f.key] = v === undefined || v === null ? '' : String(v);
   }
   out.searchText = [
@@ -49,6 +53,10 @@ function sanitizeRegistration(p) {
   for (const f of REGISTRATION_FIELDS) {
     const v = p[f.key];
     if (f.type === 'number') out[f.key] = v === '' || v === null || v === undefined ? null : Number(v);
+    // Phone numbers are stored one way — `+91 9339214522` — however they
+    // were typed. A register where the same number appears in four shapes
+    // cannot be searched, deduplicated or dialled reliably.
+    else if (f.type === 'tel') out[f.key] = formatPhone(v);
     else out[f.key] = v === undefined || v === null ? '' : String(v).trim();
   }
   out.nameLower = out.name.toLowerCase();
