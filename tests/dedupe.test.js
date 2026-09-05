@@ -84,3 +84,44 @@ test('the explanation names who the row collided with', () => {
   assert.match(text, /same WhatsApp number/);
   assert.match(text, /AIHOW26-004/);
 });
+
+/* ------------------------------------------------------------------ *
+ * Reported: a student could not be accepted from the QR queue.
+ *
+ * She shared an email address with a sibling already registered, which is
+ * ordinary in a family. Detection was right; refusing on it was not.
+ * ------------------------------------------------------------------ */
+
+test('a shared family email is reported — and reported is all it is', () => {
+  const registered = [{
+    name: 'Amrin Khanum', email: 'amrinkhanum793@gmail.com',
+    whatsapp: '9880011223', ticketId: 'AIHOW26-004',
+  }];
+  const incoming = [{
+    name: 'Adifaah Shaikh', email: 'amrinkhanum793@gmail.com',
+    whatsapp: '7975588058', qualification: '1st PUC', area: 'RT Nagar',
+  }];
+
+  const { unique, duplicates } = splitDuplicates(incoming, registered);
+
+  assert.equal(duplicates.length, 1, 'the shared email is spotted');
+  assert.equal(duplicates[0].reason, 'same email');
+  assert.equal(unique.length, 0);
+
+  // The point: it hands back the row and who it matched, for the operator to
+  // judge. It does not drop her, and nothing here can refuse a save.
+  assert.equal(duplicates[0].row.name, 'Adifaah Shaikh');
+  assert.equal(duplicates[0].against.name, 'Amrin Khanum');
+  assert.match(describeDuplicate(duplicates[0]), /Adifaah Shaikh/);
+  assert.match(describeDuplicate(duplicates[0]), /same email as Amrin Khanum, ticket AIHOW26-004/);
+});
+
+test('two siblings on one phone are each reported, never discarded', () => {
+  const incoming = [
+    { name: 'Adifaah Shaikh', whatsapp: '7975588058' },
+    { name: 'Amrin Khanum', whatsapp: '7975588058' },
+  ];
+  const { unique, duplicates } = splitDuplicates(incoming, []);
+  assert.equal(unique.length + duplicates.length, incoming.length,
+    'every row comes back somewhere — detection loses nobody');
+});

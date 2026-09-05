@@ -26,7 +26,43 @@ export const ISSUER = {
   unitLine: 'Beyond Guidance, a unit of Islamic Information Centre',
   phones: ['+91 98452 89298', '+91 63646 30740'],
   /** Shown in the app masthead — who built/operates the system. */
-  operator: 'Al-Majeed School of Research Methodology & Innovation',
+  /**
+   * The school that built and runs this system, and is named as an associate
+   * on everything it produces.
+   *
+   * THE canonical spelling. It was written three different ways across the
+   * code — with a comma after "Research", with "&" and with "and" — which on
+   * a certificate and the ticket for the same course is the kind of thing
+   * people notice. Every document now takes it from here.
+   */
+  operator: 'Al-Majeed School of Research Methodology and Innovation',
+  /** The public site. Used in the footer, on certificates and in share links. */
+  site: 'school.almajeedgroup.in',
+  siteUrl: 'https://school.almajeedgroup.in',
+  email: 'almajeed.work@gmail.com',
+  city: 'Bengaluru, Karnataka',
+  /**
+   * UPI ID that registration fees are paid to, e.g. 'name@okhdfcbank'.
+   * Shown as a scannable QR on the public registration form, with the fee
+   * already filled in. A workshop can override it with its own Payment UPI
+   * field. Leave blank and the form asks students to call instead.
+   */
+  upiId: '',
+  upiName: 'Islamic Information Centre',
+  /**
+   * A payment QR supplied by the bank — a BharatQR or merchant standee — used
+   * for every workshop that does not set its own.
+   *
+   * Normally you leave this empty and upload the QR on the workshop screen,
+   * which stores it on the record: no file to copy, no deploy to run. Set it
+   * only to ship a QR with the site itself, as a path to a file in `public/`
+   * (e.g. `/payment-qr.png`).
+   *
+   * Either way an image beats `upiId`, because a merchant QR carries card
+   * rails a plain UPI link cannot. It carries no amount, though, so the form
+   * asks the payer to type the fee in.
+   */
+  paymentQrImage: '',
 };
 
 export const ORG_NAME = ISSUER.operator;
@@ -47,6 +83,101 @@ export const BOOTSTRAP_ADMIN_EMAIL = 'almajeed.work@gmail.com';
 /* ------------------------------------------------------------------ *
  * Workshop
  * ------------------------------------------------------------------ */
+
+/**
+ * ID card colourways and crests, by key.
+ *
+ * The definitions themselves live in `lib/idcards.js` — the colours, the
+ * crest files and how a card is laid out. Only the keys are needed here, and
+ * importing the module would make schema.js depend on something that depends
+ * on it.
+ */
+/** Certificate designs, by key. Defined in lib/certificates.js. */
+export const CERTIFICATE_DESIGN_KEYS = ['classic', 'parliament'];
+export const CERTIFICATE_DESIGN_LABELS = {
+  classic: 'Classic — tricolour',
+  parliament: 'Parliament — red',
+};
+
+export const ID_CARD_THEME_KEYS = ['saffron', 'emerald', 'indigo', 'maroon', 'teal', 'slate'];
+export const ID_CARD_THEME_LABELS = {
+  saffron: 'Saffron', emerald: 'Emerald', indigo: 'Indigo',
+  maroon: 'Maroon', teal: 'Teal', slate: 'Slate',
+};
+export const ID_CARD_CREST_KEYS = ['almajeed', 'kabir', 'iic', 'beyond'];
+export const ID_CARD_CREST_LABELS = {
+  almajeed: 'Al-Majeed School',
+  kabir: 'Kabir IND PU College',
+  iic: 'Islamic Information Centre',
+  beyond: 'Beyond Guidance',
+};
+/** Thumbnails for the picker, so an order is arranged by sight not by name. */
+export const ID_CARD_CREST_IMAGES = {
+  almajeed: '/crests/al-majeed.png',
+  kabir: '/crests/kabir-college.png',
+  iic: '/crests/islamic-information-centre.png',
+  beyond: '/crests/beyond-guidance.png',
+};
+
+/** Blood groups a card may carry. Free text gets typed six different ways. */
+export const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+
+/**
+ * Whether a course charges. Chosen when the course is established, because
+ * it decides what the public form asks for and what the organiser has to
+ * chase afterwards.
+ */
+export const FEE_TYPES = ['Free', 'Paid'];
+
+/**
+ * Who the course is run in association with, for print.
+ *
+ * Al-Majeed School is named on everything this system produces, whether or
+ * not anyone typed it into the workshop, and it comes last so a partner
+ * named for a particular course leads.
+ *
+ * If somebody HAS typed it into the collaborators — which they will, and
+ * spelled some other way — it is not repeated. Matching ignores case,
+ * punctuation, and "&" against "and", because those are exactly the
+ * differences a person types without thinking.
+ */
+export function associationLine(workshop) {
+  const flat = (v) => String(v ?? '')
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+
+  const own = String(workshop?.collaborators ?? '').trim();
+  const house = ISSUER.operator;
+  if (!own) return house;
+  return flat(own).includes(flat(house)) ? own : `${own} · ${house}`;
+}
+
+/**
+ * Is this a free course?
+ *
+ * Explicit `feeType` wins. Workshops created before the field existed have
+ * none, so they fall back to what they charge — which is how they behaved
+ * already, and keeps a paid workshop from silently becoming free.
+ */
+export function isFreeWorkshop(w) {
+  if (!w) return false;
+  if (w.feeType === 'Free') return true;
+  if (w.feeType === 'Paid') return false;
+  return !(Number(w.feeAmount) > 0);
+}
+
+/** What a candidate owes, as a number. Always 0 on a free course. */
+export function workshopFee(w) {
+  if (isFreeWorkshop(w)) return 0;
+  return Number(w?.feeAmount) || 0;
+}
+
+/** The fields to show for a given workshop, honouring every `showWhen`. */
+export function visibleWorkshopFields(w) {
+  return WORKSHOP_FIELDS.filter((f) => typeof f.showWhen !== 'function' || f.showWhen(w));
+}
 
 export const WORKSHOP_FIELDS = [
   {
@@ -154,9 +285,22 @@ export const WORKSHOP_FIELDS = [
     aliases: ['seat limit', 'seats', 'limited seats', 'max participants', 'maximum participants', 'capacity', 'intake', 'only first'],
   },
   {
+    key: 'feeType',
+    label: 'Course Type',
+    type: 'enum',
+    options: FEE_TYPES,
+    inTable: true,
+    aliases: ['course type', 'fee type', 'free or paid', 'paid or free', 'type of course'],
+    hint: 'Free hides the fee, the payment QR and the payment columns everywhere.',
+  },
+  {
     key: 'feeAmount',
     label: `Registration Fee (${CURRENCY})`,
     type: 'number',
+    // Meaningless on a free course, and a stale amount left behind after
+    // switching to Free is exactly how a free workshop ends up asking for
+    // money on its public page.
+    showWhen: (w) => !isFreeWorkshop(w),
     aliases: ['fee', 'fees', 'registration fee', 'cost', 'charges', 'amount', 'course fee'],
   },
   {
@@ -164,6 +308,76 @@ export const WORKSHOP_FIELDS = [
     label: 'Enquiry Numbers',
     type: 'list',
     aliases: ['contact', 'contacts', 'contact number', 'contact numbers', 'enquiry', 'enquiries', 'phone', 'call', 'for registration'],
+  },
+  {
+    key: 'paymentUpi',
+    label: 'Payment UPI ID',
+    type: 'text',
+    showWhen: (w) => !isFreeWorkshop(w),
+    aliases: ['upi', 'upi id', 'payment upi', 'vpa', 'pay to'],
+    hint: 'Fees are collected here. Leave blank to use the organisation default.',
+  },
+  {
+    key: 'paymentQrUrl',
+    label: 'Payment QR Image',
+    type: 'image',
+    showWhen: (w) => !isFreeWorkshop(w),
+    aliases: ['payment qr', 'qr image', 'payment qr image'],
+    hint: 'The QR students scan to pay. Shown instead of the UPI QR when set. '
+      + 'A bank QR carries no amount, so the form asks them to type the fee in.',
+  },
+  {
+    key: 'registrationOpen',
+    label: 'Public Registration',
+    type: 'enum',
+    options: ['Open', 'Closed'],
+    aliases: ['registration open', 'public registration', 'registration status'],
+    hint: 'Open lets students register themselves from the QR code on the poster.',
+  },
+  {
+    key: 'certificateDesign',
+    label: 'Certificate Design',
+    type: 'enum',
+    options: CERTIFICATE_DESIGN_KEYS,
+    optionLabels: CERTIFICATE_DESIGN_LABELS,
+    aliases: ['certificate design', 'certificate template', 'certificate style'],
+    hint: 'The sheet every certificate for this course is printed on. '
+      + 'Parliament shows the code, duration, time and topics.',
+  },
+  {
+    key: 'idCardTheme',
+    label: 'ID Card Colour',
+    type: 'enum',
+    options: ID_CARD_THEME_KEYS,
+    optionLabels: ID_CARD_THEME_LABELS,
+    aliases: ['id card colour', 'id card color', 'card colour', 'card color', 'id colour'],
+    hint: 'The colourway every participant card for this course is printed in.',
+  },
+  {
+    key: 'idCardCrests',
+    label: 'ID Card Logos',
+    type: 'multi',
+    options: ID_CARD_CREST_KEYS,
+    optionLabels: ID_CARD_CREST_LABELS,
+    optionPreviews: ID_CARD_CREST_IMAGES,
+    aliases: ['id card logos', 'card logos', 'logos', 'crests'],
+    hint: 'Whose crests appear on the card, and in what order — left to right. '
+      + 'All four, as listed, if you choose none.',
+  },
+  {
+    key: 'idCardLabel',
+    label: 'ID Card Role',
+    type: 'text',
+    aliases: ['id card role', 'card role', 'card label', 'id card label'],
+    hint: 'Printed under the crest strip — PARTICIPANT, DELEGATE, VOLUNTEER. '
+      + 'One person can be given a different role on their own card.',
+  },
+  {
+    key: 'idCardNote',
+    label: 'ID Card Note',
+    type: 'longtext',
+    aliases: ['id card note', 'card note', 'card instructions'],
+    hint: 'A line along the foot of the back — a return address, a condition of entry.',
   },
   {
     key: 'topics',
@@ -271,6 +485,34 @@ export const REGISTRATION_FIELDS = [
     hint: 'Allocated automatically on save — leave blank.',
   },
   {
+    key: 'idRole',
+    label: 'ID Card Role',
+    type: 'text',
+    aliases: ['id role', 'id card role', 'role', 'designation'],
+    hint: 'Overrides the course-wide role on this one card.',
+  },
+  {
+    key: 'bloodGroup',
+    label: 'Blood Group',
+    type: 'enum',
+    options: BLOOD_GROUPS,
+    aliases: ['blood group', 'blood', 'bloodgroup', 'blood type'],
+  },
+  {
+    key: 'emergencyContact',
+    label: 'Emergency Contact',
+    type: 'tel',
+    aliases: ['emergency contact', 'emergency', 'emergency no', 'emergency number',
+              'guardian contact', 'parent contact', 'in case of emergency'],
+  },
+  {
+    key: 'idValidUntil',
+    label: 'ID Valid Until',
+    type: 'date',
+    aliases: ['id valid until', 'valid until', 'valid till', 'card valid until'],
+    hint: 'Defaults to the last day of the course.',
+  },
+  {
     key: 'notes',
     label: 'Notes',
     type: 'text',
@@ -298,7 +540,7 @@ export const registrationFieldByKey = Object.fromEntries(REGISTRATION_FIELDS.map
 
 function blank(fields) {
   const out = {};
-  for (const f of fields) out[f.key] = f.type === 'list' ? [] : '';
+  for (const f of fields) out[f.key] = (f.type === 'list' || f.type === 'multi') ? [] : '';
   return out;
 }
 

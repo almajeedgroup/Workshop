@@ -1,14 +1,29 @@
-import { Routes, Route, NavLink, Navigate, Link } from 'react-router-dom';
+import { Routes, Route, NavLink, Navigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext.jsx';
 import { isConfigured } from './firebase.js';
 import { ISSUER } from './lib/schema.js';
 
+import Sidebar from './components/Sidebar.jsx';
+import PublicShell from './components/site/PublicShell.jsx';
+import HomePage from './pages/site/HomePage.jsx';
+import AboutPage from './pages/site/AboutPage.jsx';
+import ProgrammesPage from './pages/site/ProgrammesPage.jsx';
+import CertificatesPage from './pages/site/CertificatesPage.jsx';
+import ContactPage from './pages/site/ContactPage.jsx';
+import RegisterPage from './pages/site/RegisterPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
+import ConsolePage from './pages/ConsolePage.jsx';
 import ListPage from './pages/ListPage.jsx';
 import ImportPage from './pages/ImportPage.jsx';
 import WorkshopPage from './pages/WorkshopPage.jsx';
 import EditPage from './pages/EditPage.jsx';
 import TicketPage from './pages/TicketPage.jsx';
+import CertificateAllotPage from './pages/CertificateAllotPage.jsx';
+import IdCardPage from './pages/IdCardPage.jsx';
+import IdCardsPage from './pages/IdCardsPage.jsx';
+import AttendancePage from './pages/AttendancePage.jsx';
+import CertificatePage from './pages/CertificatePage.jsx';
+import VerifyPage from './pages/VerifyPage.jsx';
 
 function SetupNotice() {
   return (
@@ -23,30 +38,6 @@ function SetupNotice() {
         <p className="hint">See README.md for the full setup walkthrough.</p>
       </div>
     </main>
-  );
-}
-
-function Masthead() {
-  const { user, isAdmin, logout } = useAuth();
-  return (
-    <header className="masthead no-print">
-      <Link to="/" className="brand" style={{ textDecoration: 'none' }}>WORKSHOPS</Link>
-      <span className="org">{ISSUER.unitLine}</span>
-      <span className="spacer" />
-      {isAdmin && (
-        <nav>
-          <NavLink to="/" end className="navlink">Records</NavLink>
-          <NavLink to="/import" className="navlink">Import Text</NavLink>
-          <NavLink to="/new" className="navlink">Add Manually</NavLink>
-        </nav>
-      )}
-      {user && (
-        <>
-          <span className="who">{user.email}</span>
-          <button className="small" onClick={logout}>Sign out</button>
-        </>
-      )}
-    </header>
   );
 }
 
@@ -85,32 +76,71 @@ function Protected({ children }) {
   return children;
 }
 
+/** Everything the public sees, wrapped in the site's own header and footer. */
+const PUBLIC = [
+  ['/', <HomePage />],
+  ['/programmes', <ProgrammesPage />],
+  ['/certificates', <CertificatesPage />],
+  ['/about', <AboutPage />],
+  ['/contact', <ContactPage />],
+  ['/verify', <VerifyPage />],
+  ['/verify/:certificateId', <VerifyPage />],
+  ['/c/:certificateId', <CertificatePage />],
+  ['/register/:workshopId', <RegisterPage />],
+];
+
 export default function App() {
+  const { pathname } = useLocation();
+  // The public site has its own chrome and must not inherit the admin
+  // sidebar. Admin routes all sit under these prefixes.
+  const isAdminArea = /^\/(login|console|records|import|new|w)(\/|$)/.test(pathname);
+
   if (!isConfigured) {
     return (
       <div className="shell">
-        <Masthead />
+        <Sidebar />
         <SetupNotice />
       </div>
     );
   }
 
+  if (!isAdminArea) {
+    return (
+      <PublicShell>
+        <Routes>
+          {PUBLIC.map(([path, el]) => <Route key={path} path={path} element={el} />)}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </PublicShell>
+    );
+  }
+
   return (
     <div className="shell">
-      <Masthead />
+      <Sidebar />
+      <div className="shell-main">
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/" element={<Protected><ListPage /></Protected>} />
+
+        {/* Administrators only */}
+        <Route path="/console" element={<Protected><ConsolePage /></Protected>} />
+        <Route path="/records" element={<Protected><ListPage /></Protected>} />
         <Route path="/import" element={<Protected><ImportPage /></Protected>} />
         <Route path="/new" element={<Protected><EditPage mode="new" /></Protected>} />
         <Route path="/w/:id" element={<Protected><WorkshopPage /></Protected>} />
         <Route path="/w/:id/edit" element={<Protected><EditPage mode="edit" /></Protected>} />
         <Route path="/w/:id/t/:regId" element={<Protected><TicketPage /></Protected>} />
+        <Route path="/w/:id/certificates" element={<Protected><CertificateAllotPage /></Protected>} />
+        <Route path="/w/:id/attendance" element={<Protected><AttendancePage /></Protected>} />
+        <Route path="/w/:id/cards" element={<Protected><IdCardsPage /></Protected>} />
+        <Route path="/w/:id/card/:regId" element={<Protected><IdCardPage /></Protected>} />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <footer className="foot no-print">
         {ISSUER.name} · system by {ISSUER.operator}
       </footer>
+      </div>
     </div>
   );
 }

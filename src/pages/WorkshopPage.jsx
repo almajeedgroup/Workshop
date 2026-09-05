@@ -7,14 +7,29 @@ import {
 import RegistrationList from '../components/RegistrationList.jsx';
 import { parseRegistrations } from '../lib/parser.js';
 import { splitDuplicates, describeDuplicate } from '../lib/dedupe.js';
+import {
+  listRequests, setRequestStatus, deleteRequest, requestToRegistration,
+  setRegistrationOpen, restoreRequest,
+} from '../lib/publicdb.js';
+import RequestsPanel from '../components/RequestsPanel.jsx';
+import RegistrationCards from '../components/RegistrationCards.jsx';
+import { getPhotos } from '../lib/photodb.js';
 import { amountCollected, paymentCounts, seatsLeft as seatsLeftFor } from '../lib/stats.js';
-import { WORKSHOP_FIELDS, ISSUER, CURRENCY } from '../lib/schema.js';
+import {
+  visibleWorkshopFields, ISSUER, CURRENCY, workshopFee,
+} from '../lib/schema.js';
 import { formatDateRange } from '../lib/tickets.js';
 
 function shown(field, w) {
   const v = w[field.key];
   if (field.type === 'list') return Array.isArray(v) && v.length ? v.join('; ') : '';
   if (v === null || v === undefined) return '';
+  // An uploaded image is a data URL hundreds of thousands of characters long.
+  // Saying it is set is the useful part; the blob is not readable by anyone.
+  if (field.type === 'image') {
+    if (!v) return '';
+    return String(v).startsWith('data:') ? 'Uploaded' : String(v);
+  }
   return String(v);
 }
 
@@ -35,17 +50,37 @@ export default function WorkshopPage() {
   const [adding, setAdding] = useState(false);
   const [notice, setNotice] = useState('');
   const [pendingPaste, setPendingPaste] = useState(null);
+  const [requests, setRequests] = useState([]);
+  const [reqBusy, setReqBusy] = useState('');
+  const [toggling, setToggling] = useState(false);
+  // Both belong to the requests panel, and are shown inside it.
+  const [reqError, setReqError] = useState('');
+  const [duplicate, setDuplicate] = useState(null);
+  const [regView, setRegView] = useState('list');
+  const [photos, setPhotos] = useState(null);
+
+  // Photographs are heavy and only the cards view wants them, so they are
+  // fetched when that view is first opened and not before.
+  useEffect(() => {
+    if (regView !== 'cards' || photos) return undefined;
+    let live = true;
+    getPhotos(id)
+      .then((p) => live && setPhotos(p))
+      .catch((e) => live && setError(e.message));
+    return () => { live = false; };
+  }, [regView, photos, id]);
 
   const reload = async () => {
-    const [w, r] = await Promise.all([getWorkshop(id), getRegistrations(id)]);
+    const [w, r, q] = await Promise.all([getWorkshop(id), getRegistrations(id), listRequests(id)]);
     setWorkshop(w);
     setRegs(r);
+    setRequests(q);
   };
 
   useEffect(() => {
     let live = true;
-    Promise.all([getWorkshop(id), getRegistrations(id)])
-      .then(([w, r]) => { if (live) { setWorkshop(w); setRegs(r); } })
+    Promise.all([getWorkshop(id), getRegistrations(id), listRequests(id).catch(() => [])])
+      .then(([w, r, q]) => { if (live) { setWorkshop(w); setRegs(r); setRequests(q); } })
       .catch((e) => live && setError(e.message))
       .finally(() => live && setLoading(false));
     return () => { live = false; };
@@ -71,8 +106,8 @@ export default function WorkshopPage() {
     setError('');
     try {
       const patch = { ...reg, paymentStatus: status };
-      if (status === 'Paid' && !patch.amountPaid && workshop.feeAmount) {
-        patch.amountPaid = workshop.feeAmount;
+      if (status === 'Paid' && !patch.amountPaid && workshopFee(workshop)) {
+        patch.amountPaid = workshopFee(workshop);
       }
       await updateRegistration(id, reg.id, patch);
       setRegs((prev) => prev.map((r) => (r.id === reg.id ? { ...r, ...patch } : r)));
@@ -148,6 +183,120 @@ export default function WorkshopPage() {
     }
   };
 
+  /**
+   * Accepting is the manual step: only here does a submission become a
+   * registration and get its ticket number. Payment stays Pending until it is
+   * marked by hand on the list below.
+   */
+  /**
+   * A match against somebody already registered WARNS; it does not refuse.
+   *
+   * dedupe.js says it plainly — "nothing here blocks a save, it reports and
+   * the operator decides, two cousins really can share a phone" — and every
+   * other route into the register honours that. Accept did not: it refused
+   * outright and told you to add the person by hand, which loses the link
+   * back to their request. Families share an email address and a phone, and
+   * a sibling should not need retyping.
+   */
+  const acceptRequest = async (request, force = false) => {
+    setReqBusy(request.id);
+    setError('');
+    setReqError('');
+    try {
+      if (!force) {
+        const { duplicates } = splitDuplicates([requestToRegistration(request)], regs);
+        if (duplicates.length) {
+          setDuplicate({ id: request.id, message: describeDuplicate(duplicates[0]) });
+          return;
+        }
+      }
+      setDuplicate(null);
+      const [saved] = await addRegistrations(id, [requestToRegistration(request)]);
+      await setRequestStatus(request.id, 'accepted', { ticketId: saved?.ticketId || '' });
+      await reload();
+      setNotice(
+        `${request.name} registered as ${saved?.ticketId || 'a new entry'}. ` +
+        'Payment is Pending until you mark it below.'
+      );
+    } catch (e) {
+      // Beside the button that failed. The page-level notice sits above the
+      // statistics, which is off-screen when you are working in this panel.
+      setReqError(e.message);
+    } finally {
+      setReqBusy('');
+    }
+  };
+
+  const rejectRequest = async (request) => {
+    setReqBusy(request.id);
+    setReqError('');
+    setDuplicate(null);
+    try {
+      await setRequestStatus(request.id, 'rejected');
+      await reload();
+      setNotice(`${request.name}'s request marked rejected.`);
+    } catch (e) {
+      setReqError(e.message);
+    } finally {
+      setReqBusy('');
+    }
+  };
+
+  /**
+   * Undo a rejection. Everything the student typed is still on the record —
+   * rejecting only ever changed the status — so this puts it back in the
+   * queue with nothing lost.
+   */
+  const putBackRequest = async (request) => {
+    setReqBusy(request.id);
+    setReqError('');
+    try {
+      await restoreRequest(request.id);
+      await reload();
+      setNotice(`${request.name} is back in the queue, with everything they entered.`);
+    } catch (e) {
+      setReqError(e.message);
+    } finally {
+      setReqBusy('');
+    }
+  };
+
+  const removeRequest = async (request) => {
+    setReqBusy(request.id);
+    setReqError('');
+    setDuplicate(null);
+    try {
+      await deleteRequest(request.id);
+      await reload();
+      setNotice(`${request.name}'s request was deleted. That one cannot be restored.`);
+    } catch (e) {
+      setReqError(e.message);
+    } finally {
+      setReqBusy('');
+    }
+  };
+
+  /**
+   * Publishing writes the public mirror as well as the flag. A workshop
+   * created before self-registration existed has no mirror at all, so its
+   * link reads "not valid" — this is what fixes that, in one press.
+   */
+  const toggleRegistration = async (open) => {
+    setToggling(true);
+    setError('');
+    try {
+      await setRegistrationOpen(id, workshop, open);
+      await reload();
+      setNotice(open
+        ? 'The registration page is live. Print the QR, or share the link.'
+        : 'Registration closed. The form now refuses new entries.');
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setToggling(false);
+    }
+  };
+
   const runExport = async (fn) => {
     setExporting(true);
     try {
@@ -163,7 +312,7 @@ export default function WorkshopPage() {
   const remove = async () => {
     try {
       await deleteWorkshop(id);
-      nav('/');
+      nav('/records');
     } catch (e) {
       setError(e.message);
     }
@@ -171,7 +320,7 @@ export default function WorkshopPage() {
 
   if (loading) return <main><p className="count">Loading…</p></main>;
   if (!workshop) {
-    return <main><div className="empty">Workshop not found. <Link to="/">Back to records</Link></div></main>;
+    return <main><div className="empty">Workshop not found. <Link to="/records">Back to records</Link></div></main>;
   }
 
   const seatsLeft = seatsLeftFor(workshop, regs.length);
@@ -195,8 +344,11 @@ export default function WorkshopPage() {
         </div>
         <span className="spacer" />
         <div className="btn-row">
-          <Link className="btn" to="/">← Records</Link>
+          <Link className="btn" to="/records">← Records</Link>
           <Link className="btn" to={`/w/${id}/edit`}>Edit</Link>
+          <Link className="btn" to={`/w/${id}/attendance`}>Attendance</Link>
+          <Link className="btn" to={`/w/${id}/cards`}>ID Cards</Link>
+          <Link className="btn" to={`/w/${id}/certificates`}>Certificates</Link>
           <button onClick={() => window.print()}>Print / PDF</button>
         </div>
       </div>
@@ -230,7 +382,7 @@ export default function WorkshopPage() {
       <div className="panel">
         <h2 className="no-print">Details</h2>
         <dl className="kv">
-          {WORKSHOP_FIELDS.map((f) => {
+          {visibleWorkshopFields(workshop).map((f) => {
             const v = shown(f, workshop);
             if (!v) return null;
             return (
@@ -243,17 +395,59 @@ export default function WorkshopPage() {
         </dl>
       </div>
 
+      <RequestsPanel
+        workshop={workshop}
+        requests={requests}
+        registerLink={`${window.location.origin}/register/${id}`}
+        onAccept={acceptRequest}
+        onReject={rejectRequest}
+        onDelete={removeRequest}
+        onRestore={putBackRequest}
+        error={reqError}
+        duplicate={duplicate}
+        onDismissDuplicate={() => setDuplicate(null)}
+        onToggleOpen={toggleRegistration}
+        busyId={reqBusy}
+        toggling={toggling}
+      />
+
       <div className="panel">
         <div className="page-head" style={{ border: 0, paddingBottom: 0, marginBottom: 12 }}>
           <h2>Registrations</h2>
           <span className="count">{filtered.length} of {regs.length}</span>
           <span className="spacer" />
           <div className="btn-row no-print">
+            <button
+              className={regView === 'list' ? 'primary' : undefined}
+              aria-pressed={regView === 'list'}
+              onClick={() => setRegView('list')}
+            >
+              List
+            </button>
+            <button
+              className={regView === 'cards' ? 'primary' : undefined}
+              aria-pressed={regView === 'cards'}
+              onClick={() => setRegView('cards')}
+              title="Photographs, for checking somebody against their card"
+            >
+              Cards
+            </button>
             <button onClick={() => setPasteOpen((o) => !o)}>
               {pasteOpen ? 'Close' : '+ Paste registrations'}
             </button>
+            <button
+              className="primary"
+              onClick={() => runExport('exportStudentListXlsx')}
+              disabled={!filtered.length || exporting}
+              title={filtered.length === regs.length
+                ? 'All students, one row each, in an Excel file'
+                : `Only the ${filtered.length} matching your search — clear it to download all ${regs.length}`}
+            >
+              {exporting ? 'Building…' : 'Download student list'}
+              {filtered.length !== regs.length ? ` (${filtered.length})` : ''}
+            </button>
             <button onClick={() => runExport('exportRegistrationsXlsx')} disabled={!filtered.length || exporting}>
-              Excel
+              Full Excel
             </button>
             <button onClick={() => runExport('exportRegistrationsCsv')} disabled={!filtered.length || exporting}>
               CSV
@@ -349,13 +543,19 @@ export default function WorkshopPage() {
           {(q || payFilter) && <button onClick={() => { setQ(''); setPayFilter(''); }}>Clear</button>}
         </div>
 
-        <RegistrationList
-          workshop={workshop}
-          rows={filtered}
-          onPaymentChange={changePayment}
-          onDelete={deleteOne}
-          busyId={busyId}
-        />
+        {regView === 'cards' ? (
+          photos === null
+            ? <p className="count">Loading photographs…</p>
+            : <RegistrationCards workshop={workshop} rows={filtered} photos={photos} />
+        ) : (
+          <RegistrationList
+            workshop={workshop}
+            rows={filtered}
+            onPaymentChange={changePayment}
+            onDelete={deleteOne}
+            busyId={busyId}
+          />
+        )}
       </div>
 
       <div className="btn-row no-print">

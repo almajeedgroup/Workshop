@@ -275,7 +275,7 @@ function coerce(field, rawValue) {
       if (field.key === 'mode') return toMode(rawValue);
       if (field.key === 'paymentStatus') return toPaymentStatus(rawValue);
       return String(rawValue ?? '').trim();
-    case 'list': return toList(rawValue);
+    case 'list': case 'multi': return toList(rawValue);
     case 'date': return parseDateRange(rawValue).start;
     case 'tel': return String(rawValue ?? '').replace(/[^\d+\s-]/g, '').trim();
     case 'email': {

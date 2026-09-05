@@ -1,0 +1,216 @@
+/* Certificate — the one place in this app that carries colour.
+   Layout is in millimetres against an A4 landscape sheet, so what appears on
+   screen is exactly what comes out of the printer. */
+
+@font-face{font-family:'Anton';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/Anton-400.woff2) format('woff2')}
+@font-face{font-family:'Great Vibes';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/GreatVibes-400.woff2) format('woff2')}
+@font-face{font-family:'Poppins';font-style:normal;font-weight:300;font-display:swap;src:url(/fonts/Poppins-300.woff2) format('woff2')}
+@font-face{font-family:'Poppins';font-style:normal;font-weight:400;font-display:swap;src:url(/fonts/Poppins-400.woff2) format('woff2')}
+@font-face{font-family:'Poppins';font-style:normal;font-weight:600;font-display:swap;src:url(/fonts/Poppins-600.woff2) format('woff2')}
+@font-face{font-family:'Poppins';font-style:normal;font-weight:700;font-display:swap;src:url(/fonts/Poppins-700.woff2) format('woff2')}
+
+.cert-scope{
+  --paper:#FBFAF6; --cink:#031A43; --saffron:#F17304; --saffron-deep:#DD4901;
+  --green:#0A7A2C; --green-deep:#0D5436; --chair:rgba(3,26,67,.14); --cmuted:#6a6f7d;
+  --display:'Anton',Impact,'Arial Narrow',sans-serif;
+  --script:'Great Vibes','Segoe Script','Brush Script MT',cursive;
+  --cbody:'Poppins','Segoe UI',Helvetica,Arial,sans-serif;
+}
+
+.sheet{
+  position:relative; font-family:var(--cbody); width:297mm; height:210mm;
+  background:var(--paper); overflow:hidden; box-shadow:0 18px 50px rgba(0,0,0,.25);
+  flex:none; color:var(--cink);
+}
+.sheet *{box-sizing:border-box; margin:0; padding:0}
+
+.sheet .edge{position:absolute;top:0;height:100%;width:27mm;pointer-events:none}
+.sheet .edge.l{left:0} .sheet .edge.r{right:0}
+.sheet .chakra{position:absolute;left:50%;top:54%;transform:translate(-50%,-50%);width:118mm;height:118mm;opacity:.045;pointer-events:none}
+.sheet .inner{position:relative;height:100%;padding:9mm 33mm 9mm;display:flex;flex-direction:column;text-align:center}
+.sheet .inner>*{flex-shrink:0}
+
+.sheet .crests{display:flex;align-items:center;justify-content:center}
+.sheet .crests img{height:21mm;width:auto;display:block;margin:0 7mm}
+.sheet .crests i{width:1px;height:14mm;background:var(--chair);display:block}
+
+.sheet .org{margin-top:3.5mm;font-size:7.4pt;font-weight:600;letter-spacing:.2em;text-transform:uppercase}
+.sheet .org b{color:var(--saffron-deep);font-weight:700}
+.sheet .org small{display:block;font-size:6.5pt;font-weight:400;letter-spacing:.14em;color:var(--cmuted);margin-top:1.2mm;text-transform:uppercase}
+
+.sheet h1{font-family:var(--display);font-weight:400;font-size:34pt;line-height:1;letter-spacing:.05em;margin-top:5mm;text-transform:uppercase}
+.sheet .tri{display:flex;justify-content:center;margin-top:3mm}
+.sheet .tri i{display:block;height:1.5mm;width:16mm;border-radius:1mm}
+.sheet .tri i:nth-child(1){background:var(--saffron)}
+.sheet .tri i:nth-child(2){background:#fff;box-shadow:inset 0 0 0 .3mm var(--chair);margin:0 1.2mm}
+.sheet .tri i:nth-child(3){background:var(--green)}
+
+.sheet .lead{margin-top:4mm;font-size:8.4pt;letter-spacing:.24em;text-transform:uppercase;color:var(--cmuted);font-weight:500}
+/* One line, and a FIXED height rather than a minimum.
+   `white-space:nowrap` is what lets FittedName measure: with wrapping on,
+   scrollWidth never exceeds clientWidth and there is nothing to shrink
+   against. The fixed height is what keeps the rest of the sheet still — a
+   name box that grows pushes the signatures through the frame and the
+   certificate ID off the page. */
+.sheet .name{
+  font-family:var(--script); font-size:42pt; line-height:1.15;
+  margin:1.5mm auto 0; padding:0 5mm; width:118mm; height:26mm;
+  display:flex; align-items:center; justify-content:center;
+  white-space:nowrap; overflow:hidden;
+}
+.sheet .crule{width:118mm;height:.6mm;background:var(--saffron);margin:.5mm auto 0}
+
+.sheet .cbody{max-width:216mm;margin:5mm auto 0;font-size:10pt;line-height:1.78;color:#33384a;font-weight:300}
+.sheet .cbody p+p{margin-top:2.6mm}
+.sheet .cbody strong{font-weight:600;color:var(--cink)}
+.sheet .cheer{margin-top:5mm;font-size:10.2pt;font-weight:600;color:var(--green-deep)}
+
+.sheet .signs{display:flex;justify-content:space-between;gap:12mm;margin-top:auto;padding-top:6.5mm}
+.sheet .sig{flex:1;text-align:center}
+.sheet .sig .line{height:.4mm;background:var(--cink);opacity:.5;margin-bottom:2mm}
+.sheet .sig b{display:block;font-size:9pt;font-weight:600}
+
+/* Occupies the space a handwritten signature would, above the rule. */
+.sheet .sig .mark{
+  display:flex; align-items:center; justify-content:center; gap:1.5mm;
+  height:9mm; margin-bottom:.5mm;
+}
+.sheet .sig .mark .tick{width:4.6mm;height:4.6mm;flex:none;display:block}
+.sheet .sig .mark span{
+  /* The role caption below uses `.sig span` with a fixed 11mm block height;
+     undo that here or the word rides above the tick instead of beside it. */
+  display:inline; height:auto; margin:0;
+  font-size:8pt; font-weight:600; letter-spacing:.17em;
+  text-transform:uppercase; color:var(--green-deep); line-height:1;
+}
+.sheet .sig span{display:block;height:11mm;font-size:6.9pt;color:var(--cmuted);margin-top:1mm;letter-spacing:.06em;text-transform:uppercase;line-height:1.5}
+
+.sheet .cfoot{display:flex;align-items:flex-end;justify-content:space-between;gap:12mm;margin-top:2mm;padding-top:4.5mm;border-top:.3mm solid var(--chair)}
+.sheet .cid{text-align:left;flex:none}
+.sheet .cid b{display:block;font-size:6.5pt;font-weight:600;letter-spacing:.19em;text-transform:uppercase;color:#8a8f9c}
+.sheet .cid .id{display:block;width:56mm;min-height:6.5mm;font-size:10pt;font-weight:600;letter-spacing:.05em;font-variant-numeric:tabular-nums;margin-top:2mm}
+.sheet .verify{display:flex;align-items:center;gap:3.5mm;flex:none}
+.sheet .verify svg.qr{width:12mm;height:12mm;color:var(--cink);flex:none}
+.sheet .verify .t{text-align:left}
+.sheet .verify .t b{display:block;font-size:6.5pt;font-weight:600;letter-spacing:.19em;text-transform:uppercase;color:#8a8f9c}
+.sheet .verify .t a,.sheet .verify .t span{display:block;font-size:9.4pt;font-weight:600;color:var(--green-deep);text-decoration:none;margin-top:.6mm}
+
+/* A revoked certificate must never look valid, on screen or on paper. */
+.sheet.revoked::after{
+  content:'REVOKED'; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-family:var(--display); font-size:120pt; letter-spacing:.1em; color:rgba(221,73,1,.16);
+  transform:rotate(-24deg); pointer-events:none;
+}
+
+/* Screen-only scaling so an A4 landscape sheet fits a phone. */
+.cert-stage{display:flex;flex-direction:column;align-items:center;gap:22px;padding:22px 12px 40px;overflow-x:auto}
+.cert-fit{transform-origin:top center}
+
+/* ------------------------------------------------------------------ *
+ * The parliament sheet
+ * ------------------------------------------------------------------ *
+ *
+ * A second design, not a variant of the first: red rather than tricolour, a
+ * double keyline instead of wave edges, and a panel of facts — code,
+ * duration, time, venue — that the classic sheet has no room for.
+ *
+ * Everything is scoped under `.sheet.parliament`, so the two live in one
+ * stylesheet without either having to undo the other. The shared pieces
+ * (crests, org line, name, signatures, foot) are inherited and only what
+ * differs is restated.
+ */
+.sheet.parliament{
+  --pink:#EB2F14; --pink-dp:#A11D08; --pink-ink:#14181C;
+  background:#FFFFFF; color:var(--pink-ink);
+}
+
+/* The double keyline that frames the whole sheet. */
+.sheet.parliament .frame{
+  position:absolute; top:7mm; left:7mm; right:7mm; bottom:7mm;
+  border:.9mm solid var(--pink); pointer-events:none;
+}
+.sheet.parliament .frame::after{
+  content:''; position:absolute; top:2.2mm; left:2.2mm; right:2.2mm; bottom:2.2mm;
+  border:.25mm solid var(--pink);
+}
+
+/* 14mm at the foot, not 12: the frame's inner keyline sits 9.2mm in, and the
+   certificate ID has to clear it. At 12mm the ID and the QR crossed the red
+   line — the content had already outgrown the sheet, so `margin-top:auto` on
+   the signatures had collapsed to nothing and the foot simply overflowed. */
+.sheet.parliament .inner{padding:13mm 26mm 14mm}
+.sheet.parliament .chakra{top:53%; width:122mm; height:122mm; opacity:.05}
+
+.sheet.parliament .org{color:var(--pink-ink); font-size:8.4pt}
+.sheet.parliament .org b{color:var(--pink-dp)}
+
+/* Poppins, not Anton: the display face of the classic sheet is a condensed
+   poster type, and this design wants the same family as its body text. */
+.sheet.parliament h1{
+  font-family:var(--cbody); font-weight:700; font-size:28.5pt;
+  letter-spacing:.02em; margin-top:3.5mm; color:var(--pink-ink);
+}
+
+/* The divider: two rules with a diamond between them. */
+.sheet.parliament .redrule{
+  display:flex; justify-content:center; align-items:center; gap:2.5mm; margin-top:2.5mm;
+}
+.sheet.parliament .redrule u{
+  display:block; width:24mm; height:.5mm; background:var(--pink); text-decoration:none;
+}
+.sheet.parliament .redrule i{
+  display:block; width:2.2mm; height:2.2mm; background:var(--pink); transform:rotate(45deg);
+}
+
+.sheet.parliament .lead{margin-top:3mm; font-size:9.2pt}
+.sheet.parliament .name{
+  font-size:44pt; width:126mm; height:22mm; color:var(--pink-ink); margin-top:1.5mm;
+}
+.sheet.parliament .crule{width:126mm; height:.6mm; background:var(--pink)}
+
+.sheet.parliament .cbody{
+  max-width:222mm; margin-top:2.5mm; font-size:10.3pt; line-height:1.55; color:#33383e;
+}
+/* Justified, but with the last line centred — it keeps the paragraph block
+   square without leaving a ragged orphan under a centred heading. */
+.sheet.parliament .cbody p{text-align:justify; text-align-last:center; -moz-text-align-last:center}
+.sheet.parliament .cbody p+p{margin-top:2.4mm}
+.sheet.parliament .cbody strong{font-weight:700; color:var(--pink-ink); letter-spacing:.02em}
+
+/* The topics, set as a single spaced line rather than a list. */
+.sheet.parliament .skills{
+  margin-top:2.8mm; font-size:9pt; font-weight:600; letter-spacing:.045em;
+  color:var(--pink-dp); text-transform:uppercase;
+}
+
+/* Code, duration and time across, venue underneath. */
+.sheet.parliament .facts{margin-top:3mm}
+.sheet.parliament .facts .row1{
+  display:flex; justify-content:center; align-items:center; gap:6mm; flex-wrap:wrap;
+}
+.sheet.parliament .facts .row1 i{display:block; width:.3mm; height:5.5mm; background:var(--chair)}
+.sheet.parliament .facts span{font-size:9.9pt; font-weight:600; color:var(--pink-ink)}
+.sheet.parliament .facts b{
+  font-size:7.2pt; font-weight:600; letter-spacing:.19em; text-transform:uppercase;
+  color:#8a8f96; margin-right:2mm;
+}
+.sheet.parliament .facts .venue{margin-top:2.6mm; font-size:9.2pt; font-weight:400; color:#4a4f55}
+.sheet.parliament .facts .venue b{color:#8a8f96}
+
+/* The facts panel is 13mm the classic sheet does not carry, so the gap above
+   the signatures gives it back. `margin-top:auto` then has room to work
+   again and pushes them to the foot, as it is meant to. */
+.sheet.parliament .signs{padding-top:5mm}
+.sheet.parliament .sig b{font-size:9.9pt}
+.sheet.parliament .cfoot{border-top:.3mm solid var(--chair)}
+.sheet.parliament .verify .t a{color:var(--pink-dp)}
+
+@media print{
+  @page{size:A4 landscape;margin:0}
+  html,body{background:#fff}
+  .cert-stage{padding:0;gap:0;display:block;overflow:visible}
+  .cert-fit{transform:none !important}
+  .sheet{box-shadow:none;break-after:page;page-break-after:always}
+  .sheet:last-child{break-after:auto;page-break-after:auto}
+  .cert-scope *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}

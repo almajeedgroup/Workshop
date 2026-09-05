@@ -1,4 +1,6 @@
-import { ISSUER, CURRENCY } from '../lib/schema.js';
+import {
+  ISSUER, CURRENCY, isFreeWorkshop, workshopFee, associationLine,
+} from '../lib/schema.js';
 import { formatDate, formatDateRange } from '../lib/tickets.js';
 
 function Row({ label, children }) {
@@ -17,7 +19,8 @@ function Row({ label, children }) {
  */
 export default function TicketDocument({ workshop, reg }) {
   const paid = reg.paymentStatus === 'Paid';
-  const amount = reg.amountPaid ?? workshop.feeAmount ?? '';
+  const free = isFreeWorkshop(workshop);
+  const amount = reg.amountPaid ?? workshopFee(workshop) ?? '';
 
   return (
     <div className="ticket">
@@ -50,7 +53,7 @@ export default function TicketDocument({ workshop, reg }) {
           <dl className="kv tight">
             <Row label="Title">{workshop.title}</Row>
             <Row label="Presented by">{workshop.presentedBy}</Row>
-            <Row label="In association with">{workshop.collaborators}</Row>
+            <Row label="In association with">{associationLine(workshop)}</Row>
             <Row label="Date">{formatDateRange(workshop)}</Row>
             <Row label="Time">{workshop.time}</Row>
             <Row label="Venue">{workshop.venue}</Row>
@@ -58,23 +61,34 @@ export default function TicketDocument({ workshop, reg }) {
           </dl>
         </section>
 
+        {/* A free course has nothing to receipt, and a receipt reading
+            "Pending" on one is read as money owed — and then chased. */}
         <section>
-          <h3>Payment Receipt</h3>
-          <dl className="kv tight">
-            <Row label="Status"><strong>{reg.paymentStatus || 'Pending'}</strong></Row>
-            <Row label="Amount">
-              {amount === '' || amount === null
-                ? ''
-                : `${CURRENCY}${amount}${paid ? ' — received with thanks' : ' — payable'}`}
-            </Row>
-            <Row label="Mode">{reg.paymentMode}</Row>
-            <Row label="Reference">{reg.paymentRef}</Row>
-            <Row label="Receipt No.">{reg.ticketId}</Row>
-          </dl>
-          {!paid && (
-            <p className="ticket-note">
-              This ticket is provisional until the registration fee is received.
-            </p>
+          <h3>{free ? 'Fee' : 'Payment Receipt'}</h3>
+          {free ? (
+            <dl className="kv tight">
+              <Row label="Fee"><strong>Free — no payment due</strong></Row>
+              <Row label="Ticket No.">{reg.ticketId}</Row>
+            </dl>
+          ) : (
+            <>
+              <dl className="kv tight">
+                <Row label="Status"><strong>{reg.paymentStatus || 'Pending'}</strong></Row>
+                <Row label="Amount">
+                  {amount === '' || amount === null
+                    ? ''
+                    : `${CURRENCY}${amount}${paid ? ' — received with thanks' : ' — payable'}`}
+                </Row>
+                <Row label="Mode">{reg.paymentMode}</Row>
+                <Row label="Reference">{reg.paymentRef}</Row>
+                <Row label="Receipt No.">{reg.ticketId}</Row>
+              </dl>
+              {!paid && (
+                <p className="ticket-note">
+                  This ticket is provisional until the registration fee is received.
+                </p>
+              )}
+            </>
           )}
         </section>
       </div>

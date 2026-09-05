@@ -84,6 +84,149 @@ service cloud.firestore {
         allow read, delete: if isAdmin();
         allow create, update: if isAdmin() && sane(request.resource.data, 'name');
       }
+
+      // The attendance register: one document per day, holding a map of
+      // registration ID to mark.
+      //
+      // Administrator-only, like the registrations it refers to. The map is
+      // not shape-checked field by field — the keys are registration IDs and
+      // there is no fixed set of them — but the document is capped so a
+      // stolen session cannot store a book in it, and `hasOnly` keeps
+      // anything but `marks` out.
+      match /attendance/{day} {
+        allow read, delete: if isAdmin();
+        allow create, update: if isAdmin()
+          && request.resource.data.keys().hasOnly(['marks'])
+          && request.resource.data.marks is map
+          && request.resource.data.marks.keys().size() <= 2000;
+      }
+
+      // Participant photographs for ID cards, kept apart from the
+      // registration itself.
+      //
+      // Two reasons, and both matter. A photo is 20-60KB, and the workshop
+      // screen reads every registration each time it opens — carrying them
+      // on the record would mean a course of forty pulling megabytes down
+      // before the table appeared. And a face is the most personal thing in
+      // this database: its own collection is what lets the rule here stay
+      // administrator-only while certificates next door are world-readable.
+      //
+      // The document holds ONE field. `hasOnly` is right here in a way it
+      // would not be for workshops: there is no schema to freeze, and an
+      // unexpected key is a good reason to refuse the write.
+      match /registrationPhotos/{registrationId} {
+        allow read, delete: if isAdmin();
+        allow create, update: if isAdmin()
+          && request.resource.data.keys().hasOnly(['photo'])
+          && request.resource.data.photo is string
+          && request.resource.data.photo.size() <= 400000;
+      }
+    }
+
+    // ---- Certificates -------------------------------------------------
+    //
+    // These are the one thing in this database the public may read, and only
+    // one document at a time, by its exact ID. That is what makes an employer
+    // or a college able to check a certificate somebody shows them.
+    //
+    // A certificate carries a name, an award, a workshop and a date — and
+    // nothing else. No phone number, no date of birth, no email, no address.
+    // src/lib/certdb.js builds the record from a whitelist so a field added to
+    // registrations later cannot leak out here.
+    //
+    // `list` is admin-only: reading one certificate you were given the ID for
+    // is verification, enumerating the whole register is not.
+    match /certificates/{certificateId} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create, update: if isAdmin() && sane(request.resource.data, 'recipientName');
+      allow delete: if isAdmin();
+    }
+
+    // A holder's history, keyed by an unguessable random ID that appears only
+    // on their own certificates. Public get, so someone verifying a
+    // certificate can see what else that person was awarded; not listable, so
+    // the set of holders cannot be walked.
+    match /holders/{holderKey} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow write: if isAdmin() && sane(request.resource.data, 'name');
+    }
+
+    // The map from a phone number or email to a holderKey. Never public: it is
+    // what would otherwise turn a certificate ID back into a contact detail.
+    match /holderIndex/{identity} {
+      allow read, write: if isAdmin();
+    }
+
+    // ---- Public registration ------------------------------------------
+    //
+    // A whitelisted mirror of the workshop: what a poster would say, and
+    // nothing else. The workshop document itself carries internal notes and
+    // counters, and Firestore rules cannot expose half a document — hence a
+    // separate one. src/lib/publicdb.js builds it from a whitelist.
+    match /publicWorkshops/{workshopId} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Registration requests are the ONE place an unauthenticated stranger may
+    // write, so this is the strictest rule in the file.
+    //
+    //   - create only. No read, no list, no update, no delete — not even by
+    //     the person who submitted it. A submission cannot be read back, so
+    //     the form cannot be turned into a way of reading other people's.
+    //   - the key set is fixed. Unlike the admin collections, where a
+    //     whitelist would freeze the schema, here an unexpected field is a
+    //     good reason to refuse the write.
+    //   - the workshop must exist AND have registration open, so a closed or
+    //     deleted workshop cannot collect entries.
+    //   - `hp` is a honeypot: hidden from people, filled in by naive bots.
+    //     It must arrive empty.
+    //
+    // Rules cannot rate-limit. If the form is ever abused, close registration
+    // on the workshop and the writes stop at the door.
+    function requestFields() {
+      return ['workshopId', 'name', 'dob', 'qualification', 'courseName',
+              'whatsapp', 'area', 'email', 'paymentMode', 'paymentRef',
+              'notes', 'ref', 'status', 'hp', 'createdAt'];
+    }
+
+    // `get` on a path that does not exist raises an evaluation error rather
+    // than returning nothing, and a mirror written before this field existed
+    // has no `registrationOpen` at all — so both are handled explicitly. The
+    // request is refused either way; this just refuses it cleanly.
+    function openForRegistration(workshopId) {
+      return exists(/databases/$(database)/documents/publicWorkshops/$(workshopId))
+        && get(/databases/$(database)/documents/publicWorkshops/$(workshopId))
+             .data.get('registrationOpen', false) == true;
+    }
+
+    function validRequest(d) {
+      return d.keys().hasAll(['workshopId', 'name', 'whatsapp', 'status', 'hp'])
+        && d.keys().hasOnly(requestFields())
+        && d.status == 'new'
+        && d.hp == ''
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 200
+        && d.whatsapp is string && d.whatsapp.size() > 0 && d.whatsapp.size() <= 40
+        && d.workshopId is string && d.workshopId.size() <= 200
+        && sized(d.get('email', ''), 200)
+        && sized(d.get('area', ''), 200)
+        && sized(d.get('qualification', ''), 200)
+        && sized(d.get('courseName', ''), 200)
+        && sized(d.get('notes', ''), 200)
+        && sized(d.get('paymentRef', ''), 200)
+        && sized(d.get('paymentMode', ''), 200)
+        && sized(d.get('dob', ''), 40)
+        && sized(d.get('ref', ''), 40);
+    }
+
+    match /registrationRequests/{requestId} {
+      allow create: if validRequest(request.resource.data)
+                    && openForRegistration(request.resource.data.workshopId);
+      allow read, list: if isAdmin();
+      allow update, delete: if isAdmin();
     }
 
     // Deny everything not explicitly matched above.

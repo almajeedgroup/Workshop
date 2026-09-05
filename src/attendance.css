@@ -1,0 +1,104 @@
+/* The attendance sheet — the one document here meant to be written on.
+
+   Laid out in millimetres against A4 portrait. Row heights and signature
+   column widths are the whole design: a row a pen cannot sign in is a row
+   that gets signed across two rows, and then the sheet proves nothing. */
+
+.att-scope{
+  --att-ink:#0A0A0A; --att-line:#0A0A0A; --att-soft:#555; --att-wash:#f2f2f2;
+  --att-body:'Poppins','Segoe UI',Helvetica,Arial,sans-serif;
+}
+
+.att-sheet{
+  box-sizing:border-box; width:210mm; min-height:297mm; padding:12mm 12mm 14mm;
+  background:#fff; color:var(--att-ink); font-family:var(--att-body);
+  margin:0 auto 10mm; box-shadow:0 6mm 20mm rgba(0,0,0,.2);
+}
+.att-sheet *{box-sizing:border-box}
+
+/* ---- heading ----
+   Crests on their own centred line, title underneath across the full width.
+   Flanking the title with the crest strip (and a hidden copy to balance it)
+   cost half the page, and both the organisation name and the words
+   ATTENDANCE SHEET wrapped. */
+.att-head{border-bottom:.6mm solid var(--att-line); padding-bottom:3mm; text-align:center}
+.att-crests{display:flex; align-items:center; justify-content:center; gap:5mm; margin-bottom:2.5mm}
+.att-crests img{height:13mm; width:auto; display:block}
+.att-titles{text-align:center}
+.att-titles .org{font-size:11pt; font-weight:700; letter-spacing:.02em; line-height:1.2}
+.att-titles .unit{font-size:8pt; color:var(--att-soft); margin-top:.8mm; letter-spacing:.06em; text-transform:uppercase}
+.att-titles .doc{
+  margin-top:2.2mm; font-size:12pt; font-weight:700; letter-spacing:.18em;
+  text-transform:uppercase;
+}
+
+/* ---- what the sheet is for ---- */
+.att-meta{
+  margin-top:3.5mm; display:grid; grid-template-columns:auto 1fr auto 1fr;
+  gap:1.4mm 3mm; font-size:9pt; line-height:1.35;
+}
+.att-meta dt{font-weight:600; color:var(--att-soft); white-space:nowrap}
+.att-meta dd{margin:0; font-weight:500; overflow-wrap:anywhere}
+.att-meta .wide{grid-column:2 / -1}
+
+/* ---- the register ---- */
+.att-table{width:100%; border-collapse:collapse; margin-top:4mm; font-size:9pt}
+.att-table th,.att-table td{border:.3mm solid var(--att-line); padding:1.6mm 2mm; vertical-align:middle}
+/* The admin stylesheet drops the bottom border of a table's last row, which
+   is right for a UI list and wrong for a document — it left the register's
+   final row open at the foot. That rule is more specific than `.att-table
+   td`, so the border has to be put back explicitly. */
+.att-table tbody tr:last-child td{border-bottom:.3mm solid var(--att-line)}
+.att-table th{
+  background:var(--att-wash); font-size:7.5pt; font-weight:700; letter-spacing:.06em;
+  text-transform:uppercase; text-align:left;
+}
+.att-table th.sig{text-align:center}
+.att-table .num{width:9mm; text-align:center; font-weight:600}
+.att-table .tid{width:26mm; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:8pt; white-space:nowrap}
+.att-table .nm{font-weight:600}
+.att-table .det{font-size:7.5pt; color:var(--att-soft); font-weight:400; margin-top:.4mm}
+/* The height IS the feature: 11mm is what a signature needs. */
+.att-table tbody tr{height:11mm}
+.att-table td.sig{padding:0; text-align:center}
+/* The recorded mark, when the sheet is printed as a record rather than to
+   be signed. Black on the fill, like everything else in the palette. */
+.att-table .mk{
+  display:inline-block; min-width:7mm; padding:.6mm 1.6mm; font-size:8pt; font-weight:700;
+  border:.2mm solid var(--att-line); -webkit-print-color-adjust:exact; print-color-adjust:exact;
+}
+.att-table .mk[data-tone='jade']{background:#00CA72}
+.att-table .mk[data-tone='tangerine']{background:#FFCC00}
+.att-table .mk[data-tone='red']{background:#FB275D}
+/* #999 came out at 2.85:1 — a dash nobody can read is worse than a blank
+   box, because it looks like the printer failed rather than like a gap. */
+.att-table .mk[data-tone='none']{background:transparent; border-color:transparent; color:var(--att-soft)}
+
+.att-empty{margin-top:6mm; padding:8mm; border:.3mm dashed var(--att-line); text-align:center; font-size:9.5pt; color:var(--att-soft)}
+
+/* ---- totals and the signing block ---- */
+.att-count{margin-top:3mm; font-size:8.5pt; color:var(--att-soft); display:flex; gap:8mm; flex-wrap:wrap}
+.att-count b{color:var(--att-ink)}
+
+.att-signs{display:flex; gap:10mm; margin-top:12mm; break-inside:avoid}
+.att-sign{flex:1; text-align:center}
+.att-sign .rule{height:.35mm; background:var(--att-line); margin-bottom:1.6mm}
+.att-sign .who{font-size:9pt; font-weight:700; min-height:4mm}
+.att-sign .role{font-size:7.5pt; color:var(--att-soft); letter-spacing:.06em; text-transform:uppercase; margin-top:.6mm}
+
+.att-foot{
+  margin-top:8mm; padding-top:2.5mm; border-top:.3mm solid var(--att-line);
+  font-size:7.5pt; color:var(--att-soft); display:flex; justify-content:space-between; gap:6mm;
+}
+
+@media print{
+  @page{size:A4 portrait; margin:0}
+  html,body{background:#fff}
+  .att-sheet{box-shadow:none; margin:0; min-height:auto; padding:10mm 12mm 12mm}
+  .att-scope *{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+  /* The heading row repeats on every page. A second page of signature boxes
+     with no names against them proves nothing. */
+  .att-table thead{display:table-header-group}
+  .att-table tr{break-inside:avoid}
+  .att-signs{break-inside:avoid}
+}
