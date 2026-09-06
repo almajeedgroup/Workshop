@@ -7,6 +7,7 @@ import { listPendingRequests } from '../lib/publicdb.js';
 const LINKS = [
   { to: '/console', label: 'Console', end: false },
   { to: '/records', label: 'Records', end: true },
+  { to: '/people', label: 'Students', end: false },
   { to: '/import', label: 'Import text', end: false },
   { to: '/new', label: 'Add manually', end: false },
 ];

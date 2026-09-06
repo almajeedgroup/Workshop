@@ -26,6 +26,7 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 | **Ticket** | Every registrant gets a sequential Ticket ID and a printable ticket + IIC payment receipt. |
 | **Overlay** | Open anybody's ticket over the board without losing the groups you expanded to find them. |
 | **Find** | One box on the Console and the board that finds a person by name, ticket, number or anything else, across every course at once. |
+| **Students** | Everybody on two or more courses, and a printable profile of everything one student has done. |
 | **Online class** | Online and Hybrid courses get a Jitsi room on the school's own page, with the register beside it and attendance taken from who is in it. |
 | **Send** | One click opens WhatsApp or email with the ticket already written out. |
 | **Contact** | Call or email any registrant directly from the list. |
@@ -875,6 +876,7 @@ src/
   lib/attendancedb.js      the register: one document per day
   lib/photodb.js           participant photographs, kept off the registration
   lib/search.js            finding one person across every course at once
+  lib/people.js            recognising one student across courses
   lib/meeting.js           room names, join links, and who is in the room
   lib/meetingdb.js         opening and closing a class, and moving its room
   lib/phonefix.js          which stored numbers need reshaping, and into what
@@ -894,7 +896,7 @@ src/
   components/site/         PublicShell, SiteHeader, SiteFooter, Icons
   pages/                   the admin tool: Console, Login, List, Import, Workshop,
                            Edit, Ticket, CertificateAllot, IdCard, IdCards,
-                           Attendance, Class
+                           Attendance, Class, People, Person
   pages/site/              the public site: Home, Programmes, Certificates,
                            About, Contact, Register, JoinClass
   AuthContext.jsx          sign-in + admin allow-list check
@@ -970,7 +972,80 @@ click to confirm.
 
 ---
 
-## 15. Finding one person
+## 15. Returning students
+
+A registration belongs to a workshop. Somebody who comes to three courses is
+three documents with three ticket IDs, and nothing in the system said they
+were one person — so the school could not answer the question every school
+eventually asks, and a returning student got the same blank welcome as a
+stranger.
+
+**Students** in the sidebar lists everybody on two or more courses. Each name
+opens a profile: every course they have been on, the ticket for each, what
+they attended, what they paid, and every certificate they have been awarded.
+It prints, because that is what gets asked for.
+
+### Who counts as the same person
+
+The same identity the duplicate check uses — **phone, then email, then name
+with date of birth** (`matchKeys` in `dedupe.js`). Inventing a second answer
+here would let the app call two records a duplicate on one screen and two
+different people on another.
+
+**A name alone is not an identity.** There are two Mohammed Khans, and
+merging them puts one student's attendance and certificates on the other's
+profile. Somebody with no phone, no email and no date of birth has nothing
+to match on and stays on their own; their profile says so.
+
+Joining is **transitive**: a phone on the first registration, an email on the
+second, and both on a third is one person, not three. Anything less gives an
+answer that depends on the order the records were read in.
+
+Two tickets on **one** course is a duplicate registration, not a second
+visit, so courses are counted distinct — that person is not a returning
+student and has not attended twice.
+
+### Registered, or actually there
+
+The list switches between two counts, and the difference is real:
+
+- **Registered on 2+** — signed up for two or more courses.
+- **Attended 2+** — *marked present* on two or more.
+
+A register is not taken on every course here, so counting only marked
+attendance hides most returning students, while counting only registrations
+includes somebody who signed up twice and came once. Both questions are
+legitimate; neither is presented as the other, and the screen says which one
+you are looking at.
+
+A course whose register was **never taken** counts towards neither side.
+Not zero — counting an untaken register as absence says a student skipped a
+course when the truth is that nobody wrote anything down.
+
+### The profile address
+
+`/people/:id`, where the id is a digest of the identity key, not the key
+itself. That key is a phone number or an email address, and a profile page
+whose address carries a student's phone leaks it into browser history,
+screenshots, and anything the link is pasted into. The digest is stable, so a
+profile keeps the same address, and meaningless on its own. It is not doing
+security work — the administrator login is.
+
+### From a search result
+
+Look somebody up in the finder and, if they turn out to be on more than one
+course, the overlay offers their profile. Finding out they have been here
+before is usually how you find out at all.
+
+### What it costs
+
+One read per course for the registers, and one per course on a profile for
+the certificates — only on these two screens. The registrations themselves
+were already fetched.
+
+---
+
+## 16. Finding one person
 
 The rest of the app is organised by workshop, which is right — a course is
 the thing that gets run, printed and paid for. But the question that arrives
@@ -1047,7 +1122,7 @@ with the board and not beside the table.
 
 ---
 
-## 16. Online classes
+## 17. Online classes
 
 An Online or Hybrid course gets a **classroom**: a Jitsi Meet room embedded in
 the school's own pages. Jitsi is open source and its public server is free,
@@ -1170,7 +1245,7 @@ server by that one name.
 
 ---
 
-## 17. Phone numbers
+## 18. Phone numbers
 
 Everything is stored as `+91 98452 89298` — country code, then the number.
 The sanitisers in `src/lib/db.js` and `src/lib/publicdb.js` put every `tel`
@@ -1223,16 +1298,17 @@ looking after a permanent service-account key for a one-off tidy-up.
 
 ---
 
-## 18. Tests
+## 19. Tests
 
 ```bash
 npm test
 ```
 
-Runs 358 assertions on Node's built-in test runner — no extra dependencies,
+Runs 385 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards, attendance
-sheets, online classes, search and the phone-number migration. The parser
+sheets, online classes, search, returning students and the phone-number
+migration. The parser
 is heuristic and fails **silently** when it fails at all, so anything you teach
 it belongs in `tests/parser.test.js` alongside a paste that used to break it.
 
@@ -1241,7 +1317,7 @@ the Firebase emulator.
 
 ---
 
-## 19. Colour
+## 20. Colour
 
 Black text on a white page, and the four colours on everything else.
 
@@ -1295,7 +1371,7 @@ their own schemes, and the ID card keeps its six colourways.
 
 ---
 
-## 20. Attribution
+## 21. Attribution
 
 Al-Majeed School of Research Methodology and Innovation is named **in
 association with** on everything this system produces: the ticket and its
@@ -1317,7 +1393,7 @@ different ways across the code — with a comma after "Research", with `&`, and
 with `and` — which on a certificate and the ticket for the same course is the
 sort of thing people notice.
 
-## 21. Notes
+## 22. Notes
 
 - Search and filtering happen on the client, so no composite Firestore indexes
   are needed. Comfortable into the low thousands of records. Past that, the
@@ -1356,7 +1432,7 @@ sort of thing people notice.
 
 ---
 
-## 22. Verifying the security rules
+## 23. Verifying the security rules
 
 `firestore.rules` is the only thing standing between the public internet and
 every student's phone number, so it is worth testing rather than trusting.

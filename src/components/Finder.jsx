@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { buildIndex, search, workshopFacts, requestFacts, MIN_QUERY } from '../lib/search.js';
+import { groupPeople, courseCount, RETURNING_AT } from '../lib/people.js';
 import { formatDateRange } from '../lib/tickets.js';
 import TicketDocument from './TicketDocument.jsx';
 import Overlay from './Overlay.jsx';
@@ -33,6 +34,10 @@ export default function Finder({ bundles = [], requests = [], placeholder }) {
 
   // Rebuilt only when the data behind it changes, not on every keystroke.
   const index = useMemo(() => buildIndex(bundles, requests), [bundles, requests]);
+  // So a result can offer a profile when the person turns out to be on more
+  // than one course. Looking that up from the ticket is how you find out
+  // they have been here before.
+  const people = useMemo(() => groupPeople(bundles), [bundles]);
   const { rows, total, short } = useMemo(() => search(index, q), [index, q]);
 
   useEffect(() => setActive(0), [q]);
@@ -142,15 +147,18 @@ export default function Finder({ bundles = [], requests = [], placeholder }) {
         </div>
       )}
 
-      {chosen && <FinderDetail item={chosen} onClose={() => setChosen(null)} />}
+      {chosen && <FinderDetail item={chosen} people={people} onClose={() => setChosen(null)} />}
     </div>
   );
 }
 
 /** What opens when a result is chosen. One overlay, three kinds of content. */
-function FinderDetail({ item, onClose }) {
+function FinderDetail({ item, people = [], onClose }) {
   if (item.kind === 'person') {
     const { workshop, reg } = item;
+    const profile = people.find((p) =>
+      p.courses.some((c) => c.reg.id === reg.id && c.workshop.id === workshop.id));
+    const returning = profile && courseCount(profile) >= RETURNING_AT;
     return (
       <Overlay
         title={`${reg.name || 'Registration'} — ${reg.ticketId || 'no ticket'}`}
@@ -159,6 +167,11 @@ function FinderDetail({ item, onClose }) {
         actions={(
           <>
             <button type="button" onClick={() => window.print()}>Print / PDF</button>
+            {returning && (
+              <Link className="btn primary" to={`/people/${profile.id}`}>
+                {courseCount(profile)} courses
+              </Link>
+            )}
             <Link className="btn" to={`/w/${workshop.id}/t/${reg.id}`}>Open full page</Link>
             <Link className="btn" to={`/w/${workshop.id}`}>The course</Link>
           </>
