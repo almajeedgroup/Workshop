@@ -568,6 +568,15 @@ select.status[data-status='Refunded'] { background: var(--red); }
 }
 .carry-list li { border-bottom: var(--hairline); font-size: 12.5px; }
 
+/* Somebody who matched an existing registration. Unticked and marked, never
+   removed: the office decides whether a shared phone means one person or
+   four, and it cannot decide about somebody it was not shown. */
+.carry-list .is-flagged { border-left: 3px solid var(--tangerine); }
+.carry-why {
+  display: block; font-style: normal; font-size: 10.5px; color: var(--muted);
+  font-weight: 400; white-space: normal;
+}
+
 /* The whole row is the label, so the name is part of the tick target rather
    than something to aim past. */
 .carry-list label {
@@ -577,6 +586,7 @@ select.status[data-status='Refunded'] { background: var(--red); }
 .carry-list label:hover { background: var(--faint); }
 .carry-list input[type='checkbox'] { flex: none; width: 15px; height: 15px; accent-color: var(--jade); }
 .carry-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.carry-list .is-flagged label { align-items: flex-start; }
 .carry-list .f-sub { flex: none; }
 
 /* ---- the finder: one box that searches everything on screen ----

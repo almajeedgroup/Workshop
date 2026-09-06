@@ -1015,19 +1015,34 @@ register nobody remembers adding them to.
 The carried list is an **allow-list**, so a field added to the schema later
 is not carried by accident.
 
-Anybody already registered here is not offered at all, matched on the usual
-identity — phone, then email, then name with date of birth — and named
-underneath so it is clear who was left out and why. Somebody listed twice on
-the old course appears once. Somebody with none of those has nothing to match
-on and is offered anyway: the office can untick a duplicate, but cannot add a
-student it was never told about.
+**It reports; it does not decide.** Anybody who matches somebody already
+registered — on the usual identity of phone, then email, then name with date
+of birth — is shown **unticked**, with what they matched and who:
 
-The line under the row says *"9 students would be added"* while everybody is
-ticked and *"3 of 9 chosen"* once they are not, so the button's number and
-the list on screen can never disagree without explanation. *"All 20 are
-already here"* saves the press altogether. If the course has a seat limit,
-the warning follows the **selection**, not the whole course — bringing one
-student into one free seat is not a problem and is not reported as one.
+> ☐ Fathima Zohra · *same WhatsApp number as Aaliya Fatima — already on this
+> course*
+
+They are never removed from the list. This office types a shared contact — an
+office number, a parent's phone, one email between siblings — into the
+records of students who have none of their own, so four different people can
+carry one number. An earlier version withheld all four with a message saying
+they were already registered, which was untrue and impossible to argue with.
+`dedupe.js` has always taken the other line for pasted registrations — *"it
+reports, and the operator decides — two cousins really can share a phone"* —
+and there was no reason for this screen to be the exception.
+
+Somebody listed twice on the **old** course is a different problem from
+somebody already on **this** one, and each says which it is. Somebody with no
+phone, email or date of birth has nothing to match on and is ticked.
+
+The line under the row says *"all 9 would be added"* while everybody is
+ticked and *"5 of 9 chosen · 4 left unticked — they match somebody already
+registered"* once they are not, so the button's number and the list on screen
+can never disagree without explanation. It counts only what is **still**
+unticked: tick a flagged row and it stops being reported as held back. If the
+course has a seat limit, the warning follows the **selection**, not the whole
+course — bringing one student into one free seat is not a problem and is not
+reported as one.
 
 
 A registration belongs to a workshop. Somebody who comes to three courses is
@@ -1360,7 +1375,7 @@ looking after a permanent service-account key for a one-off tidy-up.
 npm test
 ```
 
-Runs 432 assertions on Node's built-in test runner — no extra dependencies,
+Runs 439 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards, attendance
 sheets, online classes, search, returning students, carry-forward and the

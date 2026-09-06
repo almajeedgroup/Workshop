@@ -19,7 +19,7 @@
  * a database.
  */
 
-import { matchKeys } from './dedupe.js';
+import { matchKeys, splitDuplicates } from './dedupe.js';
 
 /**
  * The fields that belong to the person rather than to the course.
@@ -63,32 +63,62 @@ export function carriedRegistration(reg, source, { note = true } = {}) {
 }
 
 /**
- * Who would come across, and who is already here.
+ * Who comes across, and who needs a second look.
  *
- * Matched with the same `matchKeys` the duplicate check and the student
- * profiles use — phone, then email, then name with date of birth. A
- * registration with none of those has nothing to match on, so it is brought
- * across rather than silently skipped: the office can delete a duplicate,
- * but cannot add somebody they were never told about.
+ * REPORTS, IT DOES NOT DECIDE. The first version of this quietly withheld
+ * anybody who matched somebody already registered, which sounds safe and is
+ * not: this office types a shared contact — an office number, a parent's
+ * phone, one email between siblings — into the records of students who have
+ * none of their own. Four different people can carry one number, and they
+ * were all dropped from the list with a message saying they were already
+ * registered, which was untrue and impossible to argue with.
  *
- * Somebody appearing twice on the source course arrives once.
+ * So a match now UNTICKS a row and says what it matched, instead of removing
+ * it. `dedupe.js` has always worked this way for pasted registrations — "it
+ * reports, and the operator decides — two cousins really can share a phone" —
+ * and there was no reason for this screen to be the exception.
+ *
+ * Returns:
+ *   bring    — matched nothing. Ticked by default.
+ *   already  — matched something, with what and who. Shown, unticked.
+ *              `here` distinguishes "is on this course" from "is listed
+ *              twice on that one", which are different problems and were
+ *              being reported with the same misleading sentence.
  */
 export function carryPlan(sourceRegs = [], targetRegs = []) {
-  const here = new Set();
-  for (const reg of targetRegs) for (const key of matchKeys(reg)) here.add(key);
+  const { unique, duplicates } = splitDuplicates(sourceRegs, targetRegs);
+  const onThisCourse = new Set(targetRegs);
+  return {
+    bring: unique,
+    already: duplicates.map(({ row, against, reason }) => ({
+      reg: row,
+      against,
+      reason,
+      here: onThisCourse.has(against),
+    })),
+  };
+}
 
-  const bring = [];
-  const already = [];
-  const seen = new Set();
+/**
+ * Every row the panel offers, in order: the clear ones, then the ones with a
+ * question against them.
+ *
+ * One list rather than two, because a name somebody is looking for has to be
+ * findable whichever bucket it landed in.
+ */
+export function offered(plan) {
+  return [
+    ...(plan?.bring || []).map((reg) => ({ reg, match: null })),
+    ...(plan?.already || []).map((m) => ({ reg: m.reg, match: m })),
+  ];
+}
 
-  for (const reg of sourceRegs) {
-    const keys = matchKeys(reg);
-    if (keys.some((k) => here.has(k))) { already.push(reg); continue; }
-    if (keys.length && keys.some((k) => seen.has(k))) { already.push(reg); continue; }
-    keys.forEach((k) => seen.add(k));
-    bring.push(reg);
-  }
-  return { bring, already };
+/** Why a row is unticked, in words. */
+export function describeMatch(match) {
+  if (!match) return '';
+  const other = String(match.against?.name || '').trim();
+  const where = match.here ? 'already on this course' : 'listed earlier on that course';
+  return other ? `${match.reason} as ${other} — ${where}` : `${match.reason} — ${where}`;
 }
 
 /**
@@ -114,7 +144,12 @@ export function carryRows(chosen = [], source, options) {
  * continuing; do not tick eighteen who are.
  */
 export function pickAll(plan) {
-  return new Set(plan.bring.map((r) => r.id));
+  return new Set((plan?.bring || []).map((r) => r.id));
+}
+
+/** Everybody the panel offers, matches included. For "select all". */
+export function pickEveryone(plan) {
+  return new Set(offered(plan).map(({ reg }) => reg.id));
 }
 
 /** Ticking or unticking one. Returns a new set — nothing is mutated. */
@@ -134,15 +169,16 @@ export function togglePick(picked, id) {
  */
 export function chosenFrom(plan, picked) {
   const want = picked instanceof Set ? picked : new Set(picked || []);
-  return plan.bring.filter((r) => want.has(r.id));
+  return offered(plan).filter(({ reg }) => want.has(reg.id)).map(({ reg }) => reg);
 }
 
 /** Narrow a long list to what somebody is looking for. */
-export function filterBring(plan, query) {
+export function filterOffered(plan, query) {
+  const rows = offered(plan);
   const q = String(query ?? '').trim().toLowerCase();
-  if (!q) return plan.bring;
-  return plan.bring.filter((r) =>
-    `${r.name} ${r.whatsapp || ''} ${r.email || ''} ${r.area || ''} ${r.ticketId || ''}`
+  if (!q) return rows;
+  return rows.filter(({ reg }) =>
+    `${reg.name} ${reg.whatsapp || ''} ${reg.email || ''} ${reg.area || ''} ${reg.ticketId || ''}`
       .toLowerCase().includes(q));
 }
 
@@ -155,18 +191,28 @@ export function filterBring(plan, query) {
  * number and the list on screen disagree with no explanation.
  */
 export function describePlan(plan, seatsLeft = null, picked = null) {
-  const total = plan.bring.length;
-  const dup = plan.already.length;
-  if (total === 0 && dup === 0) return 'That course has no registrations to bring.';
-  if (total === 0) return `Everybody on that course — all ${dup} — is already registered here.`;
+  const rows = offered(plan);
+  const total = rows.length;
+  if (total === 0) return 'That course has no registrations to bring.';
 
-  const n = picked ? chosenFrom(plan, picked).length : total;
+  const want = picked
+    ? (picked instanceof Set ? picked : new Set(picked))
+    : new Set((plan?.bring || []).map((r) => r.id));
+  const n = rows.filter(({ reg }) => want.has(reg.id)).length;
+
+  // Only the flagged rows STILL UNTICKED are worth mentioning. Saying "4
+  // match somebody already registered" while all four are ticked contradicts
+  // the list underneath it.
+  const held = rows.filter(({ reg, match }) => match && !want.has(reg.id)).length;
+
   const parts = [];
   if (n === 0) parts.push('Nobody chosen yet');
-  else if (n === total) parts.push(`${n} student${n === 1 ? '' : 's'} would be added`);
+  else if (n === total) parts.push(`all ${n} would be added`);
   else parts.push(`${n} of ${total} chosen`);
 
-  if (dup) parts.push(`${dup} already here`);
+  if (held) {
+    parts.push(`${held} left unticked — ${held === 1 ? 'it matches' : 'they match'} somebody already registered`);
+  }
   if (n > 0 && seatsLeft !== null && n > seatsLeft) {
     parts.push(seatsLeft <= 0
       ? 'this course is already full'

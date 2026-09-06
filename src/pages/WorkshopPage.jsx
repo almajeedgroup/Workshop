@@ -23,8 +23,8 @@ import { formatDateRange } from '../lib/tickets.js';
 import { isFinished } from '../lib/overview.js';
 import { classIsLive } from '../lib/meeting.js';
 import {
-  carryPlan, carryRows, describePlan, carrySources,
-  pickAll, togglePick, chosenFrom, filterBring,
+  carryPlan, carryRows, describePlan, describeMatch, carrySources,
+  pickAll, pickEveryone, togglePick, chosenFrom, filterOffered,
 } from '../lib/carryover.js';
 
 function shown(field, w) {
@@ -195,12 +195,14 @@ export default function WorkshopPage() {
       await reload();
       setCarryOpen(false);
       setPicked(null);
-      const left = plan.bring.length - rows.length;
+      // Everybody offered, not just the clean ones — "skipped N already
+      // here" was left over from when matches were withheld, and said people
+      // had been skipped when they had simply not been ticked.
+      const left = plan.bring.length + plan.already.length - rows.length;
       setNotice(
         `Brought ${rows.length} student${rows.length === 1 ? '' : 's'} from `
         + `“${source.title || 'that course'}”`
-        + (left ? `, left ${left} behind` : '')
-        + (plan.already.length ? `, skipped ${plan.already.length} already here.` : '.')
+        + (left ? `, left ${left} behind.` : '.')
       );
     } catch (e) {
       setError(e.message);
@@ -554,7 +556,8 @@ export default function WorkshopPage() {
           // ticking eighteen.
           const marks = picked ?? pickAll(plan);
           const chosen = chosenFrom(plan, marks);
-          const shown = filterBring(plan, carryQ);
+          const shown = filterOffered(plan, carryQ);
+          const everyone = pickEveryone(plan);
           const setMarks = (next) => setPicked(next);
 
           return (
@@ -598,16 +601,16 @@ export default function WorkshopPage() {
                 {describePlan(plan, seatsLeft, marks)}
               </p>
 
-              {plan.bring.length > 0 && (
+              {(plan.bring.length > 0 || plan.already.length > 0) && (
                 <>
                   <div className="carry-tools">
                     <button
                       type="button"
                       className="small"
-                      disabled={chosen.length === plan.bring.length}
-                      onClick={() => setMarks(pickAll(plan))}
+                      disabled={chosen.length === everyone.size}
+                      onClick={() => setMarks(everyone)}
                     >
-                      Select all {plan.bring.length}
+                      Select all {everyone.size}
                     </button>
                     <button
                       type="button"
@@ -617,7 +620,7 @@ export default function WorkshopPage() {
                     >
                       Clear
                     </button>
-                    {plan.bring.length > 8 && (
+                    {(plan.bring.length + plan.already.length) > 8 && (
                       <input
                         type="search"
                         className="small"
@@ -629,21 +632,24 @@ export default function WorkshopPage() {
                     )}
                     <span className="spacer" />
                     <span className="hint">
-                      {chosen.length} of {plan.bring.length} ticked
+                      {chosen.length} of {everyone.size} ticked
                     </span>
                   </div>
 
                   <ul className="carry-list">
-                    {shown.map((r) => (
-                      <li key={r.id}>
+                    {shown.map(({ reg, match }) => (
+                      <li key={reg.id} className={match ? 'is-flagged' : undefined}>
                         <label>
                           <input
                             type="checkbox"
-                            checked={marks.has(r.id)}
-                            onChange={() => setMarks(togglePick(marks, r.id))}
+                            checked={marks.has(reg.id)}
+                            onChange={() => setMarks(togglePick(marks, reg.id))}
                           />
-                          <span className="carry-name">{r.name || '(no name)'}</span>
-                          <span className="f-sub">{r.whatsapp || r.email || 'no contact'}</span>
+                          <span className="carry-name">
+                            {reg.name || '(no name)'}
+                            {match && <em className="carry-why">{describeMatch(match)}</em>}
+                          </span>
+                          <span className="f-sub">{reg.whatsapp || reg.email || 'no contact'}</span>
                         </label>
                       </li>
                     ))}
@@ -656,10 +662,10 @@ export default function WorkshopPage() {
 
               {plan.already.length > 0 && (
                 <p className="hint">
-                  {plan.already.length} more {plan.already.length === 1 ? 'is' : 'are'} on
-                  that course and already registered here, so {plan.already.length === 1 ? 'it is' : 'they are'} not
-                  offered: {plan.already.map((r) => r.name).filter(Boolean).slice(0, 6).join(', ')}
-                  {plan.already.length > 6 ? ' and others' : ''}.
+                  The unticked ones match somebody already registered — often
+                  because a shared office or family number was typed into both.
+                  They are listed, not withheld: tick anybody who is genuinely
+                  a different person.
                 </p>
               )}
 

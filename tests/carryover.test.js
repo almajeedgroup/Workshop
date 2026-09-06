@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   CARRIED_FIELDS, carriedRegistration, carryPlan, carryRows, describePlan, carrySources,
-  pickAll, togglePick, chosenFrom, filterBring,
+  pickAll, pickEveryone, togglePick, chosenFrom, filterOffered, offered, describeMatch,
 } from '../src/lib/carryover.js';
 
 const OLD = { id: 'w0', title: 'Youth Parliament', startDate: '2025-06-01' };
@@ -76,10 +76,50 @@ test('everybody comes when the new course is empty', () => {
   assert.deepEqual(plan.already, []);
 });
 
-test('somebody already registered here is skipped, not given a second ticket', () => {
+test('somebody already registered here is unticked, NOT withheld', () => {
   const plan = carryPlan(SRC, [{ id: 't1', name: 'Adifaah S', whatsapp: '9339214522' }]);
   assert.deepEqual(plan.bring.map((r) => r.id), ['s2', 's3']);
-  assert.deepEqual(plan.already.map((r) => r.id), ['s1']);
+  assert.deepEqual(plan.already.map((m) => m.reg.id), ['s1']);
+  // Still on the list, so the office can see them and decide.
+  assert.deepEqual(offered(plan).map(({ reg }) => reg.id), ['s2', 's3', 's1']);
+});
+
+test('FOUR DIFFERENT PEOPLE SHARING ONE NUMBER ARE ALL STILL OFFERED', () => {
+  // The bug this replaced: this office types a shared office or family
+  // number into records of students who have none of their own, so four
+  // distinct people carried one number and all four vanished from the list
+  // under a message saying they were already registered. They were not.
+  const shared = '+91 9845289298';
+  const four = [
+    { id: 'a', name: 'Fathima Zohra', whatsapp: shared },
+    { id: 'b', name: 'Zoha Jabeen', whatsapp: shared },
+    { id: 'c', name: 'Syed Abdul Wahid', whatsapp: shared },
+    { id: 'd', name: 'Laiba Mohiuddin', whatsapp: shared },
+  ];
+  const plan = carryPlan(four, [{ id: 't', name: 'Someone Here', whatsapp: shared }]);
+  assert.equal(offered(plan).length, 4, 'all four must still be offered');
+  assert.equal(plan.bring.length, 0, 'and none ticked without a look');
+  // Ticking them brings them — the office decides, not the matcher.
+  assert.equal(chosenFrom(plan, pickEveryone(plan)).length, 4);
+});
+
+test('a match says what it matched and where', () => {
+  const plan = carryPlan(SRC, [{ id: 't1', name: 'Adifaah S', whatsapp: '9339214522' }]);
+  const [match] = plan.already;
+  assert.equal(match.reason, 'same WhatsApp number');
+  assert.equal(match.against.name, 'Adifaah S');
+  assert.equal(match.here, true);
+  assert.equal(describeMatch(match),
+    'same WhatsApp number as Adifaah S — already on this course');
+});
+
+test('listed twice on that course is a different problem, and says so', () => {
+  // Reporting this as "already registered here" was simply false.
+  const plan = carryPlan([...SRC, { id: 's4', name: 'Adifaah again', whatsapp: '+91 9339214522' }], []);
+  assert.equal(plan.bring.length, 3);
+  const [match] = plan.already;
+  assert.equal(match.here, false);
+  assert.match(describeMatch(match), /listed earlier on that course/);
 });
 
 test('matching is by phone, email or name with date of birth — the usual identity', () => {
@@ -89,15 +129,7 @@ test('matching is by phone, email or name with date of birth — the usual ident
   assert.equal(carryPlan(SRC, [{ name: 'Mohammed Khan' }]).bring.length, 3);
 });
 
-test('somebody listed twice on the old course arrives once', () => {
-  const plan = carryPlan([...SRC, { id: 's4', name: 'Adifaah again', whatsapp: '+91 9339214522' }], []);
-  assert.equal(plan.bring.length, 3);
-  assert.deepEqual(plan.already.map((r) => r.id), ['s4']);
-});
-
-test('somebody with nothing to match on is brought, not silently dropped', () => {
-  // The office can delete a duplicate. It cannot add somebody it was never
-  // told about.
+test('somebody with nothing to match on is offered and ticked', () => {
   const plan = carryPlan([{ id: 'x', name: 'No Contact' }], [{ id: 'y', name: 'No Contact' }]);
   assert.equal(plan.bring.length, 1);
 });
@@ -105,15 +137,24 @@ test('somebody with nothing to match on is brought, not silently dropped', () =>
 test('nothing in, nothing out', () => {
   assert.deepEqual(carryPlan([], []), { bring: [], already: [] });
   assert.deepEqual(carryPlan(), { bring: [], already: [] });
+  assert.deepEqual(offered({ bring: [], already: [] }), []);
+  assert.deepEqual(offered(), []);
+  assert.equal(describeMatch(null), '');
   assert.deepEqual(carryRows([], OLD), []);
   assert.deepEqual(carryRows(undefined, OLD), []);
 });
 
 /* ---------------- choosing which of them come ---------------- */
 
-test('everybody starts ticked — unticking two beats ticking eighteen', () => {
+test('the clear ones start ticked — unticking two beats ticking eighteen', () => {
   const plan = carryPlan(SRC, []);
   assert.deepEqual([...pickAll(plan)], ['s1', 's2', 's3']);
+});
+
+test('a matched row is offered but NOT ticked by default', () => {
+  const plan = carryPlan(SRC, [{ whatsapp: '+91 9339214522' }]);
+  assert.ok(!pickAll(plan).has('s1'), 'it needs a look first');
+  assert.ok(pickEveryone(plan).has('s1'), 'but Select all does reach it');
 });
 
 test('one student can be brought on their own', () => {
@@ -156,10 +197,16 @@ test('an array of ids works as well as a set', () => {
 
 test('a long list can be narrowed to find one person', () => {
   const plan = carryPlan(SRC, []);
-  assert.deepEqual(filterBring(plan, 'khatun').map((r) => r.id), ['s2']);
-  assert.deepEqual(filterBring(plan, 'sab@example.com').map((r) => r.id), ['s2']);
-  assert.equal(filterBring(plan, '').length, 3, 'an empty filter hides nobody');
-  assert.equal(filterBring(plan, 'zzz').length, 0);
+  assert.deepEqual(filterOffered(plan, 'khatun').map(({ reg }) => reg.id), ['s2']);
+  assert.deepEqual(filterOffered(plan, 'sab@example.com').map(({ reg }) => reg.id), ['s2']);
+  assert.equal(filterOffered(plan, '').length, 3, 'an empty filter hides nobody');
+  assert.equal(filterOffered(plan, 'zzz').length, 0);
+});
+
+test('the filter reaches the matched rows too', () => {
+  // They are the ones somebody goes looking for — "why is Zoha not coming?"
+  const plan = carryPlan(SRC, [{ whatsapp: '+91 9339214522' }]);
+  assert.deepEqual(filterOffered(plan, 'adifaah').map(({ reg }) => reg.id), ['s1']);
 });
 
 test('filtering never changes who is ticked', () => {
@@ -167,15 +214,14 @@ test('filtering never changes who is ticked', () => {
   // them — a filter that silently unticked the hidden ones would lose work.
   const plan = carryPlan(SRC, []);
   const marks = pickAll(plan);
-  filterBring(plan, 'khatun');
+  filterOffered(plan, 'khatun');
   assert.equal(chosenFrom(plan, marks).length, 3);
 });
 
 /* ---------------- what the button says ---------------- */
 
 test('the button carries the count, so pressing it is a decision', () => {
-  assert.match(describePlan(carryPlan(SRC, [])), /^3 students would be added\.$/);
-  assert.match(describePlan(carryPlan([SRC[0]], [])), /^1 student would be added\.$/);
+  assert.match(describePlan(carryPlan(SRC, [])), /^all 3 would be added\.$/);
 });
 
 test('once some are unticked it says how many of how many', () => {
@@ -184,7 +230,15 @@ test('once some are unticked it says how many of how many', () => {
   const plan = carryPlan(SRC, []);
   assert.match(describePlan(plan, null, new Set(['s1'])), /^1 of 3 chosen\.$/);
   assert.match(describePlan(plan, null, new Set()), /^Nobody chosen yet\.$/);
-  assert.match(describePlan(plan, null, pickAll(plan)), /^3 students would be added\.$/);
+  assert.match(describePlan(plan, null, pickAll(plan)), /^all 3 would be added\.$/);
+});
+
+test('it says how many are unticked and why, rather than hiding them', () => {
+  const plan = carryPlan(SRC, [{ whatsapp: '+91 9339214522' }]);
+  const line = describePlan(plan, null, pickAll(plan));
+  assert.match(line, /2 of 3 chosen/);
+  assert.match(line, /1 left unticked — it matches somebody already registered/);
+  assert.ok(!line.includes('not offered'), 'nobody is withheld any more');
 });
 
 test('the seat warning follows the selection, not the whole course', () => {
@@ -194,15 +248,32 @@ test('the seat warning follows the selection, not the whole course', () => {
     'bringing one into one free seat is not a warning');
 });
 
-test('it says how many are already here', () => {
+test('once a flagged row IS ticked, it stops being reported as held back', () => {
+  // Saying "4 match somebody already registered" while all four are ticked
+  // contradicts the list underneath it.
   const plan = carryPlan(SRC, [{ whatsapp: '+91 9339214522' }]);
-  assert.match(describePlan(plan), /2 students would be added · 1 already here\./);
+  const line = describePlan(plan, null, pickEveryone(plan));
+  assert.match(line, /^all 3 would be added\.$/);
+  assert.ok(!line.includes('unticked'));
 });
 
-test('when everybody is already here it says so, and saves the press', () => {
+test('a matched row can be ticked and brought like any other', () => {
+  const plan = carryPlan(SRC, [{ whatsapp: '+91 9339214522' }]);
+  const chosen = chosenFrom(plan, new Set(['s1']));
+  assert.deepEqual(chosen.map((r) => r.name), ['Adifaah Shaikh']);
+  assert.equal(carryRows(chosen, OLD).length, 1);
+});
+
+test('with no selection yet, it describes the clear ones and flags the rest', () => {
+  const plan = carryPlan(SRC, [{ whatsapp: '+91 9339214522' }]);
+  assert.match(describePlan(plan), /^2 of 3 chosen · 1 left unticked/);
+});
+
+test('when everybody matches, all three are still listed and none ticked', () => {
   const plan = carryPlan(SRC, SRC);
   assert.equal(plan.bring.length, 0);
-  assert.match(describePlan(plan), /all 3 — is already registered here/);
+  assert.equal(offered(plan).length, 3);
+  assert.match(describePlan(plan, null, pickAll(plan)), /^Nobody chosen yet · 3 left unticked/);
 });
 
 test('an empty course says that, rather than nothing', () => {
