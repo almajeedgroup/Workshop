@@ -5,6 +5,7 @@ import {
   classIsLive, classClosedReason, isOnlineClass, classJoinUrl, roomUrl, externalApiUrl,
   meetingOptions, HOST_TOOLBAR, GUEST_TOOLBAR, MODERATOR_ACTIONS,
   nameKey, matchRoom, marksFromRoom,
+  canEmbedMeeting, meetingHostname, launchReason, launchLimits, EMBED_FORBIDDEN,
 } from '../src/lib/meeting.js';
 import { ISSUER, isOnlineWorkshop, visibleWorkshopFields } from '../src/lib/schema.js';
 import { publicWorkshopRecord } from '../src/lib/publicdb.js';
@@ -302,4 +303,58 @@ test('an in-person course never publishes a room, however the flag is set', () =
 test('the mirror carries the server, so a student never has to know it', () => {
   const rec = publicWorkshopRecord({ title: 'AI', mode: 'Online' });
   assert.equal(rec.meetingHost, ISSUER.meetingHost);
+});
+
+/* ------------------------------------------------------------------ *
+ * Embedded, or opened in its own window
+ * ------------------------------------------------------------------ */
+
+test('meet.jit.si is NOT embedded, because an embedded call is cut off', () => {
+  // 8x8 allow embedding meet.jit.si only as a demo: five minutes and the
+  // call disconnects, with a dialog saying so. Used directly it is free and
+  // unlimited. The app must not depend on the mode that gets cut off.
+  assert.equal(canEmbedMeeting('meet.jit.si', 'auto'), false);
+  assert.equal(canEmbedMeeting('https://meet.jit.si/', 'auto'), false);
+  assert.equal(canEmbedMeeting('8x8.vc', 'auto'), false);
+});
+
+test('a self-hosted Jitsi is embedded, because the rule is theirs not the software’s', () => {
+  assert.equal(canEmbedMeeting('jitsi.almajeedgroup.in', 'auto'), true);
+  assert.equal(canEmbedMeeting('meet.school.example', 'auto'), true);
+});
+
+test('the mode can be forced either way', () => {
+  assert.equal(canEmbedMeeting('meet.jit.si', 'always'), true);
+  assert.equal(canEmbedMeeting('jitsi.school.in', 'never'), false);
+});
+
+test('the default setting is the one that works', () => {
+  assert.equal(ISSUER.meetingEmbed, 'auto');
+  assert.equal(canEmbedMeeting(), false, 'meet.jit.si, so launched');
+});
+
+test('a hostname is read out of whatever was written', () => {
+  for (const v of ['meet.jit.si', 'https://meet.jit.si', 'https://meet.jit.si/', 'MEET.JIT.SI']) {
+    assert.equal(meetingHostname(v), 'meet.jit.si', v);
+  }
+});
+
+test('the reason is given only when there is one', () => {
+  assert.match(launchReason('meet.jit.si', 'auto'), /five-minute demo/);
+  assert.match(launchReason('meet.jit.si', 'auto'), /no limit/);
+  assert.equal(launchReason('jitsi.school.in', 'auto'), '', 'nothing to explain');
+  assert.match(launchReason('jitsi.school.in', 'never'), /set to open in its own window/);
+});
+
+test('what stops working is listed, not left to be discovered', () => {
+  const limits = launchLimits();
+  assert.equal(limits.length, 2);
+  assert.ok(limits.some((l) => /attendance/.test(l)), 'the live register is the big one');
+  assert.ok(limits.some((l) => /lobby/i.test(l)));
+});
+
+test('a launched room still reaches the same address as an embedded one', () => {
+  // The join link a student holds does not change with the mode.
+  assert.equal(roomUrl('beyond-guidance-ai-abcdefgh12345678', 'meet.jit.si'),
+    'https://meet.jit.si/beyond-guidance-ai-abcdefgh12345678');
 });

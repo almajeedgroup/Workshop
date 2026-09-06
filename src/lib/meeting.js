@@ -180,6 +180,63 @@ export function externalApiUrl(host = ISSUER.meetingHost) {
 }
 
 /* ------------------------------------------------------------------ *
+ * Embedded, or opened in its own window
+ * ------------------------------------------------------------------ */
+
+/**
+ * Servers that refuse to be embedded, and what they do about it.
+ *
+ * meet.jit.si is free and unlimited used directly, and a five-minute demo
+ * when put in an iframe: 8x8 disconnect the call and say so in a dialog. That
+ * is a policy, not a bug, and no amount of configuration gets round it — so
+ * the app stops depending on it rather than pretending.
+ */
+export const EMBED_FORBIDDEN = ['meet.jit.si', '8x8.vc'];
+
+/** Just the hostname, however the setting was written. */
+export function meetingHostname(host = ISSUER.meetingHost) {
+  return String(host).replace(/^https?:\/\//, '').replace(/\/.*$/, '').toLowerCase();
+}
+
+/**
+ * Should the meeting go inside the page?
+ *
+ * `auto` is the default and the honest one: embed a server that allows it,
+ * launch one that does not. `always` is for a self-hosted Jitsi, where the
+ * rule does not exist; `never` is for anybody who simply prefers a separate
+ * window.
+ */
+export function canEmbedMeeting(host = ISSUER.meetingHost, mode = ISSUER.meetingEmbed) {
+  if (mode === 'always') return true;
+  if (mode === 'never') return false;
+  return !EMBED_FORBIDDEN.includes(meetingHostname(host));
+}
+
+/** Why the class opens in its own window, for the presenter who wonders. */
+export function launchReason(host = ISSUER.meetingHost, mode = ISSUER.meetingEmbed) {
+  if (mode === 'never') return 'The class is set to open in its own window.';
+  if (!EMBED_FORBIDDEN.includes(meetingHostname(host))) return '';
+  return `${meetingHostname(host)} allows a class inside another page only as a `
+    + 'five-minute demo, and disconnects it after that. Opened in its own '
+    + 'window the same free server has no limit, so that is what this does.';
+}
+
+/**
+ * What is lost by not embedding, so nobody hunts for a feature that is off.
+ *
+ * Said once, plainly, rather than leaving a presenter to discover that the
+ * live register stopped filling in.
+ */
+export function launchLimits() {
+  return [
+    'Who is in the room cannot be read from another window, so attendance is '
+      + 'taken on the register screen rather than in one press here.',
+    'The lobby is not switched on for you. Turn it on in the meeting\u2019s own '
+      + 'Security options once you are in.',
+  ];
+}
+
+/* ------------------------------------------------------------------ *
  * How the room is set up
  * ------------------------------------------------------------------ */
 

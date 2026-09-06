@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getPublicWorkshop } from '../../lib/publicdb.js';
-import { classIsLive, classClosedReason } from '../../lib/meeting.js';
+import { classIsLive, classClosedReason, canEmbedMeeting } from '../../lib/meeting.js';
 import { formatDateRange } from '../../lib/tickets.js';
 import { ISSUER } from '../../lib/schema.js';
 import JitsiRoom from '../../components/JitsiRoom.jsx';
+import RoomLauncher from '../../components/RoomLauncher.jsx';
 import ClassBoard from '../../components/ClassBoard.jsx';
 import { IconAlert, IconPin, IconUsers } from '../../components/site/Icons.jsx';
 import '../../class.css';
@@ -124,13 +125,22 @@ export default function JoinClassPage() {
               ? <>In association with <strong>{workshop.collaborators}</strong></>
               : ISSUER.unitLine}
           </p>
-          <JitsiRoom
-            room={workshop.meetingRoom}
-            host={workshop.meetingHost || ISSUER.meetingHost}
-            displayName={displayName}
-            subject={workshop.title || 'Class'}
-            onLeft={() => setJoining(false)}
-          />
+          {canEmbedMeeting(workshop.meetingHost || ISSUER.meetingHost) ? (
+            <JitsiRoom
+              room={workshop.meetingRoom}
+              host={workshop.meetingHost || ISSUER.meetingHost}
+              displayName={displayName}
+              subject={workshop.title || 'Class'}
+              onLeft={() => setJoining(false)}
+            />
+          ) : (
+            <RoomLauncher
+              room={workshop.meetingRoom}
+              host={workshop.meetingHost || ISSUER.meetingHost}
+              subject="Your class is ready"
+              label="Open the class"
+            />
+          )}
           {/* The same notes, transcript and handouts the presenter is
               writing, read-only and live. */}
           <div style={{ marginTop: 16 }}>
@@ -229,9 +239,10 @@ export default function JoinClassPage() {
             </button>
 
             <p style={{ marginTop: 16, fontSize: 12.5, color: 'var(--ink-soft)' }}>
-              You will be asked to allow your camera and microphone, and can
-              check both before you go in. You may wait briefly in a lobby
-              until the presenter admits you. Nothing needs installing.
+              The class opens in its own window. You will be asked to allow
+              your camera and microphone, and can check both before you go in.
+              Keep this page open beside it — the notes, the transcript and any
+              handouts appear here. Nothing needs installing.
             </p>
           </form>
         </div>

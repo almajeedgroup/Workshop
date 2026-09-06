@@ -57,6 +57,10 @@
   min-height: 380px; justify-content: center;
 }
 .room-idle h2, .room-fallback h3 { margin: 0; }
+.launch-why { border-left: 3px solid var(--tangerine); padding-left: 12px; max-width: 60ch; }
+.launch-why p { margin: 0 0 8px; }
+.launch-why ul { margin: 0 0 8px; padding-left: 18px; font-size: 13px; }
+.launch-why li { margin-bottom: 5px; }
 .room-idle p, .room-fallback p { margin: 0; max-width: 52ch; }
 .room-fallback { border-style: dashed; border-color: var(--red); }
 

@@ -6,10 +6,12 @@ import { setMarks } from '../lib/attendancedb.js';
 import { attendanceRows } from '../lib/attendance.js';
 import {
   classIsLive, classJoinUrl, matchRoom, marksFromRoom, roomIsGuessable, roomUrl,
+  canEmbedMeeting,
 } from '../lib/meeting.js';
 import { ISSUER, isOnlineWorkshop } from '../lib/schema.js';
 import { formatDateRange } from '../lib/tickets.js';
 import JitsiRoom from '../components/JitsiRoom.jsx';
+import RoomLauncher from '../components/RoomLauncher.jsx';
 import ClassBoard from '../components/ClassBoard.jsx';
 import '../class.css';
 
@@ -101,6 +103,10 @@ export default function ClassPage() {
 
   const live = classIsLive(workshop);
   const joinLink = classJoinUrl(id);
+  // meet.jit.si disconnects an embedded call after five minutes; used
+  // directly it does not. So on that server the class is launched, not
+  // embedded, and the register below says what that costs.
+  const embed = canEmbedMeeting();
 
   const toggle = async () => {
     setBusy('toggle'); setError(''); setNotice('');
@@ -177,7 +183,7 @@ export default function ClassPage() {
 
       <div className="class-grid">
         <section className="class-stage" aria-label="The class">
-          {live ? (
+          {live && embed ? (
             <JitsiRoom
               room={workshop.meetingRoom}
               moderator
@@ -186,6 +192,12 @@ export default function ClassPage() {
               onParticipants={handleParticipants}
               onJoined={handleJoined}
               onLeft={handleLeft}
+            />
+          ) : live ? (
+            <RoomLauncher
+              room={workshop.meetingRoom}
+              subject={workshop.title || 'The class is ready'}
+              label="Open the class"
             />
           ) : (
             <div className="room-idle">
@@ -244,6 +256,18 @@ export default function ClassPage() {
 
             {!live ? (
               <p className="hint">Open the class to see who arrives.</p>
+            ) : !embed ? (
+              <>
+                <p className="hint">
+                  Who is in the room cannot be read from another window, so
+                  attendance is taken on the register screen rather than here.
+                </p>
+                <div className="btn-row">
+                  <Link className="btn primary" to={`/w/${id}/attendance`}>
+                    Take the register
+                  </Link>
+                </div>
+              </>
             ) : !joined ? (
               <p className="hint">
                 Join the room yourself and the list fills in as students arrive.

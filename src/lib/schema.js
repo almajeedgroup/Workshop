@@ -66,6 +66,26 @@ export const ISSUER = {
    */
   meetingHost: 'meet.jit.si',
   /**
+   * Whether the meeting is put INSIDE this page, or opened in its own window.
+   *
+   * This is not a style choice. 8x8, who run meet.jit.si, allow embedding it
+   * only as a demo: an embedded call disconnects after FIVE MINUTES, with a
+   * dialog saying so. Used directly, in its own tab, the same free server has
+   * no such limit. So the default is `auto`, which embeds a server that
+   * permits it and launches one that does not.
+   *
+   *   'auto'   embed unless the server is known to forbid it  (recommended)
+   *   'always' embed regardless — for a self-hosted Jitsi
+   *   'never'  always open in a new window
+   *
+   * TO GET EMBEDDING BACK, run your own Jitsi: it is the same open-source
+   * software with no such rule. Point `meetingHost` at it, add it to the
+   * three places in firebase.json that name meet.jit.si, and everything
+   * built on the embedded call — the live register, one-press attendance,
+   * the lobby going on by itself — starts working again.
+   */
+  meetingEmbed: 'auto',
+  /**
    * A payment QR supplied by the bank — a BharatQR or merchant standee — used
    * for every workshop that does not set its own.
    *

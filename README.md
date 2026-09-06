@@ -898,7 +898,8 @@ src/
                            IdCard, OrderedChoice, AttendanceSheet,
                            FittedName, SeatBar, BoardGroup, Sidebar,
                            RegistrationCards, AttendanceRegister, Overlay,
-                           PhoneFixPanel, JitsiRoom, ClassBoard, Finder,
+                           PhoneFixPanel, JitsiRoom, RoomLauncher, ClassBoard,
+                           Finder,
                            CertificateDocument,
                            CertificateStage
   components/site/         PublicShell, SiteHeader, SiteFooter, Icons
@@ -1222,6 +1223,33 @@ or Facebook. Students are never asked to. The screen says so, because being
 asked to log into something you were not expecting is alarming if nobody
 warned you.
 
+### Why the class opens in its own window
+
+**8x8, who run meet.jit.si, allow it to be embedded only as a demo.** An
+embedded call disconnects after **five minutes**, with a dialog saying so.
+The same free server, opened directly in its own tab, has no such limit.
+
+So `meetingEmbed` in `src/lib/schema.js` defaults to `auto`: a server known
+to forbid embedding is **launched**, any other is **embedded**. Nothing about
+the class link changes — a student still opens `/class/:id` on the school's
+own page, and the notes, the transcript and the handouts stay there beside
+the meeting.
+
+Two things only work embedded, and the screen says so rather than leaving
+them to be missed:
+
+- **who is in the room**, and therefore attendance in one press. Launched,
+  the register is taken on the attendance screen, and the panel offers that
+  link instead of an empty list.
+- **the lobby going on by itself.** Launched, the presenter turns it on in
+  the meeting's own Security options.
+
+**To get both back, run your own Jitsi.** It is the same open-source software
+without the rule: point `meetingHost` at it, add it to the three places in
+`firebase.json` that name meet.jit.si, and `auto` embeds it. `meetingEmbed`
+also takes `always` and `never` for anybody who would rather decide
+themselves.
+
 ### Room names are minted, never typed
 
 A Jitsi room has no guest list: anyone who knows the name can walk in, and a
@@ -1439,7 +1467,7 @@ looking after a permanent service-account key for a one-off tidy-up.
 npm test
 ```
 
-Runs 469 assertions on Node's built-in test runner — no extra dependencies,
+Runs 477 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards, attendance
 sheets, online classes, the class record, search, returning students,
