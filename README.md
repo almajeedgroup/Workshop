@@ -1304,7 +1304,7 @@ looking after a permanent service-account key for a one-off tidy-up.
 npm test
 ```
 
-Runs 385 assertions on Node's built-in test runner — no extra dependencies,
+Runs 399 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards, attendance
 sheets, online classes, search, returning students and the phone-number
@@ -1394,6 +1394,27 @@ with `and` — which on a certificate and the ticket for the same course is the
 sort of thing people notice.
 
 ## 22. Notes
+
+**The sidebar does not move.** It was an ordinary flex item as tall as the
+document, so scrolling a board of forty registrations carried the navigation
+off the top of the screen. It is now `position: sticky` at the viewport
+height — sticky rather than fixed, so it stays in the flex row and the work
+column still measures itself against its real width instead of a margin kept
+in step by hand. A stretched flex item is already the height of everything
+and has nowhere to stick to, so it takes `align-self: flex-start`.
+
+Its right edge is a **drag handle**: pull it between 168 and 420 pixels,
+double-click to reset, and the width is remembered. It is a `separator` you
+can reach with Tab — arrows nudge it, `Home` puts it back — because a control
+that only exists as a six-pixel strip of cursor is a control some people do
+not have. The clamp lives in `src/lib/sidebar.js` and is tested: a sidebar
+dragged to nothing is a navigation you cannot get back, since the control
+that widens it is inside the thing that vanished.
+
+The one place a scrollbar is allowed inside it is the link list, and only in
+a window too short to hold the nav at all. The brand and the sign-out button
+stay where they are either way.
+
 
 - Search and filtering happen on the client, so no composite Firestore indexes
   are needed. Comfortable into the low thousands of records. Past that, the

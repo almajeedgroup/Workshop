@@ -90,8 +90,25 @@ h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; }
 .shell { display: flex; min-height: 100%; align-items: stretch; }
 .shell-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 
+/* THE SIDEBAR DOES NOT MOVE. It used to be an ordinary flex item as tall as
+   the document, so scrolling a board of forty registrations carried the
+   navigation off the top of the screen and getting back to it meant
+   scrolling all the way up again.
+
+   `sticky` rather than `fixed`: it stays in the flex row, so the work column
+   still measures itself against the sidebar's real width and nothing needs a
+   matching margin kept in step by hand. It needs `align-self: flex-start`,
+   because a stretched flex item is already the height of everything and has
+   nowhere to stick to. */
 .side {
-  flex: none; width: 208px; padding: 16px 0 14px;
+  flex: none;
+  width: var(--side-w, 208px);
+  padding: 16px 0 14px;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100vh;
+  height: 100dvh;          /* the real height on a phone, address bar and all */
   display: flex; flex-direction: column; gap: 2px;
   /* The flag runs down the right edge here rather than along a bottom one:
      it is still the boundary between the furniture and the work. */
@@ -102,6 +119,26 @@ h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; }
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 .side .spacer { flex: 1; }
+
+/* The one place a scrollbar is allowed, and only when it is that or lose a
+   link entirely: a window too short to hold the nav. The brand and the
+   sign-out button stay where they are either way. */
+.side-nav { min-height: 0; overflow-y: auto; }
+
+/* ---- dragging it wider ----
+
+   Sits over the flag on the right edge. Six pixels is the smallest target
+   that can be hit without aiming, and the cursor says what it does before
+   you press. */
+.side-grip {
+  position: absolute; top: 0; right: -3px; bottom: 0; width: 9px;
+  cursor: col-resize; background: none; border: 0; padding: 0;
+  touch-action: none;
+}
+.side-grip:hover, .side-grip:focus-visible { background: var(--blue); outline: none; }
+.side-grip:focus-visible { box-shadow: inset 0 0 0 1px var(--ink); }
+/* Without this the drag turns into a text selection two columns wide. */
+body.side-resizing { user-select: none; cursor: col-resize; }
 
 .side-brand {
   display: block; padding: 0 16px 14px; text-decoration: none;
@@ -146,11 +183,16 @@ h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; }
     display: inline-block; margin: 10px var(--gap) 0; align-self: flex-start;
   }
   .side {
-    position: fixed; z-index: 20; top: 0; bottom: 0; left: 0; width: 232px;
+    position: fixed; z-index: 20; top: 0; bottom: 0; left: 0;
+    width: 232px;          /* deliberately overrides --side-w */
+    height: auto; align-self: auto;
     background-color: var(--paper); transform: translateX(-100%);
     transition: transform .18s ease; box-shadow: 4px 0 18px rgba(0,0,0,.14);
   }
   .side.open { transform: none; }
+  /* A drawer that slides in over the page is already the width it needs to
+     be, and there is no edge beside the content to pull. */
+  .side-grip { display: none; }
   .side-scrim {
     display: block; position: fixed; inset: 0; z-index: 19;
     background: rgba(10,10,10,.38);
