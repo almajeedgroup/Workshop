@@ -5,6 +5,7 @@ import { classIsLive, classClosedReason } from '../../lib/meeting.js';
 import { formatDateRange } from '../../lib/tickets.js';
 import { ISSUER } from '../../lib/schema.js';
 import JitsiRoom from '../../components/JitsiRoom.jsx';
+import ClassBoard from '../../components/ClassBoard.jsx';
 import { IconAlert, IconPin, IconUsers } from '../../components/site/Icons.jsx';
 import '../../class.css';
 
@@ -130,6 +131,12 @@ export default function JoinClassPage() {
             subject={workshop.title || 'Class'}
             onLeft={() => setJoining(false)}
           />
+          {/* The same notes, transcript and handouts the presenter is
+              writing, read-only and live. */}
+          <div style={{ marginTop: 16 }}>
+            <ClassBoard workshopId={workshopId} day={new Date().toISOString().slice(0, 10)} />
+          </div>
+
           <div className="btn-row" style={{ marginTop: 14 }}>
             <button className="btn ghost" type="button" onClick={() => setJoining(false)}>
               Leave the class

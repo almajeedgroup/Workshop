@@ -10,6 +10,7 @@ import {
 import { ISSUER, isOnlineWorkshop } from '../lib/schema.js';
 import { formatDateRange } from '../lib/tickets.js';
 import JitsiRoom from '../components/JitsiRoom.jsx';
+import ClassBoard from '../components/ClassBoard.jsx';
 import '../class.css';
 
 /**
@@ -210,6 +211,10 @@ export default function ClassPage() {
         </section>
 
         <aside className="class-side" aria-label="The class register">
+          {/* Notes, transcript and handouts — written while the class runs,
+              because afterwards nobody remembers to. */}
+          <ClassBoard workshopId={id} workshop={workshop} day={day} host />
+
           <div className="panel">
             <h2>Join link</h2>
             <p className="hint">

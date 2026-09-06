@@ -29,6 +29,7 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 | **Students** | Everybody on two or more courses, and a printable profile of everything one student has done. |
 | **Carry forward** | Bring one, some or all of a previous course's students onto the next one — names and contacts, never last term's fees. |
 | **Online class** | Online and Hybrid courses get a Jitsi room on the school's own page, with the register beside it and attendance taken from who is in it. |
+| **Class record** | Live notes, an automatic transcript, PDFs and links shared to every screen at once, and a recording saved to the presenter's computer. |
 | **Send** | One click opens WhatsApp or email with the ticket already written out. |
 | **Contact** | Call or email any registrant directly from the list. |
 | **Payments** | Mark Paid / Pending / Waived / Refunded inline; running totals and amount collected. |
@@ -880,6 +881,10 @@ src/
   lib/people.js            recognising one student across courses
   lib/carryover.js         who comes to the next course, and with what
   lib/meeting.js           room names, join links, and who is in the room
+  lib/classroom.js         notes, transcript lines, handouts and recordings
+  lib/classroomdb.js       the live side of those three
+  lib/speech.js            the browser's speech recogniser, wrapped
+  lib/recorder.js          screen + microphone recording, wrapped
   lib/meetingdb.js         opening and closing a class, and moving its room
   lib/phonefix.js          which stored numbers need reshaping, and into what
   lib/phonefixdb.js        running that over the database, scan then apply
@@ -893,7 +898,8 @@ src/
                            IdCard, OrderedChoice, AttendanceSheet,
                            FittedName, SeatBar, BoardGroup, Sidebar,
                            RegistrationCards, AttendanceRegister, Overlay,
-                           PhoneFixPanel, JitsiRoom, Finder, CertificateDocument,
+                           PhoneFixPanel, JitsiRoom, ClassBoard, Finder,
+                           CertificateDocument,
                            CertificateStage
   components/site/         PublicShell, SiteHeader, SiteFooter, Icons
   pages/                   the admin tool: Console, Login, List, Import, Workshop,
@@ -1288,6 +1294,64 @@ person.
 register that records that as absence is lying about them. Absence stays a
 decision somebody makes on the attendance screen.
 
+### What the class leaves behind
+
+A live class is the one thing this system produces that vanishes when it
+ends. Somebody who missed it, or who was there and is revising, had nothing.
+Three things are written **while the class runs**, because afterwards nobody
+remembers to, and all three appear on the student's screen live:
+
+| | |
+|---|---|
+| **Notes** | One page the presenter types on. Everyone in the class reads it as it is written. |
+| **Transcript** | What was said, line by line, with the time. |
+| **Handouts** | A link, or a small PDF, on every screen at once. |
+
+There is also **Record the class**, which saves a video of the session.
+
+### What these cannot do, said plainly
+
+There is no server here — Firebase Hosting serves files and Firestore holds
+documents, and nothing runs in between. That is what keeps this app free to
+operate, and it sets three real limits. Each is stated **on screen where it
+matters**, not buried here:
+
+- **The transcript hears the presenter, not the class.** It is the browser's
+  own speech recogniser listening to the microphone of the machine it runs
+  on. A student's voice arrives as decoded audio inside the meeting frame and
+  never passes that microphone. A lecture transcribes well; a discussion does
+  not. Chrome and Edge have the recogniser; Safari and Firefox largely do
+  not, and are told so rather than given a button that does nothing.
+- **A recording is saved to the presenter's computer.** It captures a screen
+  they pick — share the tab the class is in and you get everybody's video and
+  everybody's voice — with their own microphone mixed in, because a shared
+  tab carries every voice except the sharer's own. There is nowhere to upload
+  an hour of video to, so it downloads as a `.webm` named for the course and
+  the day.
+- **A handout PDF must be under 600 KB.** A Firestore document is 1 MiB in
+  total and base64 costs a third more than the bytes it carries. Anything
+  larger is shared as a link, and the refusal says the actual size, the
+  actual limit, and to put it on Drive instead.
+
+Transcription is flushed on a timer rather than written line by line: a class
+produces a line every few seconds, and a document write each would be a write
+every few seconds for an hour. A dropped connection costs seconds of speech
+rather than the hour. The day's lines live in **one** document, capped at
+200,000 characters, and a class that runs past it drops its **oldest** lines
+— the end of a lecture is the part people revise from.
+
+### Who may read them
+
+Students have no account, so the rules allow the read **only while the class
+is open** — the same switch that publishes the meeting room. Closing a class
+closes its notes with it, and a course that never met online exposes nothing.
+Verified against the emulator: with the class open a stranger reads the
+notes, the transcript and the handouts and **nothing else** — not the
+workshop, not a registration, not a photograph, not the attendance register —
+and can write none of them. Deleting a workshop takes all three with it, or
+orphaned notes would stay readable for as long as the mirror said the class
+was open.
+
 ### When it will not load
 
 The meeting software is a script from another origin, so it is blocked by a
@@ -1375,11 +1439,11 @@ looking after a permanent service-account key for a one-off tidy-up.
 npm test
 ```
 
-Runs 439 assertions on Node's built-in test runner — no extra dependencies,
+Runs 469 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards, attendance
-sheets, online classes, search, returning students, carry-forward and the
-phone-number migration. The parser
+sheets, online classes, the class record, search, returning students,
+carry-forward and the phone-number migration. The parser
 is heuristic and fails **silently** when it fails at all, so anything you teach
 it belongs in `tests/parser.test.js` alongside a paste that used to break it.
 

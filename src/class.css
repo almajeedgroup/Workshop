@@ -117,3 +117,50 @@ button.big { padding: 10px 22px; font-size: 14px; }
 @media print {
   .class-grid { display: none; }
 }
+
+/* ---- what the class leaves behind: notes, transcript, handouts ---- */
+
+.board-panel { border: var(--hair); padding: 12px 14px; margin-bottom: var(--gap); }
+
+.board-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.board-tabs button { font-size: 12px; padding: 5px 12px; }
+
+.board-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.board-tools .spacer { flex: 1; }
+.board-tools input[type='text'], .board-tools input:not([type]) { flex: 1 1 200px; min-width: 0; }
+
+.board-notes {
+  width: 100%; min-height: 220px; resize: vertical;
+  font: inherit; font-size: 13px; line-height: 1.6; padding: 10px 12px;
+}
+
+/* Read-only text, from a presenter typing or a recogniser listening. Capped
+   and scrollable so an hour of transcript does not push the class off the
+   screen it is happening on. */
+.board-read {
+  border: var(--hairline); padding: 10px 12px;
+  max-height: 300px; overflow-y: auto;
+  white-space: pre-wrap; font-size: 13px; line-height: 1.6;
+}
+
+.board-transcript { white-space: normal; }
+.t-line { margin: 0 0 5px; display: flex; gap: 8px; align-items: baseline; }
+.t-at {
+  flex: none; font-family: var(--mono); font-size: 10px; color: var(--muted);
+  min-width: 32px;
+}
+/* Mid-sentence, not yet stored. Grey and italic so it reads as provisional
+   rather than as something that has been written down. */
+.t-partial { color: var(--muted); font-style: italic; }
+
+.board-share { margin-bottom: 10px; }
+.board-share > input { width: 100%; margin-bottom: 8px; }
+
+.board-handouts { list-style: none; margin: 8px 0 0; padding: 0; }
+.board-handouts li {
+  display: flex; gap: 10px; align-items: baseline;
+  padding: 6px 0; border-bottom: var(--hairline); font-size: 13px;
+}
+.board-handouts li:last-child { border-bottom: 0; }
+.board-handouts a { font-weight: 600; flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.board-handouts .f-sub { flex: none; }

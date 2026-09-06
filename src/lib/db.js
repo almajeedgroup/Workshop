@@ -22,6 +22,7 @@ import { formatPhone } from './parser.js';
 import { syncPublicWorkshop, removePublicWorkshop } from './publicdb.js';
 import { removePhoto, PHOTOS } from './photodb.js';
 import { removeMarks, ATTENDANCE } from './attendancedb.js';
+import { NOTES, TRANSCRIPT, HANDOUTS } from './classroomdb.js';
 
 const WORKSHOPS = 'workshops';
 const REGISTRATIONS = 'registrations';
@@ -341,8 +342,11 @@ export async function syncRegistrations(workshopId, registrations, baseIds = nul
 
 export async function deleteWorkshop(id) {
   // Deleting a document does NOT delete its sub-collections — do it
-  // explicitly, for the registrations and for the photographs alike.
-  for (const name of [REGISTRATIONS, PHOTOS, ATTENDANCE]) {
+  // explicitly, for every one of them. The classroom collections matter
+  // most: they are the only things under a workshop the public can read,
+  // and orphaned notes on a deleted course would stay readable for as long
+  // as its public mirror said the class was open.
+  for (const name of [REGISTRATIONS, PHOTOS, ATTENDANCE, NOTES, TRANSCRIPT, HANDOUTS]) {
     const col = collection(db, WORKSHOPS, id, name);
     let snap = await getDocs(query(col, limit(450)));
     while (!snap.empty) {
