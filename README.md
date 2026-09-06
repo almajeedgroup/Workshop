@@ -25,6 +25,7 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 | **Register** | Paste WhatsApp replies in the `*Name:* …` format — as many as you like at once. |
 | **Ticket** | Every registrant gets a sequential Ticket ID and a printable ticket + IIC payment receipt. |
 | **Overlay** | Open anybody's ticket over the board without losing the groups you expanded to find them. |
+| **Find** | One box on the Console and the board that finds a person by name, ticket, number or anything else, across every course at once. |
 | **Online class** | Online and Hybrid courses get a Jitsi room on the school's own page, with the register beside it and attendance taken from who is in it. |
 | **Send** | One click opens WhatsApp or email with the ticket already written out. |
 | **Contact** | Call or email any registrant directly from the list. |
@@ -873,6 +874,7 @@ src/
   lib/attendance.js        course days, signature columns, marks and totals
   lib/attendancedb.js      the register: one document per day
   lib/photodb.js           participant photographs, kept off the registration
+  lib/search.js            finding one person across every course at once
   lib/meeting.js           room names, join links, and who is in the room
   lib/meetingdb.js         opening and closing a class, and moving its room
   lib/phonefix.js          which stored numbers need reshaping, and into what
@@ -887,7 +889,7 @@ src/
                            IdCard, OrderedChoice, AttendanceSheet,
                            FittedName, SeatBar, BoardGroup, Sidebar,
                            RegistrationCards, AttendanceRegister, Overlay,
-                           PhoneFixPanel, JitsiRoom, CertificateDocument,
+                           PhoneFixPanel, JitsiRoom, Finder, CertificateDocument,
                            CertificateStage
   components/site/         PublicShell, SiteHeader, SiteFooter, Icons
   pages/                   the admin tool: Console, Login, List, Import, Workshop,
@@ -968,7 +970,84 @@ click to confirm.
 
 ---
 
-## 15. Online classes
+## 15. Finding one person
+
+The rest of the app is organised by workshop, which is right — a course is
+the thing that gets run, printed and paid for. But the question that arrives
+by phone is never organised that way. It is *"Adifaah says she registered"*,
+or *"who is AIHOW26-014"*, or a WhatsApp number with no name attached, and
+answering it meant opening courses one at a time until she turned up.
+
+There is a search box at the top of the **Console**, and on **Records** in
+board view. It searches everything already on the screen.
+
+### What it searches
+
+Everything, not just names. A registration is findable by name, ticket ID,
+either phone number, email, area, course, qualification, date of birth,
+payment reference or notes — and by its workshop's title or code. A pending
+self-registration is findable by its `REQ-` reference. A course is findable
+by title, code, venue, presenter, resource person or topic.
+
+Numbers match however either side punctuated them: `9339214522`,
+`+91 9339214522` and `09339214522` all find the same person. Accents and
+capitals are ignored on both sides. Several words with no name among them
+still work — *"marathahalli bba"* is two facts about somebody whose name you
+have forgotten.
+
+### The order results come in
+
+Certainty first, coincidence last:
+
+| | |
+|---|---|
+| A ticket ID or reference typed in full | somebody reading off a ticket |
+| A name typed in full | |
+| A code the query is the start of | |
+| A phone number | |
+| A name the query is the start of | |
+| A word *inside* the name | half the office searches by second name |
+| The query anywhere in the record | |
+| Every word somewhere, in any order | the last resort |
+
+A single letter is not a search — it would match half the register and rank
+none of it — so nothing runs under two characters.
+
+Twelve results are shown and **the total is always reported**. A search that
+quietly shows ten of forty looks like an answer when it is a sample.
+
+### Choosing one
+
+It opens **over** the page rather than navigating away, for the same reason
+the board's tickets do: you are usually looking somebody up in the middle of
+something else, and coming back to find your filters cleared and your groups
+collapsed is its own small tax.
+
+- a **person** opens their ticket, with *Print*, *Open full page* and *The
+  course*
+- a **request** opens what they typed, with a link to review it
+- a **course** opens its figures and who is on it
+
+It is the ARIA combobox pattern rather than a `div` with a click handler, so
+it works from the keyboard the way every other search box does: `/` or
+`Ctrl`/`⌘`-`K` focuses it, `↑` `↓` move, `Enter` opens, `Escape` closes the
+list and then clears. The highlighted row is the same whether it was reached
+by arrow key or by hovering, so the two can never disagree.
+
+The list floats over the page instead of pushing it down — a results list
+that reflows the screen under your cursor is how you click the wrong thing on
+the third keystroke.
+
+### Why it is not on the table view
+
+It searches what has already been fetched, and costs no query at all. The
+Console has every workshop with its registrations; the board fetches them
+when it is shown. The table view has only the workshops, so the box appears
+with the board and not beside the table.
+
+---
+
+## 16. Online classes
 
 An Online or Hybrid course gets a **classroom**: a Jitsi Meet room embedded in
 the school's own pages. Jitsi is open source and its public server is free,
@@ -1091,7 +1170,7 @@ server by that one name.
 
 ---
 
-## 16. Phone numbers
+## 17. Phone numbers
 
 Everything is stored as `+91 98452 89298` — country code, then the number.
 The sanitisers in `src/lib/db.js` and `src/lib/publicdb.js` put every `tel`
@@ -1144,16 +1223,16 @@ looking after a permanent service-account key for a one-off tidy-up.
 
 ---
 
-## 17. Tests
+## 18. Tests
 
 ```bash
 npm test
 ```
 
-Runs 332 assertions on Node's built-in test runner — no extra dependencies,
+Runs 358 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards, attendance
-sheets, online classes and the phone-number migration. The parser
+sheets, online classes, search and the phone-number migration. The parser
 is heuristic and fails **silently** when it fails at all, so anything you teach
 it belongs in `tests/parser.test.js` alongside a paste that used to break it.
 
@@ -1162,7 +1241,7 @@ the Firebase emulator.
 
 ---
 
-## 18. Colour
+## 19. Colour
 
 Black text on a white page, and the four colours on everything else.
 
@@ -1216,7 +1295,7 @@ their own schemes, and the ID card keeps its six colourways.
 
 ---
 
-## 19. Attribution
+## 20. Attribution
 
 Al-Majeed School of Research Methodology and Innovation is named **in
 association with** on everything this system produces: the ticket and its
@@ -1238,7 +1317,7 @@ different ways across the code — with a comma after "Research", with `&`, and
 with `and` — which on a certificate and the ticket for the same course is the
 sort of thing people notice.
 
-## 20. Notes
+## 21. Notes
 
 - Search and filtering happen on the client, so no composite Firestore indexes
   are needed. Comfortable into the low thousands of records. Past that, the
@@ -1277,7 +1356,7 @@ sort of thing people notice.
 
 ---
 
-## 21. Verifying the security rules
+## 22. Verifying the security rules
 
 `firestore.rules` is the only thing standing between the public internet and
 every student's phone number, so it is worth testing rather than trusting.

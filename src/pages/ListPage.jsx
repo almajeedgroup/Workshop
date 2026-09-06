@@ -6,6 +6,7 @@ import { WORKSHOP_FIELDS, ISSUER } from '../lib/schema.js';
 import { formatDateRange } from '../lib/tickets.js';
 import { boardGroups, shouldFetchBoard } from '../lib/overview.js';
 import BoardGroup from '../components/BoardGroup.jsx';
+import Finder from '../components/Finder.jsx';
 
 /** Which view Records opens in, remembered between visits. */
 const VIEW_KEY = 'records.view';
@@ -217,6 +218,11 @@ export default function ListPage() {
           <p className="count">Loading registrations…</p>
         ) : (
           <>
+            {/* Only on the board, because only the board has fetched the
+                registrations. The filters above narrow which courses are
+                shown; this searches inside all of them at once. */}
+            <Finder bundles={bundles} requests={requests} />
+
             <div className="btn-row no-print" style={{ marginBottom: 10 }}>
               <button onClick={() => setOpenIds(new Set(filtered.map((w) => w.id)))}>
                 Expand all

@@ -501,6 +501,81 @@ select.status[data-status='Refunded'] { background: var(--red); }
 .grp-name > a { font-weight: 700; font-size: 15px; text-decoration: none; }
 .grp-name > a:hover { text-decoration: underline; background: none; }
 
+/* ---- the finder: one box that searches everything on screen ----
+
+   The list sits OVER the page rather than pushing it down. A results list
+   that reflows the screen under your cursor is how you end up clicking the
+   wrong thing on the third keystroke. */
+
+.finder { position: relative; margin-bottom: var(--gap); }
+
+.finder-box { display: flex; gap: 6px; align-items: stretch; }
+.finder-box input {
+  flex: 1; min-width: 0; font-size: 14px; padding: 9px 12px;
+}
+/* Safari draws its own clear button on type=search, next to ours. */
+.finder-box input::-webkit-search-decoration,
+.finder-box input::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+.finder-drop {
+  position: absolute; z-index: 40; left: 0; right: 0; top: calc(100% + 4px);
+  background: var(--paper); border: var(--hair);
+  box-shadow: 0 10px 30px rgba(10, 10, 10, 0.18);
+  max-height: min(60vh, 460px); overflow-y: auto;
+}
+
+.finder-list { list-style: none; margin: 0; padding: 0; }
+
+.f-row {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 10px; align-items: baseline;
+  padding: 8px 12px; cursor: pointer;
+  border-bottom: var(--hairline);
+  border-left: 3px solid transparent;
+}
+.f-row:last-child { border-bottom: 0; }
+
+/* The kinds are told apart by a word AND a colour, never colour alone. */
+.f-person { border-left-color: var(--jade); }
+.f-request { border-left-color: var(--blue); }
+.f-workshop { border-left-color: var(--tangerine); }
+
+/* Highlight, not selection: the same row is "active" whether it was reached
+   by arrow key or by hovering, so the two never disagree. */
+.f-row.is-active { background: var(--faint); }
+
+.f-kind {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted);
+}
+.f-label { font-weight: 600; font-size: 13px; }
+.f-sub {
+  font-size: 11px; color: var(--muted); font-family: var(--mono);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.finder-foot {
+  margin: 0; padding: 7px 12px; border-top: var(--hairline);
+  font-size: 11px; color: var(--muted); position: sticky; bottom: 0;
+  background: var(--paper);
+}
+
+.finder-clear { padding: 6px 12px; }
+
+.finder-people { list-style: none; margin: 8px 0 0; padding: 0; }
+.finder-people li {
+  display: flex; justify-content: space-between; gap: 12px;
+  padding: 5px 0; border-bottom: var(--hairline); font-size: 12.5px;
+}
+
+/* Three columns is one too many on a phone; the kind and the name share a
+   line and the detail drops underneath. */
+@media (max-width: 620px) {
+  .f-row { grid-template-columns: 60px minmax(0, 1fr); }
+  .f-sub { grid-column: 2; }
+}
+
 /* A course whose last day has passed. Blue rather than a status colour: it
    is a fact about the calendar, not something that needs doing. */
 .badge {

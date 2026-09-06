@@ -7,6 +7,7 @@ import { formatDateRange } from '../lib/tickets.js';
 import { CURRENCY, isFreeWorkshop } from '../lib/schema.js';
 import SeatBar from '../components/SeatBar.jsx';
 import PhoneFixPanel from '../components/PhoneFixPanel.jsx';
+import Finder from '../components/Finder.jsx';
 
 /** Which colour each figure carries. Meaning, not position. */
 const TONE = {
@@ -77,6 +78,11 @@ export default function ConsolePage() {
       </div>
 
       {error && <div className="notice warn">{error}</div>}
+
+      {/* Above the figures on purpose. The figures answer "how are we doing";
+          this answers "where is this one person", which is the question that
+          arrives by phone in the middle of everything else. */}
+      <Finder bundles={bundles} requests={requests} />
 
       <div className="tiles">
         {figures.map((f) => {
