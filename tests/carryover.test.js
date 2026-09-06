@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   CARRIED_FIELDS, carriedRegistration, carryPlan, carryRows, describePlan, carrySources,
+  pickAll, togglePick, chosenFrom, filterBring,
 } from '../src/lib/carryover.js';
 
 const OLD = { id: 'w0', title: 'Youth Parliament', startDate: '2025-06-01' };
@@ -104,7 +105,70 @@ test('somebody with nothing to match on is brought, not silently dropped', () =>
 test('nothing in, nothing out', () => {
   assert.deepEqual(carryPlan([], []), { bring: [], already: [] });
   assert.deepEqual(carryPlan(), { bring: [], already: [] });
-  assert.deepEqual(carryRows({ bring: [] }, OLD), []);
+  assert.deepEqual(carryRows([], OLD), []);
+  assert.deepEqual(carryRows(undefined, OLD), []);
+});
+
+/* ---------------- choosing which of them come ---------------- */
+
+test('everybody starts ticked — unticking two beats ticking eighteen', () => {
+  const plan = carryPlan(SRC, []);
+  assert.deepEqual([...pickAll(plan)], ['s1', 's2', 's3']);
+});
+
+test('one student can be brought on their own', () => {
+  const plan = carryPlan(SRC, []);
+  const chosen = chosenFrom(plan, new Set(['s2']));
+  assert.deepEqual(chosen.map((r) => r.name), ['Sabnam Khatun']);
+  assert.equal(carryRows(chosen, OLD).length, 1);
+});
+
+test('several can be brought without bringing the rest', () => {
+  const plan = carryPlan(SRC, []);
+  const chosen = chosenFrom(plan, new Set(['s1', 's3']));
+  assert.deepEqual(chosen.map((r) => r.id), ['s1', 's3']);
+});
+
+test('ticking is a new set, never a mutation of the old one', () => {
+  const before = new Set(['s1']);
+  const after = togglePick(before, 's2');
+  assert.deepEqual([...before], ['s1'], 'the old set is untouched');
+  assert.deepEqual([...after], ['s1', 's2']);
+  assert.deepEqual([...togglePick(after, 's1')], ['s2']);
+});
+
+test('the chosen keep the order they are shown in', () => {
+  const plan = carryPlan(SRC, []);
+  assert.deepEqual(chosenFrom(plan, new Set(['s3', 's1'])).map((r) => r.id), ['s1', 's3']);
+});
+
+test('a tick left over from another course cannot conjure a student', () => {
+  // The set is filtered against the list, not read out of, so switching
+  // course and back cannot bring somebody who is not on it.
+  const plan = carryPlan(SRC, []);
+  assert.deepEqual(chosenFrom(plan, new Set(['somebody-else'])), []);
+  assert.deepEqual(chosenFrom(plan, null), []);
+});
+
+test('an array of ids works as well as a set', () => {
+  assert.equal(chosenFrom(carryPlan(SRC, []), ['s1']).length, 1);
+});
+
+test('a long list can be narrowed to find one person', () => {
+  const plan = carryPlan(SRC, []);
+  assert.deepEqual(filterBring(plan, 'khatun').map((r) => r.id), ['s2']);
+  assert.deepEqual(filterBring(plan, 'sab@example.com').map((r) => r.id), ['s2']);
+  assert.equal(filterBring(plan, '').length, 3, 'an empty filter hides nobody');
+  assert.equal(filterBring(plan, 'zzz').length, 0);
+});
+
+test('filtering never changes who is ticked', () => {
+  // Narrowing the list is a way of finding somebody, not a way of choosing
+  // them — a filter that silently unticked the hidden ones would lose work.
+  const plan = carryPlan(SRC, []);
+  const marks = pickAll(plan);
+  filterBring(plan, 'khatun');
+  assert.equal(chosenFrom(plan, marks).length, 3);
 });
 
 /* ---------------- what the button says ---------------- */
@@ -112,6 +176,22 @@ test('nothing in, nothing out', () => {
 test('the button carries the count, so pressing it is a decision', () => {
   assert.match(describePlan(carryPlan(SRC, [])), /^3 students would be added\.$/);
   assert.match(describePlan(carryPlan([SRC[0]], [])), /^1 student would be added\.$/);
+});
+
+test('once some are unticked it says how many of how many', () => {
+  // Otherwise the button's number and the list on screen disagree with no
+  // explanation for the difference.
+  const plan = carryPlan(SRC, []);
+  assert.match(describePlan(plan, null, new Set(['s1'])), /^1 of 3 chosen\.$/);
+  assert.match(describePlan(plan, null, new Set()), /^Nobody chosen yet\.$/);
+  assert.match(describePlan(plan, null, pickAll(plan)), /^3 students would be added\.$/);
+});
+
+test('the seat warning follows the selection, not the whole course', () => {
+  const plan = carryPlan(SRC, []);
+  assert.ok(describePlan(plan, 1, pickAll(plan)).includes('only 1 seat left'));
+  assert.ok(!describePlan(plan, 1, new Set(['s1'])).includes('seat'),
+    'bringing one into one free seat is not a warning');
 });
 
 test('it says how many are already here', () => {

@@ -24,6 +24,7 @@ import { isFinished } from '../lib/overview.js';
 import { classIsLive } from '../lib/meeting.js';
 import {
   carryPlan, carryRows, describePlan, carrySources,
+  pickAll, togglePick, chosenFrom, filterBring,
 } from '../lib/carryover.js';
 
 function shown(field, w) {
@@ -63,6 +64,12 @@ export default function WorkshopPage() {
   const [sources, setSources] = useState(null);
   const [carryFrom, setCarryFrom] = useState('');
   const [carrying, setCarrying] = useState(false);
+  // Who, of the ones who could come, is actually coming. `null` means the
+  // selection has not been made for the course now chosen, and everybody is
+  // ticked — which is where it starts and where it returns on every change
+  // of course.
+  const [picked, setPicked] = useState(null);
+  const [carryQ, setCarryQ] = useState('');
   const [requests, setRequests] = useState([]);
   const [reqBusy, setReqBusy] = useState('');
   const [toggling, setToggling] = useState(false);
@@ -170,24 +177,29 @@ export default function WorkshopPage() {
       const all = carrySources(await listAllWithRegistrations(), id);
       setSources(all);
       setCarryFrom(all[0]?.workshop.id || '');
+      setPicked(null);
+      setCarryQ('');
     } catch (e) {
       setError(e.message);
       setSources([]);
     }
   };
 
-  /** Bring them across. */
-  const bringForward = async (plan, source) => {
+  /** Bring the chosen ones across. */
+  const bringForward = async (plan, source, chosen) => {
     setCarrying(true);
     setError('');
     try {
-      const rows = carryRows(plan, source);
+      const rows = carryRows(chosen, source);
       await addRegistrations(id, rows);
       await reload();
       setCarryOpen(false);
+      setPicked(null);
+      const left = plan.bring.length - rows.length;
       setNotice(
         `Brought ${rows.length} student${rows.length === 1 ? '' : 's'} from `
         + `“${source.title || 'that course'}”`
+        + (left ? `, left ${left} behind` : '')
         + (plan.already.length ? `, skipped ${plan.already.length} already here.` : '.')
       );
     } catch (e) {
@@ -535,16 +547,30 @@ export default function WorkshopPage() {
               </div>
             );
           }
-          const chosen = sources.find((b) => b.workshop.id === carryFrom) || sources[0];
-          const plan = carryPlan(chosen.registrations, regs);
+          const from = sources.find((b) => b.workshop.id === carryFrom) || sources[0];
+          const plan = carryPlan(from.registrations, regs);
+          // Everybody, until somebody says otherwise. Bringing a whole course
+          // forward is the common case; unticking two is less work than
+          // ticking eighteen.
+          const marks = picked ?? pickAll(plan);
+          const chosen = chosenFrom(plan, marks);
+          const shown = filterBring(plan, carryQ);
+          const setMarks = (next) => setPicked(next);
+
           return (
             <div className="no-print carry" style={{ marginBottom: 14 }}>
               <div className="pick-row">
                 <label htmlFor="carry-from"><strong>Bring students from</strong></label>
                 <select
                   id="carry-from"
-                  value={chosen.workshop.id}
-                  onChange={(e) => setCarryFrom(e.target.value)}
+                  value={from.workshop.id}
+                  onChange={(e) => {
+                    setCarryFrom(e.target.value);
+                    // A different course is a different list of people; the
+                    // old ticks mean nothing on it.
+                    setPicked(null);
+                    setCarryQ('');
+                  }}
                 >
                   {sources.map(({ workshop, registrations }) => (
                     <option key={workshop.id} value={workshop.id}>
@@ -557,33 +583,84 @@ export default function WorkshopPage() {
                 <span className="spacer" />
                 <button
                   className="primary"
-                  disabled={carrying || plan.bring.length === 0}
-                  onClick={() => bringForward(plan, chosen.workshop)}
+                  disabled={carrying || chosen.length === 0}
+                  onClick={() => bringForward(plan, from.workshop, chosen)}
                 >
                   {carrying
                     ? 'Bringing…'
-                    : plan.bring.length
-                      ? `Bring ${plan.bring.length} student${plan.bring.length === 1 ? '' : 's'}`
-                      : 'Nothing to bring'}
+                    : chosen.length
+                      ? `Bring ${chosen.length} student${chosen.length === 1 ? '' : 's'}`
+                      : 'Nobody chosen'}
                 </button>
               </div>
 
               <p className="count" style={{ marginTop: 8 }}>
-                {describePlan(plan, seatsLeft)}
+                {describePlan(plan, seatsLeft, marks)}
               </p>
 
               {plan.bring.length > 0 && (
-                <ul className="carry-list">
-                  {plan.bring.slice(0, 12).map((r) => (
-                    <li key={r.id}>
-                      <span>{r.name}</span>
-                      <span className="f-sub">{r.whatsapp || r.email || 'no contact'}</span>
-                    </li>
-                  ))}
-                  {plan.bring.length > 12 && (
-                    <li className="hint">and {plan.bring.length - 12} more</li>
-                  )}
-                </ul>
+                <>
+                  <div className="carry-tools">
+                    <button
+                      type="button"
+                      className="small"
+                      disabled={chosen.length === plan.bring.length}
+                      onClick={() => setMarks(pickAll(plan))}
+                    >
+                      Select all {plan.bring.length}
+                    </button>
+                    <button
+                      type="button"
+                      className="small"
+                      disabled={chosen.length === 0}
+                      onClick={() => setMarks(new Set())}
+                    >
+                      Clear
+                    </button>
+                    {plan.bring.length > 8 && (
+                      <input
+                        type="search"
+                        className="small"
+                        placeholder="Find a name…"
+                        aria-label="Filter the students on that course"
+                        value={carryQ}
+                        onChange={(e) => setCarryQ(e.target.value)}
+                      />
+                    )}
+                    <span className="spacer" />
+                    <span className="hint">
+                      {chosen.length} of {plan.bring.length} ticked
+                    </span>
+                  </div>
+
+                  <ul className="carry-list">
+                    {shown.map((r) => (
+                      <li key={r.id}>
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={marks.has(r.id)}
+                            onChange={() => setMarks(togglePick(marks, r.id))}
+                          />
+                          <span className="carry-name">{r.name || '(no name)'}</span>
+                          <span className="f-sub">{r.whatsapp || r.email || 'no contact'}</span>
+                        </label>
+                      </li>
+                    ))}
+                    {shown.length === 0 && (
+                      <li className="hint">Nobody on that course matches “{carryQ.trim()}”.</li>
+                    )}
+                  </ul>
+                </>
+              )}
+
+              {plan.already.length > 0 && (
+                <p className="hint">
+                  {plan.already.length} more {plan.already.length === 1 ? 'is' : 'are'} on
+                  that course and already registered here, so {plan.already.length === 1 ? 'it is' : 'they are'} not
+                  offered: {plan.already.map((r) => r.name).filter(Boolean).slice(0, 6).join(', ')}
+                  {plan.already.length > 6 ? ' and others' : ''}.
+                </p>
               )}
 
               <p className="hint">

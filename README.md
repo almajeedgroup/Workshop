@@ -27,7 +27,7 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 | **Overlay** | Open anybody's ticket over the board without losing the groups you expanded to find them. |
 | **Find** | One box on the Console and the board that finds a person by name, ticket, number or anything else, across every course at once. |
 | **Students** | Everybody on two or more courses, and a printable profile of everything one student has done. |
-| **Carry forward** | Bring a previous course's students onto the next one in one press — names and contacts, never last term's fees. |
+| **Carry forward** | Bring one, some or all of a previous course's students onto the next one — names and contacts, never last term's fees. |
 | **Online class** | Online and Hybrid courses get a Jitsi room on the school's own page, with the register beside it and attendance taken from who is in it. |
 | **Send** | One click opens WhatsApp or email with the ticket already written out. |
 | **Contact** | Call or email any registrant directly from the list. |
@@ -984,10 +984,20 @@ into the new one — an afternoon's work producing exactly the register that
 already existed.
 
 **+ From a previous course**, on the workshop's Registrations panel, opens
-with your most recent other course already chosen, says how many would come,
-and lists them. The second press does it. Courses with nobody on them are not
-offered, and neither is this one — bringing a course's students onto itself
-would duplicate every one of them.
+with your most recent other course already chosen and lists everybody on it,
+**ticked**. Untick whoever is not continuing, or **Clear** and pick the one
+person you meant — the button counts what is ticked, so it reads *Bring 1
+student* or *Bring 9 students* and never brings more than it says.
+
+Everybody starts ticked because bringing a whole course forward is the common
+case: unticking two is less work than ticking eighteen. Past eight students a
+**find a name** box appears; narrowing the list is a way of finding somebody,
+never a way of choosing them, so filtering does not disturb a single tick.
+
+Courses with nobody on them are not offered, and neither is this one —
+bringing a course's students onto itself would duplicate every one of them.
+Changing course clears the ticks, because a different course is a different
+list of people and the old ticks mean nothing on it.
 
 **What comes across is the person, not the enrolment.** Name, date of birth,
 qualification, course, phone, email, area, blood group, emergency contact —
@@ -1005,15 +1015,19 @@ register nobody remembers adding them to.
 The carried list is an **allow-list**, so a field added to the schema later
 is not carried by accident.
 
-Anybody already registered here is skipped rather than issued a second
-ticket, matched on the usual identity — phone, then email, then name with
-date of birth. Somebody listed twice on the old course arrives once. Somebody
-with none of those has nothing to match on and is brought anyway: the office
-can delete a duplicate, but cannot add a student it was never told about.
+Anybody already registered here is not offered at all, matched on the usual
+identity — phone, then email, then name with date of birth — and named
+underneath so it is clear who was left out and why. Somebody listed twice on
+the old course appears once. Somebody with none of those has nothing to match
+on and is offered anyway: the office can untick a duplicate, but cannot add a
+student it was never told about.
 
-The button carries the count. "Bring students" is a leap of faith; **Bring 18
-students** is a decision, and *"all 20 are already here"* saves the press
-altogether. If the course has a seat limit, it says so before you go over it.
+The line under the row says *"9 students would be added"* while everybody is
+ticked and *"3 of 9 chosen"* once they are not, so the button's number and
+the list on screen can never disagree without explanation. *"All 20 are
+already here"* saves the press altogether. If the course has a seat limit,
+the warning follows the **selection**, not the whole course — bringing one
+student into one free seat is not a problem and is not reported as one.
 
 
 A registration belongs to a workshop. Somebody who comes to three courses is
@@ -1346,7 +1360,7 @@ looking after a permanent service-account key for a one-off tidy-up.
 npm test
 ```
 
-Runs 421 assertions on Node's built-in test runner — no extra dependencies,
+Runs 432 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards, attendance
 sheets, online classes, search, returning students, carry-forward and the

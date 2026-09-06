@@ -555,14 +555,29 @@ select.status[data-status='Refunded'] { background: var(--red); }
 .carry .pick-row { margin: 0; flex-wrap: wrap; }
 .carry .pick-row select { flex: 1 1 240px; min-width: 0; }
 .carry .pick-row button { flex: none; }
+.carry-tools { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+.carry-tools .spacer { flex: 1; }
+.carry-tools input { padding: 4px 8px; font-size: 12px; min-width: 160px; }
+
+/* Capped and scrollable: a course of forty would otherwise push the register
+   itself off the bottom of the screen while you are choosing who comes. */
 .carry-list {
-  list-style: none; margin: 10px 0 0; padding: 0;
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0 16px;
+  list-style: none; margin: 8px 0 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0 16px;
+  max-height: 320px; overflow-y: auto;
 }
-.carry-list li {
-  display: flex; justify-content: space-between; gap: 10px;
-  padding: 4px 0; border-bottom: var(--hairline); font-size: 12.5px;
+.carry-list li { border-bottom: var(--hairline); font-size: 12.5px; }
+
+/* The whole row is the label, so the name is part of the tick target rather
+   than something to aim past. */
+.carry-list label {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 4px; cursor: pointer;
 }
+.carry-list label:hover { background: var(--faint); }
+.carry-list input[type='checkbox'] { flex: none; width: 15px; height: 15px; accent-color: var(--jade); }
+.carry-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.carry-list .f-sub { flex: none; }
 
 /* ---- the finder: one box that searches everything on screen ----
 

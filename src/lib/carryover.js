@@ -91,27 +91,83 @@ export function carryPlan(sourceRegs = [], targetRegs = []) {
   return { bring, already };
 }
 
-/** The rows to write, ready for `addRegistrations`. */
-export function carryRows(plan, source, options) {
-  return plan.bring.map((reg) => carriedRegistration(reg, source, options));
+/**
+ * The rows to write, ready for `addRegistrations`.
+ *
+ * Takes the registrations chosen rather than the whole plan, so there is one
+ * obvious place the selection is applied and no way to write the full list
+ * by passing the wrong thing.
+ */
+export function carryRows(chosen = [], source, options) {
+  return chosen.map((reg) => carriedRegistration(reg, source, options));
+}
+
+/* ------------------------------------------------------------------ *
+ * Choosing which of them come
+ * ------------------------------------------------------------------ */
+
+/**
+ * Everybody who could come, ticked.
+ *
+ * Ticked rather than empty, because bringing a whole course forward is the
+ * common case and the reason the button exists. Untick the two who are not
+ * continuing; do not tick eighteen who are.
+ */
+export function pickAll(plan) {
+  return new Set(plan.bring.map((r) => r.id));
+}
+
+/** Ticking or unticking one. Returns a new set — nothing is mutated. */
+export function togglePick(picked, id) {
+  const next = new Set(picked);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  return next;
 }
 
 /**
- * What the button should say before it is pressed.
+ * The ones actually chosen, in the order they appear.
+ *
+ * Filtered from `plan.bring` rather than read out of the set, so a stale id —
+ * left behind when the source course was changed — cannot conjure a student
+ * who is not on the list any more.
+ */
+export function chosenFrom(plan, picked) {
+  const want = picked instanceof Set ? picked : new Set(picked || []);
+  return plan.bring.filter((r) => want.has(r.id));
+}
+
+/** Narrow a long list to what somebody is looking for. */
+export function filterBring(plan, query) {
+  const q = String(query ?? '').trim().toLowerCase();
+  if (!q) return plan.bring;
+  return plan.bring.filter((r) =>
+    `${r.name} ${r.whatsapp || ''} ${r.email || ''} ${r.area || ''} ${r.ticketId || ''}`
+      .toLowerCase().includes(q));
+}
+
+/**
+ * What the panel says under the row.
  *
  * The count is the point. "Bring students" is a leap of faith; "Bring 18
  * students" is a decision, and "all 20 are already here" saves the press
- * altogether.
+ * altogether. Once some are unticked it has to say so too, or the button's
+ * number and the list on screen disagree with no explanation.
  */
-export function describePlan(plan, seatsLeft = null) {
-  const n = plan.bring.length;
+export function describePlan(plan, seatsLeft = null, picked = null) {
+  const total = plan.bring.length;
   const dup = plan.already.length;
-  if (n === 0 && dup === 0) return 'That course has no registrations to bring.';
-  if (n === 0) return `Everybody on that course — all ${dup} — is already registered here.`;
+  if (total === 0 && dup === 0) return 'That course has no registrations to bring.';
+  if (total === 0) return `Everybody on that course — all ${dup} — is already registered here.`;
 
-  const parts = [`${n} student${n === 1 ? '' : 's'} would be added`];
+  const n = picked ? chosenFrom(plan, picked).length : total;
+  const parts = [];
+  if (n === 0) parts.push('Nobody chosen yet');
+  else if (n === total) parts.push(`${n} student${n === 1 ? '' : 's'} would be added`);
+  else parts.push(`${n} of ${total} chosen`);
+
   if (dup) parts.push(`${dup} already here`);
-  if (seatsLeft !== null && n > seatsLeft) {
+  if (n > 0 && seatsLeft !== null && n > seatsLeft) {
     parts.push(seatsLeft <= 0
       ? 'this course is already full'
       : `only ${seatsLeft} seat${seatsLeft === 1 ? '' : 's'} left`);
