@@ -16,10 +16,11 @@ import RegistrationCards from '../components/RegistrationCards.jsx';
 import { getPhotos } from '../lib/photodb.js';
 import { amountCollected, paymentCounts, seatsLeft as seatsLeftFor } from '../lib/stats.js';
 import {
-  visibleWorkshopFields, ISSUER, CURRENCY, workshopFee,
+  visibleWorkshopFields, ISSUER, CURRENCY, workshopFee, isOnlineWorkshop,
 } from '../lib/schema.js';
 import { formatDateRange } from '../lib/tickets.js';
 import { isFinished } from '../lib/overview.js';
+import { classIsLive } from '../lib/meeting.js';
 
 function shown(field, w) {
   const v = w[field.key];
@@ -345,6 +346,7 @@ export default function WorkshopPage() {
             {workshop.code && <span className="tag">{workshop.code}</span>}
             {workshop.mode && <span className="tag solid">{workshop.mode}</span>}
             {isFinished(workshop) && <span className="badge done">Completed</span>}
+            {classIsLive(workshop) && <span className="badge on-air">Class open</span>}
             {formatDateRange(workshop)}
           </div>
         </div>
@@ -352,6 +354,9 @@ export default function WorkshopPage() {
         <div className="btn-row">
           <Link className="btn" to="/records">← Records</Link>
           <Link className="btn" to={`/w/${id}/edit`}>Edit</Link>
+          {isOnlineWorkshop(workshop) && (
+            <Link className="btn" to={`/w/${id}/class`}>Class</Link>
+          )}
           <Link className="btn" to={`/w/${id}/attendance`}>Attendance</Link>
           <Link className="btn" to={`/w/${id}/cards`}>ID Cards</Link>
           <Link className="btn" to={`/w/${id}/certificates`}>Certificates</Link>

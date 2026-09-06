@@ -25,6 +25,7 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 | **Register** | Paste WhatsApp replies in the `*Name:* …` format — as many as you like at once. |
 | **Ticket** | Every registrant gets a sequential Ticket ID and a printable ticket + IIC payment receipt. |
 | **Overlay** | Open anybody's ticket over the board without losing the groups you expanded to find them. |
+| **Online class** | Online and Hybrid courses get a Jitsi room on the school's own page, with the register beside it and attendance taken from who is in it. |
 | **Send** | One click opens WhatsApp or email with the ticket already written out. |
 | **Contact** | Call or email any registrant directly from the list. |
 | **Payments** | Mark Paid / Pending / Waived / Refunded inline; running totals and amount collected. |
@@ -872,6 +873,8 @@ src/
   lib/attendance.js        course days, signature columns, marks and totals
   lib/attendancedb.js      the register: one document per day
   lib/photodb.js           participant photographs, kept off the registration
+  lib/meeting.js           room names, join links, and who is in the room
+  lib/meetingdb.js         opening and closing a class, and moving its room
   lib/phonefix.js          which stored numbers need reshaping, and into what
   lib/phonefixdb.js        running that over the database, scan then apply
   lib/exporters.js         which sheets to build (loaded on demand)
@@ -884,14 +887,16 @@ src/
                            IdCard, OrderedChoice, AttendanceSheet,
                            FittedName, SeatBar, BoardGroup, Sidebar,
                            RegistrationCards, AttendanceRegister, Overlay,
-                           PhoneFixPanel, CertificateDocument, CertificateStage
+                           PhoneFixPanel, JitsiRoom, CertificateDocument,
+                           CertificateStage
   components/site/         PublicShell, SiteHeader, SiteFooter, Icons
   pages/                   the admin tool: Console, Login, List, Import, Workshop,
                            Edit, Ticket, CertificateAllot, IdCard, IdCards,
-                           Attendance
+                           Attendance, Class
   pages/site/              the public site: Home, Programmes, Certificates,
-                           About, Contact, Register
+                           About, Contact, Register, JoinClass
   AuthContext.jsx          sign-in + admin allow-list check
+  class.css                the online classroom, on both sides of it
   styles.css               the admin tool; near-black + the four colours
   site.css                 the public site
   certificate.css          the certificate; the one place with colour
@@ -963,7 +968,130 @@ click to confirm.
 
 ---
 
-## 15. Phone numbers
+## 15. Online classes
+
+An Online or Hybrid course gets a **classroom**: a Jitsi Meet room embedded in
+the school's own pages. Jitsi is open source and its public server is free,
+which is the whole reason it is here — an online course should not cost a
+room licence a month.
+
+It is not just a video call bolted on. The presenter's screen at
+`/w/:id/class` has the class and the **register** side by side, so who is in
+the room and who is on the course are one question, not two.
+
+### Opening a class
+
+**Class** appears on the workshop page when the mode is Online or Hybrid.
+Pressing **Open the class** mints a room, publishes the join link and lets
+students in — one press, the same shape as publishing a registration page.
+**Close the class** takes the room off the public page again.
+
+`meet.jit.si` asks whoever opens a room to sign in once, with Google, GitHub
+or Facebook. Students are never asked to. The screen says so, because being
+asked to log into something you were not expecting is alarming if nobody
+warned you.
+
+### Room names are minted, never typed
+
+A Jitsi room has no guest list: anyone who knows the name can walk in, and a
+room called `physics-class` on a public server **will** be walked into. So a
+room is `beyond-guidance-aihow26-` plus sixteen random characters — a
+readable half so a presenter running three courses knows which room they just
+opened, and about eighty bits of randomness so nobody arrives by guessing.
+The alphabet leaves out `l`, `o`, `0` and `1`, because these get read down a
+phone.
+
+Typing a short name over it is allowed and **warned about** on the spot.
+Somebody moving a class onto a room their institution already uses has a
+reason, and a warning is the right way to disagree with them.
+
+**New room** moves the class and kills every link already sent — the only way
+to shut out a link that has been forwarded.
+
+### The link a student gets
+
+`/class/:workshopId`, on the school's own site. **The room name is never in
+it.** That indirection is the design: the room can be replaced after a leak,
+and the class can be closed between sessions, without forty phones needing a
+new link. It is added to the ticket and the WhatsApp message automatically —
+but only while a class is actually open, so a message kept for weeks never
+carries a link that does nothing.
+
+The student is asked for a name before joining, and optionally their ticket
+ID. Nobody attends as "Fellow Jitster": a register has to know who was there,
+and a class has to know who is talking.
+
+The room reaches the public mirror **only while the class is open**. That is
+what makes closing a class close it, rather than hiding a button on a page
+anyone can skip. A course switched from Online to Offline stops publishing
+too — `classOpen` and `meetingRoom` outlive a change of mode, so the mode is
+checked every time rather than trusted once.
+
+### The lobby, and who can do what
+
+The presenter's room turns its **lobby on** without being asked. It is the
+one control that still works after a link has been forwarded: the room stops
+being open and starts being knocked on. The safe setting should be the one
+you get without knowing to ask for it.
+
+| | Presenter | Student |
+|---|---|---|
+| Microphone, camera, chat, raise hand, tile view | ✓ | ✓ |
+| Screen share | ✓ | — |
+| Mute everyone, lobby and security, recording | ✓ | — |
+| Arrives muted | — | ✓ |
+
+Screen sharing is a presenter's, as it is on every teaching platform — a
+class where anyone can put their screen on the wall is a class that gets
+interrupted. The presenter can still hand it over from the participants pane.
+
+### Attendance from the room
+
+The side panel lists three things, and the last two are the interesting ones:
+who is **present** (on the register and in the room), who is a **stranger**
+(in the room, not on the register), and who is **missing**. Matching is by
+ticket ID first — the student only has to have typed it somewhere in their
+name — then by exact name.
+
+Nothing is guessed. A near-miss is reported as a stranger rather than quietly
+credited to somebody with a similar name, and two people of the same name are
+matched to neither. This feeds attendance, and attendance is a record about a
+person.
+
+**Mark N present** writes today's register. It only ever marks people
+**present** — never absent. Students join late and connections drop, and a
+register that records that as absence is lying about them. Absence stays a
+decision somebody makes on the attendance screen.
+
+### When it will not load
+
+The meeting software is a script from another origin, so it is blocked by a
+firewall, by a locked-down browser, and by a Content-Security-Policy that has
+not been told about it. The default outcome of all three is a silent empty
+box a minute before a class starts. So the load is timed out, and failure
+shows the way in that does not depend on us: a direct link to the room on the
+Jitsi server itself.
+
+### What had to be allowed
+
+Three lines in `firebase.json`, and the third is the one that bites:
+
+- `script-src` — `external_api.js`
+- `frame-src` — the meeting itself
+- `Permissions-Policy` — **`camera=()` and `microphone=()` deny the device to
+  every origin including our own.** Left alone, the class would have loaded a
+  video call that could never see or hear anybody.
+
+The room's own traffic is inside that frame and governed by its origin, so no
+`connect-src` entry is needed.
+
+Self-hosting a Jitsi means changing `ISSUER.meetingHost` in
+`src/lib/schema.js` and those three places. Everything else addresses the
+server by that one name.
+
+---
+
+## 16. Phone numbers
 
 Everything is stored as `+91 98452 89298` — country code, then the number.
 The sanitisers in `src/lib/db.js` and `src/lib/publicdb.js` put every `tel`
@@ -1016,16 +1144,16 @@ looking after a permanent service-account key for a one-off tidy-up.
 
 ---
 
-## 16. Tests
+## 17. Tests
 
 ```bash
 npm test
 ```
 
-Runs 293 assertions on Node's built-in test runner — no extra dependencies,
+Runs 332 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards, attendance
-sheets and the phone-number migration. The parser
+sheets, online classes and the phone-number migration. The parser
 is heuristic and fails **silently** when it fails at all, so anything you teach
 it belongs in `tests/parser.test.js` alongside a paste that used to break it.
 
@@ -1034,7 +1162,7 @@ the Firebase emulator.
 
 ---
 
-## 17. Colour
+## 18. Colour
 
 Black text on a white page, and the four colours on everything else.
 
@@ -1088,7 +1216,7 @@ their own schemes, and the ID card keeps its six colourways.
 
 ---
 
-## 18. Attribution
+## 19. Attribution
 
 Al-Majeed School of Research Methodology and Innovation is named **in
 association with** on everything this system produces: the ticket and its
@@ -1110,7 +1238,7 @@ different ways across the code — with a comma after "Research", with `&`, and
 with `and` — which on a certificate and the ticket for the same course is the
 sort of thing people notice.
 
-## 19. Notes
+## 20. Notes
 
 - Search and filtering happen on the client, so no composite Firestore indexes
   are needed. Comfortable into the low thousands of records. Past that, the
@@ -1149,7 +1277,7 @@ sort of thing people notice.
 
 ---
 
-## 20. Verifying the security rules
+## 21. Verifying the security rules
 
 `firestore.rules` is the only thing standing between the public internet and
 every student's phone number, so it is worth testing rather than trusting.

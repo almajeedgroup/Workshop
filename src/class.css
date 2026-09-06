@@ -1,0 +1,119 @@
+/* The online classroom.
+
+   The video is the page. Everything else — the join link, who is in the
+   room, the register — sits beside it on a wide screen and underneath it on
+   a narrow one, because on a phone the class itself is the only thing there
+   is room for.
+
+   Same rule as the rest of the app: the four colours are fills and borders,
+   never text. The one exception a video call forces is the stage itself,
+   which is black because video looks wrong on white and every other
+   conferencing tool in the world is dark behind the tiles. */
+
+.class-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: var(--gap);
+  align-items: start;
+}
+
+/* One column, class first. A presenter on a phone needs the room, and can
+   scroll for the rest. */
+@media (max-width: 900px) {
+  .class-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+
+.class-stage { min-width: 0; }
+.class-side { min-width: 0; }
+.class-side .panel:last-child { margin-bottom: 0; }
+
+/* ---- the room itself ---- */
+
+.room-wrap { position: relative; border: var(--hair); background: var(--ink); }
+
+/* A fixed aspect ratio rather than a height: the frame then matches the
+   video inside it at every width instead of leaving a black band.
+
+   NO `min-height` HERE. With `aspect-ratio`, a minimum height sets a minimum
+   WIDTH as well — 380px tall at 16:9 is 676px wide — so on a phone the class
+   pushed the page sideways and the whole layout scrolled. Phones get their
+   own treatment below instead. */
+.room { aspect-ratio: 16 / 9; }
+.room > iframe { display: block; width: 100%; height: 100%; border: 0; }
+
+.room-loading {
+  position: absolute; inset: auto 0 0 0; margin: 0; padding: 8px 12px;
+  background: var(--tangerine); color: var(--ink);
+  font-size: 12px; font-weight: 700;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+
+/* Closed, and the meeting never loaded, share a shape: a bordered card the
+   width of the stage, so the page does not jump when the class opens. */
+.room-idle, .room-fallback {
+  border: var(--hair); padding: 28px; background: var(--paper);
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  min-height: 380px; justify-content: center;
+}
+.room-idle h2, .room-fallback h3 { margin: 0; }
+.room-idle p, .room-fallback p { margin: 0; max-width: 52ch; }
+.room-fallback { border-style: dashed; border-color: var(--red); }
+
+/* On a phone, 16:9 across the screen is a 219px-tall class — too small to
+   read a face in. Height leads and the ratio gives way, the same trade every
+   conferencing app makes in portrait.
+
+   AFTER the rules it overrides, not before: `aspect-ratio: auto` here loses
+   to a later `aspect-ratio: 16/9` of equal specificity, and a definite
+   height with a live ratio derives the WIDTH from it — which is how a 390px
+   phone ended up with a 924px-wide class and a page that scrolled sideways. */
+@media (max-width: 700px) {
+  .room { aspect-ratio: auto; height: min(70vh, 520px); min-height: 300px; }
+  .room-idle, .room-fallback { min-height: 0; padding: 20px; }
+}
+
+button.big { padding: 10px 22px; font-size: 14px; }
+
+/* ---- links you are meant to copy ---- */
+
+.joinlink { margin: 0 0 10px; }
+.joinlink code {
+  display: block; padding: 7px 9px; border: var(--hairline);
+  font-family: var(--mono); font-size: 11.5px;
+  word-break: break-all; user-select: all;
+}
+
+/* ---- who is in the room ---- */
+
+.who { list-style: none; margin: 0; padding: 0; }
+.who li {
+  display: flex; gap: 8px; align-items: baseline;
+  padding: 5px 0 5px 10px; border-bottom: var(--hairline);
+  border-left: 3px solid transparent;
+}
+.who li:last-child { border-bottom: 0; }
+.who-name { font-weight: 600; font-size: 12.5px; }
+.who-note {
+  margin-left: auto; font-size: 10.5px; color: var(--muted);
+  font-family: var(--mono); text-align: right;
+}
+
+/* Colour carries the same meanings as everywhere else: jade is fine, red is
+   wrong, grey is simply not yet. The left rail is doubled by the wording in
+   the note, so colour is never the only signal. */
+.who .is-present { border-left-color: var(--jade); }
+.who .is-stranger { border-left-color: var(--red); }
+.who .is-missing { border-left-color: var(--faint); }
+
+.who-missing { margin-top: 10px; }
+.who-missing > summary {
+  cursor: pointer; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted);
+}
+
+/* Nothing on this page is worth printing — a screenshot of a video call is
+   not a record. The register prints; this sends you there. */
+@media print {
+  .class-grid { display: none; }
+}

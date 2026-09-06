@@ -6,6 +6,7 @@ import {
   ticketMessage, ticketMessagePlain, ticketSubject,
   whatsappLink, mailtoLink, telLink,
 } from '../lib/tickets.js';
+import { classIsLive, classJoinUrl } from '../lib/meeting.js';
 
 export default function TicketPage() {
   const { id, regId } = useParams();
@@ -43,8 +44,11 @@ export default function TicketPage() {
     );
   }
 
-  const message = ticketMessage(workshop, reg);
-  const plain = ticketMessagePlain(workshop, reg);
+  // Only on a course that actually has a class open. A dead link in a
+  // message somebody keeps for weeks is worse than no link.
+  const classUrl = classIsLive(workshop) ? classJoinUrl(workshop.id) : '';
+  const message = ticketMessage(workshop, reg, { classUrl });
+  const plain = ticketMessagePlain(workshop, reg, { classUrl });
 
   const copy = async () => {
     setActionError('');

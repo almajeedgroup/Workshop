@@ -5,6 +5,7 @@ import { formatDateRange } from '../lib/tickets.js';
 import { CURRENCY } from '../lib/schema.js';
 import SeatBar from './SeatBar.jsx';
 import Overlay from './Overlay.jsx';
+import { classIsLive } from '../lib/meeting.js';
 import TicketDocument from './TicketDocument.jsx';
 
 /**
@@ -40,6 +41,9 @@ export default function BoardGroup({ group, open, onToggle }) {
         <div className="grp-name">
           <Link to={`/w/${workshop.id}`}>{workshop.title || '(untitled)'}</Link>
           {finished && <span className="badge done">Completed</span>}
+          {classIsLive(workshop) && (
+            <Link className="badge on-air" to={`/w/${workshop.id}/class`}>Class open</Link>
+          )}
           <div className="count">
             {formatDateRange(workshop) || 'no dates'}
             {workshop.venue ? ` · ${workshop.venue}` : ''}

@@ -24,6 +24,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { ISSUER, isFreeWorkshop, workshopFee, associationLine } from './schema.js';
+import { classIsLive } from './meeting.js';
 import { formatPhone } from './parser.js';
 
 const PUBLIC_WORKSHOPS = 'publicWorkshops';
@@ -59,6 +60,13 @@ export function publicWorkshopRecord(workshop) {
     paymentUpi: str(workshop.paymentUpi) || ISSUER.upiId || '',
     paymentQrUrl: str(workshop.paymentQrUrl) || ISSUER.paymentQrImage || '',
     registrationOpen: str(workshop.registrationOpen) === 'Open',
+    // The online class. THE ROOM NAME ONLY EXISTS HERE WHILE THE CLASS IS
+    // OPEN — that is what makes closing one close it. A room left published
+    // after a class ends is a room strangers can wander into for as long as
+    // the workshop record lives, and no button on our page prevents that.
+    classOpen: classIsLive(workshop),
+    meetingRoom: classIsLive(workshop) ? str(workshop.meetingRoom) : '',
+    meetingHost: ISSUER.meetingHost || '',
   };
 }
 

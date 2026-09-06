@@ -11,6 +11,7 @@ import ProgrammesPage from './pages/site/ProgrammesPage.jsx';
 import CertificatesPage from './pages/site/CertificatesPage.jsx';
 import ContactPage from './pages/site/ContactPage.jsx';
 import RegisterPage from './pages/site/RegisterPage.jsx';
+import JoinClassPage from './pages/site/JoinClassPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import ConsolePage from './pages/ConsolePage.jsx';
 import ListPage from './pages/ListPage.jsx';
@@ -22,6 +23,7 @@ import CertificateAllotPage from './pages/CertificateAllotPage.jsx';
 import IdCardPage from './pages/IdCardPage.jsx';
 import IdCardsPage from './pages/IdCardsPage.jsx';
 import AttendancePage from './pages/AttendancePage.jsx';
+import ClassPage from './pages/ClassPage.jsx';
 import CertificatePage from './pages/CertificatePage.jsx';
 import VerifyPage from './pages/VerifyPage.jsx';
 
@@ -87,6 +89,7 @@ const PUBLIC = [
   ['/verify/:certificateId', <VerifyPage />],
   ['/c/:certificateId', <CertificatePage />],
   ['/register/:workshopId', <RegisterPage />],
+  ['/class/:workshopId', <JoinClassPage />],
 ];
 
 export default function App() {
@@ -132,6 +135,7 @@ export default function App() {
         <Route path="/w/:id/t/:regId" element={<Protected><TicketPage /></Protected>} />
         <Route path="/w/:id/certificates" element={<Protected><CertificateAllotPage /></Protected>} />
         <Route path="/w/:id/attendance" element={<Protected><AttendancePage /></Protected>} />
+        <Route path="/w/:id/class" element={<Protected><ClassPage /></Protected>} />
         <Route path="/w/:id/cards" element={<Protected><IdCardsPage /></Protected>} />
         <Route path="/w/:id/card/:regId" element={<Protected><IdCardPage /></Protected>} />
 

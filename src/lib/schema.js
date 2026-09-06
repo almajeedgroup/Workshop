@@ -50,6 +50,22 @@ export const ISSUER = {
   upiId: '',
   upiName: 'Islamic Information Centre',
   /**
+   * Where online classes are held.
+   *
+   * Jitsi Meet is open source and its public server, meet.jit.si, is free to
+   * use — which is the whole reason it is here rather than a paid room
+   * licence. Everything in this app addresses the server by this one name,
+   * so moving to a self-hosted Jitsi later is a single-line change and no
+   * room link already sent out has to change shape.
+   *
+   * NOTE on the public server: meet.jit.si asks the person who OPENS a room
+   * to sign in (Google, GitHub or Facebook) before the meeting starts.
+   * Students joining do not sign in to anything. The classroom screen says
+   * so, because being asked to log in to something you were not expecting is
+   * alarming if nobody warned you.
+   */
+  meetingHost: 'meet.jit.si',
+  /**
    * A payment QR supplied by the bank — a BharatQR or merchant standee — used
    * for every workshop that does not set its own.
    *
@@ -172,6 +188,18 @@ export function isFreeWorkshop(w) {
 export function workshopFee(w) {
   if (isFreeWorkshop(w)) return 0;
   return Number(w?.feeAmount) || 0;
+}
+
+/**
+ * Does this course meet online at all?
+ *
+ * Hybrid counts. A hybrid course has people in the room AND people at home,
+ * and the ones at home are the whole reason the online half exists — hiding
+ * the classroom from them because there is also a venue would be exactly
+ * backwards.
+ */
+export function isOnlineWorkshop(w) {
+  return w?.mode === 'Online' || w?.mode === 'Hybrid';
 }
 
 /** The fields to show for a given workshop, honouring every `showWhen`. */
@@ -337,6 +365,28 @@ export const WORKSHOP_FIELDS = [
     options: ['Open', 'Closed'],
     aliases: ['registration open', 'public registration', 'registration status'],
     hint: 'Open lets students register themselves from the QR code on the poster.',
+  },
+  {
+    key: 'classOpen',
+    label: 'Online Class',
+    type: 'enum',
+    options: ['Open', 'Closed'],
+    showWhen: isOnlineWorkshop,
+    aliases: ['online class', 'class open', 'live class'],
+    hint: 'Open publishes the join link and lets students into the room. '
+      + 'Closed takes the room off the public page — the link stops working.',
+  },
+  {
+    key: 'meetingRoom',
+    label: 'Meeting Room',
+    type: 'text',
+    showWhen: isOnlineWorkshop,
+    aliases: ['meeting room', 'room', 'room name'],
+    // Minted, not typed. It is shown because a presenter should be able to
+    // see which room they are about to open, and replaceable because the
+    // only way to shut a leaked link out of a room is to stop using it.
+    hint: 'Left blank, one is created the first time the class is opened. '
+      + 'Replacing it moves the class to a new room and kills the old link.',
   },
   {
     key: 'certificateDesign',

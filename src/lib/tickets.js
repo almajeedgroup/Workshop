@@ -138,7 +138,7 @@ export function ticketSubject(workshop, reg) {
  * The message sent over WhatsApp or email. Uses WhatsApp's *bold* markers,
  * which render as bold in WhatsApp and read fine as plain text in email.
  */
-export function ticketMessage(workshop, reg, { ticketUrl = '' } = {}) {
+export function ticketMessage(workshop, reg, { ticketUrl = '', classUrl = '' } = {}) {
   const paid = reg.paymentStatus === 'Paid';
   const free = isFreeWorkshop(workshop);
   const amount = reg.amountPaid || workshopFee(workshop) || '';
@@ -160,6 +160,10 @@ export function ticketMessage(workshop, reg, { ticketUrl = '' } = {}) {
   if (dates) lines.push(`*Date:* ${dates}`);
   if (workshop.time) lines.push(`*Time:* ${workshop.time}`);
   if (workshop.venue) lines.push(`*Venue:* ${workshop.venue}`);
+  // An online course whose ticket says nothing about how to attend it is a
+  // ticket to nowhere. The link is to the school's own class page, so it
+  // survives the room being replaced.
+  if (classUrl) lines.push(`*Join the online class:* ${classUrl}`);
   lines.push('');
 
   // A free course has nothing to receipt. Printing "Status: Pending" under a
