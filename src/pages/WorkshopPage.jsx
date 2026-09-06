@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   getWorkshop, getRegistrations, deleteWorkshop, updateRegistration, addRegistrations,
+  listAllWithRegistrations,
   deleteRegistration,
 } from '../lib/db.js';
 import RegistrationList from '../components/RegistrationList.jsx';
@@ -21,6 +22,9 @@ import {
 import { formatDateRange } from '../lib/tickets.js';
 import { isFinished } from '../lib/overview.js';
 import { classIsLive } from '../lib/meeting.js';
+import {
+  carryPlan, carryRows, describePlan, carrySources,
+} from '../lib/carryover.js';
 
 function shown(field, w) {
   const v = w[field.key];
@@ -52,6 +56,13 @@ export default function WorkshopPage() {
   const [adding, setAdding] = useState(false);
   const [notice, setNotice] = useState('');
   const [pendingPaste, setPendingPaste] = useState(null);
+  // Bringing a previous course's students across. The other courses are
+  // fetched only when this is opened — most visits never use it, and it is a
+  // read of every workshop with its registrations.
+  const [carryOpen, setCarryOpen] = useState(false);
+  const [sources, setSources] = useState(null);
+  const [carryFrom, setCarryFrom] = useState('');
+  const [carrying, setCarrying] = useState(false);
   const [requests, setRequests] = useState([]);
   const [reqBusy, setReqBusy] = useState('');
   const [toggling, setToggling] = useState(false);
@@ -141,6 +152,48 @@ export default function WorkshopPage() {
       setError(e.message);
     } finally {
       setAdding(false);
+    }
+  };
+
+  /**
+   * Open the panel and load the other courses.
+   *
+   * The newest is chosen for you, because it is nearly always the one meant:
+   * this course follows the last one. That makes the whole thing open,
+   * look, press.
+   */
+  const openCarry = async () => {
+    setCarryOpen(true);
+    setError('');
+    if (sources) return;
+    try {
+      const all = carrySources(await listAllWithRegistrations(), id);
+      setSources(all);
+      setCarryFrom(all[0]?.workshop.id || '');
+    } catch (e) {
+      setError(e.message);
+      setSources([]);
+    }
+  };
+
+  /** Bring them across. */
+  const bringForward = async (plan, source) => {
+    setCarrying(true);
+    setError('');
+    try {
+      const rows = carryRows(plan, source);
+      await addRegistrations(id, rows);
+      await reload();
+      setCarryOpen(false);
+      setNotice(
+        `Brought ${rows.length} student${rows.length === 1 ? '' : 's'} from `
+        + `“${source.title || 'that course'}”`
+        + (plan.already.length ? `, skipped ${plan.already.length} already here.` : '.')
+      );
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setCarrying(false);
     }
   };
 
@@ -447,6 +500,12 @@ export default function WorkshopPage() {
               {pasteOpen ? 'Close' : '+ Paste registrations'}
             </button>
             <button
+              onClick={() => (carryOpen ? setCarryOpen(false) : openCarry())}
+              title="Bring the students from a previous course onto this one"
+            >
+              {carryOpen ? 'Close' : '+ From a previous course'}
+            </button>
+            <button
               className="primary"
               onClick={() => runExport('exportStudentListXlsx')}
               disabled={!filtered.length || exporting}
@@ -465,6 +524,76 @@ export default function WorkshopPage() {
             </button>
           </div>
         </div>
+
+        {carryOpen && (() => {
+          if (!sources) return <p className="count no-print">Loading your other courses…</p>;
+          if (sources.length === 0) {
+            return (
+              <div className="empty no-print">
+                No other course has anybody on it yet. Once one does, its
+                students can be brought here in one press.
+              </div>
+            );
+          }
+          const chosen = sources.find((b) => b.workshop.id === carryFrom) || sources[0];
+          const plan = carryPlan(chosen.registrations, regs);
+          return (
+            <div className="no-print carry" style={{ marginBottom: 14 }}>
+              <div className="pick-row">
+                <label htmlFor="carry-from"><strong>Bring students from</strong></label>
+                <select
+                  id="carry-from"
+                  value={chosen.workshop.id}
+                  onChange={(e) => setCarryFrom(e.target.value)}
+                >
+                  {sources.map(({ workshop, registrations }) => (
+                    <option key={workshop.id} value={workshop.id}>
+                      {workshop.title || '(untitled)'} — {registrations.length} student
+                      {registrations.length === 1 ? '' : 's'}
+                      {workshop.startDate ? ` · ${workshop.startDate}` : ''}
+                    </option>
+                  ))}
+                </select>
+                <span className="spacer" />
+                <button
+                  className="primary"
+                  disabled={carrying || plan.bring.length === 0}
+                  onClick={() => bringForward(plan, chosen.workshop)}
+                >
+                  {carrying
+                    ? 'Bringing…'
+                    : plan.bring.length
+                      ? `Bring ${plan.bring.length} student${plan.bring.length === 1 ? '' : 's'}`
+                      : 'Nothing to bring'}
+                </button>
+              </div>
+
+              <p className="count" style={{ marginTop: 8 }}>
+                {describePlan(plan, seatsLeft)}
+              </p>
+
+              {plan.bring.length > 0 && (
+                <ul className="carry-list">
+                  {plan.bring.slice(0, 12).map((r) => (
+                    <li key={r.id}>
+                      <span>{r.name}</span>
+                      <span className="f-sub">{r.whatsapp || r.email || 'no contact'}</span>
+                    </li>
+                  ))}
+                  {plan.bring.length > 12 && (
+                    <li className="hint">and {plan.bring.length - 12} more</li>
+                  )}
+                </ul>
+              )}
+
+              <p className="hint">
+                Names and contact details come across. Ticket numbers, fees and
+                last term’s notes do not — each person is issued a new ticket
+                here and starts unpaid.
+              </p>
+            </div>
+          );
+        })()}
 
         {pasteOpen && (
           <div className="no-print" style={{ marginBottom: 14 }}>

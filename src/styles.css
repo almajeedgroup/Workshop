@@ -545,6 +545,25 @@ select.status[data-status='Refunded'] { background: var(--red); }
 .grp-name > a { font-weight: 700; font-size: 15px; text-decoration: none; }
 .grp-name > a:hover { text-decoration: underline; background: none; }
 
+/* Bringing a previous course's students across. Bordered rather than plain,
+   because it appears inside the registrations panel and needs to read as a
+   thing being set up, not as part of the list underneath it. */
+.carry { border: var(--hair); padding: 12px 14px; }
+/* The course list is long — a title plus a count plus a date — and a select
+   sized to its widest option pushed the button clean off the panel. It takes
+   the space that is left instead, and the row wraps before anything is lost. */
+.carry .pick-row { margin: 0; flex-wrap: wrap; }
+.carry .pick-row select { flex: 1 1 240px; min-width: 0; }
+.carry .pick-row button { flex: none; }
+.carry-list {
+  list-style: none; margin: 10px 0 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0 16px;
+}
+.carry-list li {
+  display: flex; justify-content: space-between; gap: 10px;
+  padding: 4px 0; border-bottom: var(--hairline); font-size: 12.5px;
+}
+
 /* ---- the finder: one box that searches everything on screen ----
 
    The list sits OVER the page rather than pushing it down. A results list

@@ -27,6 +27,7 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 | **Overlay** | Open anybody's ticket over the board without losing the groups you expanded to find them. |
 | **Find** | One box on the Console and the board that finds a person by name, ticket, number or anything else, across every course at once. |
 | **Students** | Everybody on two or more courses, and a printable profile of everything one student has done. |
+| **Carry forward** | Bring a previous course's students onto the next one in one press — names and contacts, never last term's fees. |
 | **Online class** | Online and Hybrid courses get a Jitsi room on the school's own page, with the register beside it and attendance taken from who is in it. |
 | **Send** | One click opens WhatsApp or email with the ticket already written out. |
 | **Contact** | Call or email any registrant directly from the list. |
@@ -877,6 +878,7 @@ src/
   lib/photodb.js           participant photographs, kept off the registration
   lib/search.js            finding one person across every course at once
   lib/people.js            recognising one student across courses
+  lib/carryover.js         who comes to the next course, and with what
   lib/meeting.js           room names, join links, and who is in the room
   lib/meetingdb.js         opening and closing a class, and moving its room
   lib/phonefix.js          which stored numbers need reshaping, and into what
@@ -973,6 +975,46 @@ click to confirm.
 ---
 
 ## 15. Returning students
+
+### Bringing them to the next course
+
+The same twenty people come back term after term, and enrolling them again
+meant finding the old course, reading twenty names off it and typing them
+into the new one — an afternoon's work producing exactly the register that
+already existed.
+
+**+ From a previous course**, on the workshop's Registrations panel, opens
+with your most recent other course already chosen, says how many would come,
+and lists them. The second press does it. Courses with nobody on them are not
+offered, and neither is this one — bringing a course's students onto itself
+would duplicate every one of them.
+
+**What comes across is the person, not the enrolment.** Name, date of birth,
+qualification, course, phone, email, area, blood group, emergency contact —
+facts about somebody, which do not change between courses.
+
+**What stays behind** is the ticket number, the payment status, the amount,
+the mode, the reference, last term's notes and the ID card's validity date.
+Carrying those forward would open a new course with twenty people already
+marked *Paid* for a fee nobody has collected, holding tickets issued by
+another course. Everybody arrives **Pending**, with a fresh ticket number
+from this course's own series, and a note saying where they came from — six
+months on, that note is the only thing explaining why somebody is on a
+register nobody remembers adding them to.
+
+The carried list is an **allow-list**, so a field added to the schema later
+is not carried by accident.
+
+Anybody already registered here is skipped rather than issued a second
+ticket, matched on the usual identity — phone, then email, then name with
+date of birth. Somebody listed twice on the old course arrives once. Somebody
+with none of those has nothing to match on and is brought anyway: the office
+can delete a duplicate, but cannot add a student it was never told about.
+
+The button carries the count. "Bring students" is a leap of faith; **Bring 18
+students** is a decision, and *"all 20 are already here"* saves the press
+altogether. If the course has a seat limit, it says so before you go over it.
+
 
 A registration belongs to a workshop. Somebody who comes to three courses is
 three documents with three ticket IDs, and nothing in the system said they
@@ -1304,11 +1346,11 @@ looking after a permanent service-account key for a one-off tidy-up.
 npm test
 ```
 
-Runs 399 assertions on Node's built-in test runner — no extra dependencies,
+Runs 421 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards, attendance
-sheets, online classes, search, returning students and the phone-number
-migration. The parser
+sheets, online classes, search, returning students, carry-forward and the
+phone-number migration. The parser
 is heuristic and fails **silently** when it fails at all, so anything you teach
 it belongs in `tests/parser.test.js` alongside a paste that used to break it.
 
