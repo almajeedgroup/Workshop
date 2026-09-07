@@ -10,6 +10,8 @@
 }
 
 .att-sheet{
+  /* Its own page, so nothing else in the app can turn it sideways. */
+  page:att-sheet;
   box-sizing:border-box; width:210mm; min-height:297mm; padding:12mm 12mm 14mm;
   background:#fff; color:var(--att-ink); font-family:var(--att-body);
   margin:0 auto 10mm; box-shadow:0 6mm 20mm rgba(0,0,0,.2);
@@ -92,7 +94,9 @@
 }
 
 @media print{
-  @page{size:A4 portrait; margin:0}
+  /* Named, not bare: a bare `@page` here competes with every other
+     stylesheet's, and the last one loaded wins whatever is on screen. */
+  @page att-sheet{size:A4 portrait; margin:0}
   html,body{background:#fff}
   .att-sheet{box-shadow:none; margin:0; min-height:auto; padding:10mm 12mm 12mm}
   .att-scope *{-webkit-print-color-adjust:exact; print-color-adjust:exact}

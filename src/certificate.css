@@ -18,6 +18,8 @@
 }
 
 .sheet{
+  /* Landscape, and the only thing in the app that is. */
+  page:cert-sheet;
   position:relative; font-family:var(--cbody); width:297mm; height:210mm;
   background:var(--paper); overflow:hidden; box-shadow:0 18px 50px rgba(0,0,0,.25);
   flex:none; color:var(--cink);
@@ -206,7 +208,10 @@
 .sheet.parliament .verify .t a{color:var(--pink-dp)}
 
 @media print{
-  @page{size:A4 landscape;margin:0}
+  /* The ONE landscape document here. Declared as a named page and opted into
+     by `.sheet` alone, because as a bare `@page` it was printing every
+     attendance sheet and ID card sideways too. */
+  @page cert-sheet{size:A4 landscape;margin:0}
   html,body{background:#fff}
   .cert-stage{padding:0;gap:0;display:block;overflow:visible}
   .cert-fit{transform:none !important}

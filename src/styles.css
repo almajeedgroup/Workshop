@@ -858,7 +858,18 @@ button.chip { font: inherit; font-size: 10px; }
 /* ---------------- print ---------------- */
 
 @media print {
-  @page { margin: 16mm; }
+  /* THE page size for the whole app, declared ONCE.
+
+     `@page` is document-level: it cannot be scoped to a component, and every
+     stylesheet here ends up in ONE bundle. So a second `@page { size: … }`
+     anywhere silently decided the orientation of every printed page in the
+     app — whichever stylesheet happened to land last won. The certificate's
+     landscape did, and attendance sheets came out of the printer sideways.
+
+     Anything needing a different page declares a NAMED one beside itself and
+     opts in with the `page` property. Names cannot collide the way a second
+     bare `@page` does. */
+  @page { size: A4 portrait; margin: 16mm; }
   body { font-size: 11pt; }
   .side, .side-open, .side-scrim, .foot, .no-print, .toolbar, .btn-row, button { display: none !important; }
   .shell { display: block; }

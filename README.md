@@ -1467,7 +1467,7 @@ looking after a permanent service-account key for a one-off tidy-up.
 npm test
 ```
 
-Runs 477 assertions on Node's built-in test runner — no extra dependencies,
+Runs 484 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards, attendance
 sheets, online classes, the class record, search, returning students,
@@ -1557,6 +1557,27 @@ with `and` — which on a certificate and the ticket for the same course is the
 sort of thing people notice.
 
 ## 22. Notes
+
+**Every printed page is portrait except the certificate.** `@page` is
+document-level — it cannot be scoped to a component — and every stylesheet
+here ends up in one bundle, so a second bare `@page { size: … }` anywhere
+silently decides the orientation of the whole app. The certificate's
+landscape was last in the bundle, so attendance sheets and ID card sheets
+came out of the printer sideways, and nothing on screen showed it.
+
+There is now exactly **one** unnamed `@page`, in `styles.css`, and it is
+portrait. Anything else declares a **named** page beside itself and opts in
+with the `page` property — `att-sheet`, `card-sheet`, `cert-sheet` — because
+names cannot collide the way a second bare rule does. `tests/print.test.js`
+reads the stylesheets and fails if a second unnamed `@page` ever appears, if
+a named page is declared and never used, or if one is used and never
+declared.
+
+Verified by printing to PDF and measuring the page: the attendance sheet is
+210×297mm portrait with six signature columns and no overflow, ID cards and
+ordinary screens are portrait, and the certificate is still 297×210mm
+landscape.
+
 
 **The sidebar does not move.** It was an ordinary flex item as tall as the
 document, so scrolling a board of forty registrations carried the navigation
