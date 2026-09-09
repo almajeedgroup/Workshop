@@ -1,13 +1,13 @@
 /* Al-Majeed Workshops.
 
-   Black text on a white page, and the four colours on everything else.
+   Black text on a white page, and the five colours on everything else.
 
    THE RULE: the colours are never text. Measured against white they come out
-   at 2.17, 1.51, 3.78 and 3.24 to one, and 4.5 is the floor for readable
-   text — tangerine is nowhere near it. So they are FILLS, BORDERS and BARS,
-   always with black on top, which clears the floor on all four (9.14, 13.09,
-   5.23, 6.12 to one). Nothing here sets `color` to a palette colour, and
-   nothing should.
+   at 2.17, 1.51, 3.78, 3.24 and 4.13 to one, and 4.5 is the floor for
+   readable text — tangerine is nowhere near it. So they are FILLS, BORDERS
+   and BARS, always with black on top, which clears the floor on all five
+   (9.69, 13.89, 5.55, 6.49, 5.09 to one). Nothing here sets `color` to a
+   palette colour, and nothing should.
 
    Each colour means something, so the interface stays readable at a glance:
 
@@ -15,6 +15,12 @@
      red        the one that destroys, and anything wrong
      blue       where you are, where you are going, what has focus
      tangerine  headings and labels over data
+     violet     the class that is happening now
+
+   ON CRYSTAL VIOLET. The dye itself is far darker — around #5D2E8C, which
+   carries black at 2.23 to one and could not be written on. Held to the rule
+   above, crystal violet becomes #9B5DE5: the same colour diluted, and 5.09
+   to one, which sits between red and blue rather than breaking the set.
 
    Colour is never the only signal — the destructive button is dashed as well
    as red, and a warning notice is dashed as well as red. */
@@ -30,19 +36,20 @@
   --tangerine: #FFCC00;
   --red: #FB275D;
   --blue: #1E90FF;
+  --violet: #9B5DE5;         /* crystal violet, diluted to carry black text */
 
   /* One segment of each, in palette order. It divides the sidebar from the
      work, rules off a page heading, and crosses the login panel — the three
      places the screen is divided. */
   --flag: linear-gradient(90deg,
-    var(--jade) 0 25%, var(--tangerine) 25% 50%,
-    var(--red) 50% 75%, var(--blue) 75% 100%);
-  /* The same four running downwards, for the sidebar's edge. The horizontal
-     one squeezed into a 3px-wide strip puts all four stops inside three
+    var(--jade) 0 20%, var(--tangerine) 20% 40%,
+    var(--red) 40% 60%, var(--blue) 60% 80%, var(--violet) 80% 100%);
+  /* The same five running downwards, for the sidebar's edge. The horizontal
+     one squeezed into a 3px-wide strip puts all five stops inside three
      pixels, which paints as a single colour. */
   --flag-down: linear-gradient(180deg,
-    var(--jade) 0 25%, var(--tangerine) 25% 50%,
-    var(--red) 50% 75%, var(--blue) 75% 100%);
+    var(--jade) 0 20%, var(--tangerine) 20% 40%,
+    var(--red) 40% 60%, var(--blue) 60% 80%, var(--violet) 80% 100%);
 
   --hair: 1px solid var(--line);
   --hairline: 1px solid var(--faint);
@@ -337,6 +344,7 @@ label { display: block; }
 .pick-row:nth-child(2) .pick-n { background: var(--tangerine); }
 .pick-row:nth-child(3) .pick-n { background: var(--red); }
 .pick-row:nth-child(4) .pick-n { background: var(--blue); }
+.pick-row:nth-child(5) .pick-n { background: var(--violet); }
 .pick-img { flex: none; width: 26px; height: 26px; object-fit: contain; background: #fff; }
 .pick-label { font-size: 13px; }
 /* .spacer is scoped per container throughout this file, so it needs saying
@@ -678,13 +686,15 @@ select.status[data-status='Refunded'] { background: var(--red); }
 }
 .badge.done { background: var(--blue); }
 
-/* A class happening right now. Jade — the colour of the action that moves
-   work forward — and it is a link, because the only sensible response to
+/* A class happening right now. Violet: the class is the one thing in this
+   app that is live, and it had been borrowing jade — the colour of the
+   action that moves work forward — which made "a class is running" look like
+   "press this". It is still a link, because the only sensible response to
    seeing it is to go there. */
-.badge.on-air { background: var(--jade); }
+.badge.on-air { background: var(--violet); }
 .badge.off-air { background: var(--faint); }
 a.badge { text-decoration: none; }
-a.badge:hover { background: var(--jade); box-shadow: inset 0 0 0 2px var(--ink); }
+a.badge:hover { background: var(--violet); box-shadow: inset 0 0 0 2px var(--ink); }
 
 .grp-figs { display: flex; gap: 16px; flex-wrap: wrap; }
 .fig { font-size: 12.5px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }

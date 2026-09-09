@@ -1482,7 +1482,7 @@ the Firebase emulator.
 
 ## 20. Colour
 
-Black text on a white page, and the four colours on everything else.
+Black text on a white page, and the five colours on everything else.
 
 | | Hex | Where |
 |---|---|---|
@@ -1490,15 +1490,16 @@ Black text on a white page, and the four colours on everything else.
 | Tangerine Yellow | `#FFCC00` | Flag segment 2; table headings; the import preview header; solid tags |
 | Radical Red | `#FB275D` | Flag segment 3; the delete button; warning notices |
 | Dodger Blue | `#1E90FF` | Flag segment 4; the current page; buttons and links under the pointer; the focus ring; notices |
+| Crystal Violet | `#9B5DE5` | Flag segment 5; the **Class open** badge; the class record's tabs |
 | Near-black | `#0A0A0A` | **All** text, keylines and rules |
 | White | `#FFFFFF` | Page background |
 
 **The colours are never text.** Measured against white they come out at 2.17,
-1.51, 3.78 and 3.24 to one, and 4.5 is the floor for readable text —
+1.51, 3.78, 3.24 and 4.13 to one, and 4.5 is the floor for readable text —
 tangerine is nowhere near it. So they are fills, borders and bars, always
-with black on top, which clears the floor on all four: 9.14, 13.09, 5.23 and
-6.12 to one. Nothing in `styles.css` sets `color` to a palette colour, and
-nothing should.
+with black on top, which clears the floor on all five: 9.69, 13.89, 5.55,
+6.49 and 5.09 to one. Nothing in `styles.css` sets `color` to a palette
+colour, and nothing should.
 
 Each colour means something, so the interface stays readable at a glance:
 
@@ -1506,18 +1507,37 @@ Each colour means something, so the interface stays readable at a glance:
 - **red** — the one that destroys, and anything wrong
 - **blue** — where you are, where you are going, what has focus
 - **tangerine** — headings and labels over data
+- **violet** — the class that is happening now
 
 Colour is never the only signal: the delete button is dashed as well as red,
 and a warning notice is dashed as well as red.
+
+### On crystal violet
+
+The dye itself is much darker — around `#5D2E8C`, which carries black at
+**2.23 to one** and could not be written on. Held to the rule above, it
+becomes `#9B5DE5`: the same colour diluted, at **5.09 to one**, sitting
+between red and blue rather than breaking the set. One line in `styles.css`
+if you want a different violet; the contrast figure is the thing to keep
+above 4.5.
+
+It was given to **the live class**, which is the one thing in this app that
+is happening rather than recorded. The **Class open** badge had been jade —
+the colour of the action that moves work forward — which made *"a class is
+running"* look like *"press this"*. Jade goes back to meaning one thing.
 
 ### The flag
 
 `--flag` is one segment of each colour, in palette order. It rules off the
 masthead, a page heading and the login panel — the three places that divide
-the screen, and nowhere else. Four colours on every edge is wallpaper.
+the screen, and nowhere else. Five colours on every edge is wallpaper.
 
 It is painted as a background rather than a border-image, because only the
 bottom edge is wanted and `border-image` applies its slice to all four sides.
+
+`--flag-down` is the same five running downwards, for the sidebar's edge: the
+horizontal one squeezed into a 3px strip puts every stop inside three pixels
+and paints as a single colour.
 
 The statistics strip and the numbered badges in the logo picker walk the same
 four in the same order, so a row of figures reads as four things rather than

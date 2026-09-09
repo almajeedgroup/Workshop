@@ -128,6 +128,11 @@ button.big { padding: 10px 22px; font-size: 14px; }
 
 .board-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
 .board-tabs button { font-size: 12px; padding: 5px 12px; }
+/* The class's own colour rather than the app-wide jade, so the notes, the
+   transcript and the handouts read as parts of the live class and not as
+   three separate actions to press. */
+.board-tabs button.primary { background: var(--violet); }
+.board-tabs button.primary:hover:not(:disabled) { background: var(--violet); }
 
 .board-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
 .board-tools .spacer { flex: 1; }
