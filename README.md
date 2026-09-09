@@ -1490,16 +1490,23 @@ Black text on a white page, and the five colours on everything else.
 | Tangerine Yellow | `#FFCC00` | Flag segment 2; table headings; the import preview header; solid tags |
 | Radical Red | `#FB275D` | Flag segment 3; the delete button; warning notices |
 | Dodger Blue | `#1E90FF` | Flag segment 4; the current page; buttons and links under the pointer; the focus ring; notices |
-| Crystal Violet | `#9B5DE5` | Flag segment 5; the **Class open** badge; the class record's tabs |
+| Crystal Violet | `#4A0E4E` | Flag segment 5; the **Class open** badge; the class record's tabs |
 | Near-black | `#0A0A0A` | **All** text, keylines and rules |
 | White | `#FFFFFF` | Page background |
 
 **The colours are never text.** Measured against white they come out at 2.17,
-1.51, 3.78, 3.24 and 4.13 to one, and 4.5 is the floor for readable text —
-tangerine is nowhere near it. So they are fills, borders and bars, always
-with black on top, which clears the floor on all five: 9.69, 13.89, 5.55,
-6.49 and 5.09 to one. Nothing in `styles.css` sets `color` to a palette
-colour, and nothing should.
+1.51, 3.78 and 3.24 to one, and 4.5 is the floor for readable text —
+tangerine is nowhere near it. So they are fills, borders and bars, with the
+readable colour written on top.
+
+Four of them are **light** and carry black: 9.69, 13.89, 5.55 and 6.49 to
+one. Crystal violet is **dark** and carries white — `--on-violet`, at 14.34
+to one, the strongest pairing in the palette. Black on it would be 1.46 to
+one, which is no pairing at all.
+
+That loosens nothing. The page is white and the text on it is black; this is
+a label inside a coloured chip, and that chip is dark. What the rule forbids
+is a palette colour *being* the text, and nothing in `styles.css` does that.
 
 Each colour means something, so the interface stays readable at a glance:
 
@@ -1514,17 +1521,17 @@ and a warning notice is dashed as well as red.
 
 ### On crystal violet
 
-The dye itself is much darker — around `#5D2E8C`, which carries black at
-**2.23 to one** and could not be written on. Held to the rule above, it
-becomes `#9B5DE5`: the same colour diluted, at **5.09 to one**, sitting
-between red and blue rather than breaking the set. One line in `styles.css`
-if you want a different violet; the contrast figure is the thing to keep
-above 4.5.
+`#4A0E4E` is the one dark colour here, and it changes what goes on top rather
+than what the rule is. Anything filled with it uses `--on-violet`; if you
+give violet to something new, take the pair.
 
 It was given to **the live class**, which is the one thing in this app that
 is happening rather than recorded. The **Class open** badge had been jade —
 the colour of the action that moves work forward — which made *"a class is
 running"* look like *"press this"*. Jade goes back to meaning one thing.
+
+Being dark, it also does something the other four cannot: it anchors the end
+of the flag instead of adding a fifth bright band to it.
 
 ### The flag
 

@@ -3,11 +3,19 @@
    Black text on a white page, and the five colours on everything else.
 
    THE RULE: the colours are never text. Measured against white they come out
-   at 2.17, 1.51, 3.78, 3.24 and 4.13 to one, and 4.5 is the floor for
-   readable text — tangerine is nowhere near it. So they are FILLS, BORDERS
-   and BARS, always with black on top, which clears the floor on all five
-   (9.69, 13.89, 5.55, 6.49, 5.09 to one). Nothing here sets `color` to a
-   palette colour, and nothing should.
+   at 2.17, 1.51, 3.78 and 3.24 to one, and 4.5 is the floor for readable
+   text — tangerine is nowhere near it. So they are FILLS, BORDERS and BARS
+   with the readable colour written on top.
+
+   Four of them are LIGHT and carry black: 9.69, 13.89, 5.55 and 6.49 to one.
+   Crystal violet is DARK and carries white: 14.34 to one, the strongest
+   pairing here. Black on it is 1.46 to one, which is no pairing at all — so
+   `--on-violet` exists and everything filled violet uses it.
+
+   That does not loosen anything. The PAGE is white and the TEXT on it is
+   black; this is a label inside a coloured chip, and the chip is dark. What
+   the rule forbids is a palette colour BEING the text, and nothing here does
+   that.
 
    Each colour means something, so the interface stays readable at a glance:
 
@@ -16,11 +24,6 @@
      blue       where you are, where you are going, what has focus
      tangerine  headings and labels over data
      violet     the class that is happening now
-
-   ON CRYSTAL VIOLET. The dye itself is far darker — around #5D2E8C, which
-   carries black at 2.23 to one and could not be written on. Held to the rule
-   above, crystal violet becomes #9B5DE5: the same colour diluted, and 5.09
-   to one, which sits between red and blue rather than breaking the set.
 
    Colour is never the only signal — the destructive button is dashed as well
    as red, and a warning notice is dashed as well as red. */
@@ -36,7 +39,8 @@
   --tangerine: #FFCC00;
   --red: #FB275D;
   --blue: #1E90FF;
-  --violet: #9B5DE5;         /* crystal violet, diluted to carry black text */
+  --violet: #4A0E4E;         /* crystal violet — dark, so it carries white */
+  --on-violet: #FFFFFF;      /* 14.34:1 on it; black would be 1.46:1 */
 
   /* One segment of each, in palette order. It divides the sidebar from the
      work, rules off a page heading, and crosses the login panel — the three
@@ -344,7 +348,7 @@ label { display: block; }
 .pick-row:nth-child(2) .pick-n { background: var(--tangerine); }
 .pick-row:nth-child(3) .pick-n { background: var(--red); }
 .pick-row:nth-child(4) .pick-n { background: var(--blue); }
-.pick-row:nth-child(5) .pick-n { background: var(--violet); }
+.pick-row:nth-child(5) .pick-n { background: var(--violet); color: var(--on-violet); }
 .pick-img { flex: none; width: 26px; height: 26px; object-fit: contain; background: #fff; }
 .pick-label { font-size: 13px; }
 /* .spacer is scoped per container throughout this file, so it needs saying
@@ -691,10 +695,13 @@ select.status[data-status='Refunded'] { background: var(--red); }
    action that moves work forward — which made "a class is running" look like
    "press this". It is still a link, because the only sensible response to
    seeing it is to go there. */
-.badge.on-air { background: var(--violet); }
+.badge.on-air { background: var(--violet); color: var(--on-violet); }
 .badge.off-air { background: var(--faint); }
 a.badge { text-decoration: none; }
-a.badge:hover { background: var(--violet); box-shadow: inset 0 0 0 2px var(--ink); }
+a.badge:hover {
+  background: var(--violet); color: var(--on-violet);
+  box-shadow: inset 0 0 0 2px var(--paper);
+}
 
 .grp-figs { display: flex; gap: 16px; flex-wrap: wrap; }
 .fig { font-size: 12.5px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }

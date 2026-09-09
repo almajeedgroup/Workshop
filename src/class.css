@@ -131,8 +131,10 @@ button.big { padding: 10px 22px; font-size: 14px; }
 /* The class's own colour rather than the app-wide jade, so the notes, the
    transcript and the handouts read as parts of the live class and not as
    three separate actions to press. */
-.board-tabs button.primary { background: var(--violet); }
-.board-tabs button.primary:hover:not(:disabled) { background: var(--violet); }
+.board-tabs button.primary,
+.board-tabs button.primary:hover:not(:disabled) {
+  background: var(--violet); color: var(--on-violet);
+}
 
 .board-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
 .board-tools .spacer { flex: 1; }
