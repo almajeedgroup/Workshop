@@ -1,7 +1,8 @@
+import { useEffect } from 'react';
 import { Routes, Route, NavLink, Navigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext.jsx';
 import { isConfigured } from './firebase.js';
-import { ISSUER } from './lib/schema.js';
+import { brandTitle, brandLockup } from './lib/brand.js';
 
 import Sidebar from './components/Sidebar.jsx';
 import PublicShell from './components/site/PublicShell.jsx';
@@ -28,6 +29,51 @@ import AttendancePage from './pages/AttendancePage.jsx';
 import ClassPage from './pages/ClassPage.jsx';
 import CertificatePage from './pages/CertificatePage.jsx';
 import VerifyPage from './pages/VerifyPage.jsx';
+
+/**
+ * What the browser tab says.
+ *
+ * The page first and the brand second — somebody with nine tabs open is
+ * looking for "Attendance", and nine tabs all starting WORKSHOP tell them
+ * nothing. Patterns, not exact paths, so a workshop's own screens are named
+ * without listing every ID.
+ */
+const TITLES = [
+  [/^\/$/, ''],
+  [/^\/login/, 'Sign in'],
+  [/^\/console/, 'Console'],
+  [/^\/records/, 'Records'],
+  [/^\/people\/[^/]+/, 'Student'],
+  [/^\/people/, 'Students'],
+  [/^\/import/, 'Import'],
+  [/^\/new/, 'New workshop'],
+  [/^\/w\/[^/]+\/edit/, 'Edit workshop'],
+  [/^\/w\/[^/]+\/t\//, 'Ticket'],
+  [/^\/w\/[^/]+\/certificates/, 'Certificates'],
+  [/^\/w\/[^/]+\/attendance/, 'Attendance'],
+  [/^\/w\/[^/]+\/cards/, 'ID cards'],
+  [/^\/w\/[^/]+\/card\//, 'ID card'],
+  [/^\/w\/[^/]+\/class/, 'Class'],
+  [/^\/w\/[^/]+/, 'Workshop'],
+  [/^\/programmes/, 'Programmes'],
+  [/^\/certificates/, 'Certificates'],
+  [/^\/about/, 'About'],
+  [/^\/contact/, 'Contact'],
+  [/^\/verify/, 'Verify a certificate'],
+  [/^\/c\//, 'Certificate'],
+  [/^\/register\//, 'Register'],
+  [/^\/class\//, 'Join the class'],
+];
+
+/** The label for a path, or the brand alone when nothing matches. */
+export function titleFor(pathname) {
+  const hit = TITLES.find(([pattern]) => pattern.test(pathname));
+  return brandTitle(hit ? hit[1] : '');
+}
+
+function useDocumentTitle(pathname) {
+  useEffect(() => { document.title = titleFor(pathname); }, [pathname]);
+}
 
 function SetupNotice() {
   return (
@@ -96,6 +142,7 @@ const PUBLIC = [
 
 export default function App() {
   const { pathname } = useLocation();
+  useDocumentTitle(pathname);
   // The public site has its own chrome and must not inherit the admin
   // sidebar. Admin routes all sit under these prefixes.
   const isAdminArea = /^\/(login|console|records|people|import|new|w)(\/|$)/.test(pathname);
@@ -146,7 +193,7 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <footer className="foot no-print">
-        {ISSUER.name} · system by {ISSUER.operator}
+        {brandLockup()}
       </footer>
       </div>
     </div>

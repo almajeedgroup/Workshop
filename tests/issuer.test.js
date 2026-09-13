@@ -6,8 +6,18 @@ import {
 } from '../src/lib/issuer.js';
 import { ISSUER } from '../src/lib/schema.js';
 
-const OLD = { name: 'Islamic Information Centre', unit: 'Beyond Guidance', operator: 'Al-Majeed School of Research Methodology and Innovation' };
-const NEW = { name: 'WORKSHOP', unit: 'Beyond Guidance', operator: 'Al-Majeed School of Research Methodology and Innovation' };
+/** The issuer as every certificate carried it up to the rebrand. */
+const OLD = {
+  name: 'Islamic Information Centre', unit: 'Beyond Guidance', unitLine: '',
+  operator: 'Al-Majeed School of Research Methodology and Innovation', association: '',
+};
+/** And as it is now. */
+const NEW = {
+  name: 'WORKSHOP', unit: '',
+  unitLine: 'by Al-Majeed School of Research Methodology and Innovation',
+  operator: 'Al-Majeed School of Research Methodology and Innovation',
+  association: 'Islamic Information Centre · Beyond Guidance',
+};
 
 /* ---------------- the stamp ---------------- */
 
@@ -22,7 +32,8 @@ test('a missing field becomes an empty string, never undefined', () => {
   const stamp = issuerStamp({ name: 'Only a name' });
   assert.equal(stamp.unit, '');
   assert.equal(stamp.operator, '');
-  assert.deepEqual(issuerStamp(null), { name: '', unit: '', operator: '' });
+  assert.deepEqual(issuerStamp(null),
+    { name: '', unit: '', unitLine: '', operator: '', association: '' });
 });
 
 test('a record with no stamp is recognised as having none', () => {
@@ -44,6 +55,24 @@ test('a stamped certificate keeps its own issuer however the school is renamed',
   assert.equal(certificateIssuer(cert, NEW).name, 'Islamic Information Centre');
 });
 
+test('a stamp made before the rebrand prints EXACTLY what it printed then', () => {
+  // Two fields were added to the stamp at the rebrand. A record that predates
+  // them must not gain a by-line it never had, nor lose the association line
+  // it did have — which it briefly did, when the new field took priority and
+  // the old fallback was dropped.
+  const before = issuerLines(certificateIssuer({ issuer: { name: OLD.name, unit: OLD.unit, operator: OLD.operator } }, NEW));
+  assert.equal(before.lead, 'Beyond Guidance · A Unit of Islamic Information Centre');
+  assert.equal(before.by, '', 'no by-line existed on those sheets');
+  assert.equal(before.association, 'In association with Al-Majeed School of Research Methodology and Innovation');
+});
+
+test('a certificate issued now leads with the brand and names who it is run with', () => {
+  const now = issuerLines(certificateIssuer({ issuer: NEW }));
+  assert.equal(now.lead, 'WORKSHOP');
+  assert.equal(now.by, 'by Al-Majeed School of Research Methodology and Innovation');
+  assert.equal(now.association, 'In association with Islamic Information Centre · Beyond Guidance');
+});
+
 test('an unstamped certificate falls back to the live constant', () => {
   assert.deepEqual(certificateIssuer({}, NEW), issuerStamp(NEW));
   assert.equal(certificateIssuer({}).name, ISSUER.name, 'and by default to the real one');
@@ -62,7 +91,12 @@ test('it is the stamp or the fallback, never a mixture', () => {
 /* ---------------- the frozen wording ---------------- */
 
 test('the legacy issuer is what every certificate carried until the rebrand', () => {
-  assert.deepEqual({ ...LEGACY_ISSUER }, OLD);
+  // Only the three fields that existed then. The two added at the rebrand
+  // are absent by design, and issuerStamp fills them with empty strings.
+  assert.deepEqual({ ...LEGACY_ISSUER }, {
+    name: OLD.name, unit: OLD.unit, operator: OLD.operator,
+  });
+  assert.deepEqual(issuerStamp(LEGACY_ISSUER), OLD);
 });
 
 test('it cannot be edited at runtime', () => {
@@ -82,9 +116,10 @@ test('the backfill does not depend on being run before the rebrand', () => {
 
 /* ---------------- what the sheet prints ---------------- */
 
-test('the two printed lines are built from the record', () => {
+test('the printed lines are built from the record', () => {
   assert.deepEqual(issuerLines(OLD), {
     lead: 'Beyond Guidance · A Unit of Islamic Information Centre',
+    by: '',
     association: 'In association with Al-Majeed School of Research Methodology and Innovation',
   });
 });

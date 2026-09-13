@@ -29,6 +29,13 @@ test('it is read out as a word, not as an abbreviation', () => {
   assert.equal(BRAND_SPOKEN, 'Workshop');
 });
 
+test('the drawn mark and the written name are the same word', () => {
+  // brand.js draws WORKSH•P; schema.js carries the plain word for a ticket
+  // pasted into WhatsApp and a heading in a spreadsheet, which cannot draw
+  // anything. Two spellings of one brand is the thing to catch here.
+  assert.equal(ISSUER.name, BRAND_NAME);
+});
+
 /* ---------------- the lockup ---------------- */
 
 test('the lockup takes the school name from the one canonical place', () => {

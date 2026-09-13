@@ -1,7 +1,12 @@
-# Workshops — Registration & Ticketing
+# WORKSHOP
 
-Web app for **Beyond Guidance, a unit of Islamic Information Centre**, built by
-**Al-Majeed School of Research Methodology & Innovation**.
+**WORKSHOP by Al-Majeed School of Research Methodology and Innovation**, in
+association with **Islamic Information Centre · Beyond Guidance**.
+
+The mark is `WORKSH●P` — WORK in near-black, SH●P in lime, the second O drawn
+as a centred dot. It is real text rather than an image, so it stays
+selectable, scales, prints, and reads as "Workshop" to a screen reader. See
+`src/lib/brand.js` and `src/components/Wordmark.jsx`.
 
 Paste ordinary text — a promotional poster, or the WhatsApp registration replies
 your team collects — and it is parsed into structured records, reviewed on
@@ -1467,7 +1472,7 @@ looking after a permanent service-account key for a one-off tidy-up.
 npm test
 ```
 
-Runs 514 assertions on Node's built-in test runner — no extra dependencies,
+Runs 520 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards, attendance
 sheets, online classes, the class record, search, returning students,

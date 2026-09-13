@@ -103,10 +103,11 @@ function Head({ cert }) {
  * before the stamp existed, which the Console can backfill.
  */
 function Issuer({ cert }) {
-  const { lead, association } = issuerLines(certificateIssuer(cert));
+  const { lead, by, association } = issuerLines(certificateIssuer(cert));
   return (
     <div className="org">
       <b>{lead}</b>
+      {by && <small>{by}</small>}
       {association && <small>{association}</small>}
     </div>
   );

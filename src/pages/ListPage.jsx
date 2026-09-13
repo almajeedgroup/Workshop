@@ -4,6 +4,7 @@ import { listWorkshops, withRegistrations, deleteWorkshop } from '../lib/db.js';
 import { listPendingRequests } from '../lib/publicdb.js';
 import { WORKSHOP_FIELDS, ISSUER } from '../lib/schema.js';
 import { formatDateRange } from '../lib/tickets.js';
+import { brandLockup } from '../lib/brand.js';
 import { boardGroups, shouldFetchBoard } from '../lib/overview.js';
 import BoardGroup from '../components/BoardGroup.jsx';
 import Finder from '../components/Finder.jsx';
@@ -142,7 +143,8 @@ export default function ListPage() {
     <main>
       <div className="print-only print-head">
         <h1>Workshop Records</h1>
-        <div className="org">{ISSUER.name} — {ISSUER.unitLine}</div>
+        <div className="org">{brandLockup()}</div>
+        <div className="org assoc">{ISSUER.association}</div>
         <div className="rule" />
       </div>
 

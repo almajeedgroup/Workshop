@@ -844,6 +844,12 @@ button.chip { font: inherit; font-size: 10px; }
 .ticket-head { padding: 16px 20px 12px; text-align: center; }
 .ticket-head .issuer { font-size: 19px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; }
 .ticket-head .issuer-sub { font-size: 11px; color: var(--muted); letter-spacing: 0.06em; margin-top: 3px; }
+/* Who this is run with. Smaller than the by-line and quieter than both: it
+   is context, not the name of the thing. */
+.ticket-head .issuer-assoc { font-size: 9.5px; color: var(--muted); letter-spacing: 0.05em; margin-top: 2px; }
+/* The mark sits where the plain name used to. It brings its own face, so the
+   uppercase and tracking that styled the old text must not reach it. */
+.ticket-head .issuer { display: inline-flex; text-transform: none; letter-spacing: normal; }
 
 .ticket-band {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -908,4 +914,5 @@ button.chip { font: inherit; font-size: 10px; }
 .print-only { display: none; }
 .print-head { margin-bottom: 16px; }
 .print-head .org { font-size: 10pt; letter-spacing: 0.06em; text-transform: uppercase; }
+.print-head .org.assoc { font-size: 8.5pt; color: var(--muted); margin-top: 1mm; }
 .print-head .rule { margin: 8px 0; }

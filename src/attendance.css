@@ -29,6 +29,10 @@
 .att-titles{text-align:center}
 .att-titles .org{font-size:11pt; font-weight:700; letter-spacing:.02em; line-height:1.2}
 .att-titles .unit{font-size:8pt; color:var(--att-soft); margin-top:.8mm; letter-spacing:.06em; text-transform:uppercase}
+/* Who the course is run with — quieter than the by-line above it. */
+.att-titles .unit.assoc{font-size:7pt; margin-top:.4mm}
+/* The mark brings its own face; the org rule styled plain text. */
+.att-titles .org{display:inline-flex; letter-spacing:normal}
 .att-titles .doc{
   margin-top:2.2mm; font-size:12pt; font-weight:700; letter-spacing:.18em;
   text-transform:uppercase;

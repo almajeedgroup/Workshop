@@ -8,6 +8,7 @@ import {
   courseCount, RETURNING_AT,
 } from '../lib/people.js';
 import { formatDateRange } from '../lib/tickets.js';
+import { brandLockup } from '../lib/brand.js';
 import { ISSUER, CURRENCY, isFreeWorkshop } from '../lib/schema.js';
 
 /**
@@ -78,7 +79,8 @@ export default function PersonPage() {
     <main>
       <div className="print-only print-head">
         <h1>{person.name}</h1>
-        <div className="org">{ISSUER.name} — {ISSUER.unitLine}</div>
+        <div className="org">{brandLockup()}</div>
+        <div className="org assoc">{ISSUER.association}</div>
         <div className="rule" />
       </div>
 

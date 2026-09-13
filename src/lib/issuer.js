@@ -41,8 +41,15 @@ export const LEGACY_ISSUER = Object.freeze({
   operator: 'Al-Majeed School of Research Methodology and Innovation',
 });
 
-/** The fields an issuer stamp carries. An allow-list, not a copy of ISSUER. */
-export const STAMP_FIELDS = ['name', 'unit', 'operator'];
+/**
+ * The fields an issuer stamp carries. An allow-list, not a copy of ISSUER.
+ *
+ * `unitLine` and `association` joined the list at the rebrand. A stamp made
+ * before them simply has neither, which is why every field is filled with an
+ * empty string rather than left out: a legacy record goes on printing
+ * exactly what it printed, and the two new lines are not invented for it.
+ */
+export const STAMP_FIELDS = ['name', 'unit', 'unitLine', 'operator', 'association'];
 
 /** The stamp to write onto a record issued now. */
 export function issuerStamp(source = ISSUER) {
@@ -77,9 +84,24 @@ export function certificateIssuer(cert, fallback = ISSUER) {
 export function issuerLines(issuer) {
   const name = String(issuer?.name || '').trim();
   const unit = String(issuer?.unit || '').trim();
+  const unitLine = String(issuer?.unitLine || '').trim();
   const operator = String(issuer?.operator || '').trim();
+  const association = String(issuer?.association || '').trim();
+
+  // Two shapes, because two eras. A record from before the rebrand has a
+  // unit and no by-line, and prints the way it always did; one from after
+  // leads with the brand and carries the school underneath. Neither is
+  // rewritten into the other.
+  const lead = unit && name ? `${unit} · A Unit of ${name}` : (unit || name);
+  // A legacy record has no `association` field and named the school on this
+  // line. Preferring `association` and falling back to `operator` keeps that
+  // line exactly as it was printed — dropping it would have quietly rewritten
+  // the certificates this whole mechanism exists to leave alone.
+  const withList = association || operator;
+
   return {
-    lead: unit && name ? `${unit} · A Unit of ${name}` : (unit || name),
-    association: operator ? `In association with ${operator}` : '',
+    lead,
+    by: unitLine,
+    association: withList ? `In association with ${withList}` : '',
   };
 }

@@ -1,3 +1,4 @@
+import Wordmark from './Wordmark.jsx';
 import { ISSUER, associationLine } from '../lib/schema.js';
 import { formatDate, formatDateRange } from '../lib/tickets.js';
 import { cardCrests } from '../lib/idcards.js';
@@ -33,8 +34,9 @@ export default function AttendanceSheet({ workshop, registrations, day = '', byD
             {crests.map((c) => <img key={c.key} src={c.src} alt={c.alt} />)}
           </div>
           <div className="att-titles">
-            <div className="org">{ISSUER.name}</div>
+            <Wordmark className="org" style={{ fontSize: '15pt' }} />
             <div className="unit">{ISSUER.unitLine}</div>
+            {ISSUER.association && <div className="unit assoc">{ISSUER.association}</div>}
             <div className="doc">Attendance {byDay ? 'Record' : 'Sheet'}</div>
           </div>
         </div>

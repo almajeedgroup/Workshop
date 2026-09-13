@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ISSUER } from '../../lib/schema.js';
+import Wordmark from '../Wordmark.jsx';
 
 export default function SiteFooter() {
   const year = new Date().getFullYear();
@@ -10,7 +11,7 @@ export default function SiteFooter() {
           <div>
             <div className="brand">
               <img src="/crests/al-majeed.png" alt="" />
-              <span className="t1">Al-Majeed School</span>
+              <Wordmark lockup style={{ fontSize: 24 }} />
             </div>
             <p className="about">
               Research methodology, artificial intelligence and innovation practice —

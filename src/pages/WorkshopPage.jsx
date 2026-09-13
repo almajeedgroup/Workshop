@@ -20,6 +20,7 @@ import {
   visibleWorkshopFields, ISSUER, CURRENCY, workshopFee, isOnlineWorkshop,
 } from '../lib/schema.js';
 import { formatDateRange } from '../lib/tickets.js';
+import { brandLockup } from '../lib/brand.js';
 import { isFinished } from '../lib/overview.js';
 import { classIsLive } from '../lib/meeting.js';
 import {
@@ -401,7 +402,8 @@ export default function WorkshopPage() {
   return (
     <main>
       <div className="print-only print-head">
-        <div className="org">{ISSUER.name} — {ISSUER.unitLine}</div>
+        <div className="org">{brandLockup()}</div>
+        <div className="org assoc">{ISSUER.association}</div>
         <div className="rule" />
         <h1>{workshop.title}</h1>
       </div>

@@ -1,3 +1,4 @@
+import Wordmark from './Wordmark.jsx';
 import {
   ISSUER, CURRENCY, isFreeWorkshop, workshopFee, associationLine,
 } from '../lib/schema.js';
@@ -25,8 +26,9 @@ export default function TicketDocument({ workshop, reg }) {
   return (
     <div className="ticket">
       <div className="ticket-head">
-        <div className="issuer">{ISSUER.name}</div>
+        <Wordmark className="issuer" style={{ fontSize: 26 }} />
         {ISSUER.unitLine && <div className="issuer-sub">{ISSUER.unitLine}</div>}
+        {ISSUER.association && <div className="issuer-assoc">{ISSUER.association}</div>}
       </div>
 
       <div className="ticket-band">

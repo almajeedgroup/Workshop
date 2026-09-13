@@ -20,10 +20,32 @@
  * ------------------------------------------------------------------ */
 
 export const ISSUER = {
-  /** Whose receipt this is. */
-  name: 'Islamic Information Centre',
-  unit: 'Beyond Guidance',
-  unitLine: 'Beyond Guidance, a unit of Islamic Information Centre',
+  /**
+   * Whose receipt this is.
+   *
+   * THE BRAND, spelled out. `src/lib/brand.js` draws it as WORKSH•P, with the
+   * second O as a dot, but a ticket pasted into WhatsApp and a column heading
+   * in a spreadsheet cannot draw anything — so the plain word lives here and
+   * a test asserts the two have not drifted apart.
+   */
+  name: 'WORKSHOP',
+  /**
+   * There is no sub-unit any more. Kept as an empty string rather than
+   * removed: `idcards.js`, `attendance.js` and `issuer.js` all fall back
+   * through it, and a missing key would read as `undefined` on a card.
+   */
+  unit: '',
+  /** The second line under the mark, wherever the mark appears. */
+  unitLine: 'by Al-Majeed School of Research Methodology and Innovation',
+  /**
+   * Who this was, and still is, run with.
+   *
+   * Islamic Information Centre and Beyond Guidance issued everything up to
+   * the rebrand. They are not deleted from the record — they are named on
+   * every document, which is both true and the reason a certificate from
+   * 2025 and one from 2026 can be recognised as coming from the same place.
+   */
+  association: 'Islamic Information Centre · Beyond Guidance',
   phones: ['+91 98452 89298', '+91 63646 30740'],
   /** Shown in the app masthead — who built/operates the system. */
   /**

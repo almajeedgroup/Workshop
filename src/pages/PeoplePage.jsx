@@ -5,6 +5,7 @@ import { getAllMarks } from '../lib/attendancedb.js';
 import {
   groupPeople, returningPeople, attendanceAcross, courseCount, RETURNING_AT,
 } from '../lib/people.js';
+import { brandLockup } from '../lib/brand.js';
 import { ISSUER } from '../lib/schema.js';
 
 /**
@@ -65,7 +66,8 @@ export default function PeoplePage() {
     <main>
       <div className="print-only print-head">
         <h1>Returning Students</h1>
-        <div className="org">{ISSUER.name} — {ISSUER.unitLine}</div>
+        <div className="org">{brandLockup()}</div>
+        <div className="org assoc">{ISSUER.association}</div>
         <div className="rule" />
       </div>
 

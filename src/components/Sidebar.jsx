@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../AuthContext.jsx';
-import { ISSUER } from '../lib/schema.js';
+import Wordmark from './Wordmark.jsx';
 import {
   clampWidth, storedWidth, rememberWidth, widthForKey,
   MIN_WIDTH, MAX_WIDTH, DEFAULT_WIDTH,
@@ -114,8 +114,7 @@ export default function Sidebar() {
 
       <nav id="sidenav" className={`side no-print${open ? ' open' : ''}`} aria-label="Sections">
         <Link to="/" className="side-brand">
-          WORKSHOPS
-          <small>{ISSUER.unitLine}</small>
+          <Wordmark lockup style={{ fontSize: 26 }} />
         </Link>
 
         {isAdmin && (

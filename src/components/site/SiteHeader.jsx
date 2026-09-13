@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { ISSUER } from '../../lib/schema.js';
+import { brandLockup } from '../../lib/brand.js';
+import Wordmark from '../Wordmark.jsx';
 
 const LINKS = [
   { to: '/', label: 'Home', end: true },
@@ -28,12 +29,9 @@ export default function SiteHeader() {
     <header className={`hdr${stuck ? ' stuck' : ''}`}>
       <div className="wrap">
         <div className="bar">
-          <Link to="/" className="mark" aria-label={`${ISSUER.operator} — home`}>
+          <Link to="/" className="mark" aria-label={`${brandLockup()} — home`}>
             <img src="/crests/al-majeed.png" alt="" />
-            <span className="txt">
-              <span className="t1">Al-Majeed School</span>
-              <span className="t2">Research Methodology &amp; Innovation</span>
-            </span>
+            <Wordmark lockup className="txt" style={{ fontSize: 25 }} />
           </Link>
 
           <nav className="nav" aria-label="Main">

@@ -33,8 +33,11 @@ test('slugify survives nothing at all', () => {
 });
 
 test('a minted room is long, random, and readable at the front', () => {
+  // The prefix follows the brand. Rooms minted before it are stored on their
+  // workshop and keep the name they were minted with — a room is an address
+  // people have been sent, not a label to be restyled.
   const room = mintRoomName({ code: 'AIHOW26', title: 'Workshop on AI' });
-  assert.match(room, /^beyond-guidance-aihow26-[a-z2-9]{16}$/);
+  assert.match(room, /^workshop-aihow26-[a-z2-9]{16}$/);
   assert.ok(room.length >= MIN_SAFE_ROOM_LENGTH);
 });
 
@@ -180,7 +183,8 @@ test('nobody is ever nameless in the room', () => {
 test('the room is branded as the school, not as Jitsi', () => {
   const i = meetingOptions({ room: 'r' }).interfaceConfigOverwrite;
   assert.equal(i.SHOW_JITSI_WATERMARK, false);
-  assert.equal(i.APP_NAME, ISSUER.unit);
+  assert.equal(i.APP_NAME, ISSUER.name);
+  assert.equal(i.APP_NAME, 'WORKSHOP');
 });
 
 /* ------------------------------------------------------------------ *
