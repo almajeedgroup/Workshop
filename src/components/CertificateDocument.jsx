@@ -1,4 +1,4 @@
-import { ISSUER } from '../lib/schema.js';
+import { certificateIssuer, issuerLines } from '../lib/issuer.js';
 import QrCode from './QrCode.jsx';
 import FittedName from './FittedName.jsx';
 import {
@@ -75,7 +75,7 @@ function Edge({ side, colour }) {
 }
 
 /** The crest strip and the issuing line — identical on every design. */
-function Head() {
+function Head({ cert }) {
   return (
     <>
       <div className="crests">
@@ -87,11 +87,28 @@ function Head() {
         ))}
       </div>
 
-      <div className="org">
-        <b>{ISSUER.unit}</b> &nbsp;·&nbsp; A Unit of {ISSUER.name}
-        <small>In association with {ISSUER.operator}</small>
-      </div>
+      {/* Whoever issued THIS certificate, from the record — not whoever the
+          school happens to be called today. */}
+      <Issuer cert={cert} />
     </>
+  );
+}
+
+/**
+ * Who awarded it.
+ *
+ * Read from the certificate's own record where it has one, so a sheet issued
+ * under a previous name keeps printing that name however often the school is
+ * renamed afterwards. Falls back to the current constant for records made
+ * before the stamp existed, which the Console can backfill.
+ */
+function Issuer({ cert }) {
+  const { lead, association } = issuerLines(certificateIssuer(cert));
+  return (
+    <div className="org">
+      <b>{lead}</b>
+      {association && <small>{association}</small>}
+    </div>
   );
 }
 
@@ -137,7 +154,7 @@ function ClassicSheet({ cert, content, verifyUrl, host }) {
       <Chakra />
 
       <div className="inner">
-        <Head />
+        <Head cert={cert} />
 
         <h1>{content.title}</h1>
         <div className="tri"><i /><i /><i /></div>
@@ -178,7 +195,7 @@ function ParliamentSheet({ cert, content, verifyUrl, host }) {
       <Chakra colour="#14181C" />
 
       <div className="inner">
-        <Head />
+        <Head cert={cert} />
 
         <h1>{content.title}</h1>
         <div className="redrule"><u /><i /><u /></div>

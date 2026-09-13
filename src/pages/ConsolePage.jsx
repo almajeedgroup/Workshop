@@ -7,6 +7,7 @@ import { formatDateRange } from '../lib/tickets.js';
 import { CURRENCY, isFreeWorkshop } from '../lib/schema.js';
 import SeatBar from '../components/SeatBar.jsx';
 import PhoneFixPanel from '../components/PhoneFixPanel.jsx';
+import IssuerStampPanel from '../components/IssuerStampPanel.jsx';
 import Finder from '../components/Finder.jsx';
 
 /** Which colour each figure carries. Meaning, not position. */
@@ -162,6 +163,8 @@ export default function ConsolePage() {
           </div>
         </div>
       )}
+
+      <IssuerStampPanel />
 
       <PhoneFixPanel />
     </main>

@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getCertificate, getHolder } from '../lib/certdb.js';
 import { formatDate } from '../lib/tickets.js';
 import { ISSUER } from '../lib/schema.js';
+import { certificateIssuer } from '../lib/issuer.js';
 import {
   IconCheckCircle, IconAlert, IconShield, IconArrow, IconQr,
 } from '../components/site/Icons.jsx';
@@ -133,7 +134,11 @@ export default function VerifyPage() {
                   <h3>{genuine ? 'Genuine certificate' : 'Withdrawn'}</h3>
                   <p>
                     {genuine
-                      ? `Issued by ${ISSUER.name} and valid.`
+                      // The body that issued THIS certificate. Telling somebody
+                      // checking a 2025 award that it came from whatever this
+                      // school is called in 2026 is the whole failure this
+                      // verification exists to prevent.
+                      ? `Issued by ${certificateIssuer(cert).name} and valid.`
                       : `This certificate was issued but has since been withdrawn${cert.revokedReason ? `: ${cert.revokedReason}` : '.'} It should not be relied upon.`}
                   </p>
                 </div>

@@ -1467,7 +1467,7 @@ looking after a permanent service-account key for a one-off tidy-up.
 npm test
 ```
 
-Runs 484 assertions on Node's built-in test runner — no extra dependencies,
+Runs 514 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards, attendance
 sheets, online classes, the class record, search, returning students,
@@ -1584,6 +1584,36 @@ with `and` — which on a certificate and the ticket for the same course is the
 sort of thing people notice.
 
 ## 22. Notes
+
+**A certificate records who issued it.** It used to name its issuer by reading
+`ISSUER` at the moment somebody opened it, which is invisible until the name
+changes and wrong the moment it does: every certificate ever awarded would
+quietly claim to come from an organisation that did not exist when it was
+awarded, including the one an employer is checking.
+
+So `issuer` — name, unit, operator — is stamped onto the record at issue time
+and the sheet prefers it, falling back to the live constant only for records
+made before the stamp existed. **Console → Certificate issuers** backfills
+those: check, then apply, and running it twice is harmless.
+
+The backfill writes `LEGACY_ISSUER`, frozen in `src/lib/issuer.js`, rather
+than reading today's settings. Reading the live constant would be correct
+only if the backfill ran *before* a rebrand and would permanently destroy
+what it exists to protect if it ran after — so the ordering trap is removed
+rather than documented. That constant is not configuration: it is a record of
+what is already printed on paper in other people's hands.
+
+Verified against the emulator with the real rules: a certificate issued now
+stamps itself; an admin may write the field and a stranger may not; the
+public can still read one certificate by its ID; the backfill stamped two of
+three and wrote nothing on the second run. Then, simulating the rebrand, a
+2025 certificate still reads *Beyond Guidance · A Unit of Islamic Information
+Centre* where an unstamped one would have read *A Unit of WORKSHOP*.
+
+Tickets, ID cards and attendance sheets are **not** stamped. They are
+internal documents that get reprinted, not records a third party verifies
+years later, and a reprint reasonably carries the current name.
+
 
 **Every printed page is portrait except the certificate.** `@page` is
 document-level — it cannot be scoped to a component — and every stylesheet
