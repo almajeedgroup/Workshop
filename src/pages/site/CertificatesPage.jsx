@@ -156,7 +156,7 @@ export default function CertificatesPage() {
               </p>
             </div>
             <div className="card" data-reveal style={{ borderColor: 'rgba(221,73,1,.25)', background: 'var(--saffron-wash)' }}>
-              <h3 style={{ color: 'var(--saffron-2)' }}>Three possible answers</h3>
+              <h3 style={{ color: 'var(--saffron-ink)' }}>Three possible answers</h3>
               <ul className="ticks" style={{ marginTop: 16 }}>
                 <li><IconCheck width="16" height="16" /><strong>Genuine</strong> — issued by us and still valid.</li>
                 <li><IconCheck width="16" height="16" /><strong>Withdrawn</strong> — was issued, since revoked, and should not be relied on.</li>

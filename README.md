@@ -13,7 +13,8 @@ your team collects — and it is parsed into structured records, reviewed on
 screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 
 - **Hosting / database:** Firebase Hosting + Cloud Firestore
-- **Target domain:** `workshops.almajeedgroup.in`
+- **Target domain:** `school.almajeedgroup.in` — the value in `ISSUER.site`,
+  which is what every printed QR code and document points at
 - **Access:** email + password, administrators only. No self sign-up.
 - **Parsing:** rule-based — no AI, no network calls, nothing leaves the browser
 
@@ -50,6 +51,7 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 | **Verify** | Every certificate carries an ID and a QR code that anyone can check publicly, without an account. |
 | **Student list** | One button, one clean sheet: a row per student and only the columns that say something. |
 | **Export** | Excel, CSV, printable PDF — for all workshops, one workshop, or its registrations. |
+| **Feature pages** | The public site documents all ten features, one page each, generated from `src/lib/features.js` so nothing can ship undocumented. |
 
 ---
 
@@ -363,7 +365,7 @@ Other administrators sign in with an email and password, because their
 To enable it: **Authentication → Sign-in method → Google → Enable.**
 
 > **Custom domains need adding by hand.** `*.web.app` and `*.firebaseapp.com`
-> are authorised automatically, but `workshops.almajeedgroup.in` is not — until
+> are authorised automatically, but `school.almajeedgroup.in` is not — until
 > you add it under **Authentication → Settings → Authorized domains**, Google
 > sign-in there fails with `auth/unauthorized-domain`. The sign-in page names
 > that error and where to fix it.
@@ -415,13 +417,18 @@ npm run deploy
 That runs `vite build` and deploys both the Firestore rules and the site.
 First time only, run `firebase login` before it.
 
-### Connect `workshops.almajeedgroup.in`
+### Connect `school.almajeedgroup.in`
 
-1. **Hosting → Add custom domain** → `workshops.almajeedgroup.in`.
+1. **Hosting → Add custom domain** → `school.almajeedgroup.in`.
 2. Add the **TXT** record Firebase shows, at your DNS provider for
    `almajeedgroup.in`.
 3. Once verified, add the two **A** records it gives you, on the host
-   `workshops`.
+   `school`.
+
+> **Do not retire this host.** Verification QR codes are built from the
+> origin the certificate was printed from. Every certificate already in
+> somebody's hands points here, so if the site ever moves, this name has to
+> keep resolving — serving the app, or redirecting to wherever it went.
 4. SSL is issued automatically; allow up to 24 hours.
 
 ---
@@ -1472,11 +1479,12 @@ looking after a permanent service-account key for a one-off tidy-up.
 npm test
 ```
 
-Runs 520 assertions on Node's built-in test runner — no extra dependencies,
+Runs 547 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards, attendance
 sheets, online classes, the class record, search, returning students,
-carry-forward and the phone-number migration. The parser
+carry-forward, the phone-number migration, the brand, the feature catalogue
+and the colour contrast sums. The parser
 is heuristic and fails **silently** when it fails at all, so anything you teach
 it belongs in `tests/parser.test.js` alongside a paste that used to break it.
 
@@ -1563,6 +1571,85 @@ its meaning.
 
 The public site (`site.css`) and the certificate (`certificate.css`) keep
 their own schemes, and the ID card keeps its six colourways.
+
+### The public site's palette
+
+`site.css` is saffron, green and navy — the tricolour the certificate uses,
+not the five-colour admin flag. It follows the same rule, and for a while it
+did not: the primary button was `--saffron` with white on it at **2.92:1**,
+the active nav link and the section eyebrows were `--saffron-2` at
+**4.18:1** and **4.0:1**, and the focus ring was saffron at **2.92:1** —
+under even the 3:1 that WCAG 2.2 asks of an indicator.
+
+So saffron now comes in two strengths, and which one you reach for is decided
+by whether it is carrying text:
+
+| | Hex | On white | Job |
+|---|---|---|---|
+| `--saffron` | `#F17304` | 2.92:1 | Fills, bars, the tricolour, the wash. **Never text.** |
+| `--saffron-ink` | `#C2410C` | 5.18:1 | Labels, the active link, the button fill white sits on, the focus ring |
+| `--saffron-ink-2` | `#9A330A` | 7.36:1 | The button under the pointer |
+| `--saffron-2` | `#DD4901` | 4.18:1 | Icon chips and dots — graphics, which need 3:1, not 4.5:1 |
+
+Two more tokens exist for the same reason:
+
+- `--ink-faint` (`#616B7D`) is the small-label grey. It was `#7C879B` —
+  **3.62:1**, a label colour that could not be read.
+- `--control-line` (`#616B7D`) is the edge of something you type into.
+  `--hair-2` was doing that job at **1.46:1**, which is a decorative rule,
+  not a boundary.
+
+Saffron on a dark panel is 2.86:1, so `.band-dark`, `.cta-band` and the
+footer each flip the focus ring to white. And the verify field no longer sets
+`outline:none` — a 9%-alpha glow is not a focus indicator anybody keyboarding
+through the page can see.
+
+### How the colours are checked
+
+Two passes, because neither alone is enough.
+
+**Rendered.** `tools/contrast-audit.mjs` opens every public page at 1440 /
+1280 / 1079 / 768 / 390 and walks every element that has text of its own,
+compositing alpha up the ancestor chain — including gradient stops, taking the
+worst one — and applying the large-text threshold by measured size and weight.
+It also checks the two things WCAG asks 3:1 of rather than 4.5:1: the focus
+indicator and the edge of a control you type into. The logotype is skipped:
+WCAG exempts text that is part of a brand name, which is what makes the lime
+lawful at 2.12:1.
+
+It needs a browser and a built site, so it is not part of `npm test`:
+
+```bash
+npm run build && npx vite preview --port 4177 &
+npm i --no-save playwright-core
+node tools/contrast-audit.mjs
+```
+
+It reports one thing it cannot judge: the sidebar's resize grip shows focus by
+changing its own fill (3.24:1) and an inset keyline rather than an outline,
+which satisfies 1.4.11 — a script cannot tell that from an element with no
+indicator at all, so it says so and leaves it to a person.
+
+The printed documents go through the same pass inside their own scope
+wrappers — `.cert-scope`, `.att-scope`, `.idc-scope` — because a certificate
+rendered without its scope falls back to black on white and is a different
+document from the one that gets printed. It found the issuer line at 4.0:1
+and the two labels that tell somebody how to check a certificate at 3.24:1,
+which on the most public thing this app produces is the wrong place to save a
+shade.
+
+**Static.** `tests/contrast.test.js` does the sums in `npm test`. It does not
+try to guess what sits behind an arbitrary selector — a static reader cannot
+know that `.band-dark p` is light text on navy rather than grey on paper, and
+one that guesses produces a page of false findings nobody reads. It checks
+what the file alone can settle: that `--saffron-ink` clears 4.5:1 on all three
+page grounds *and* carries white, that `--saffron` is still too light to be
+text (if that ever passes, the two tokens have collapsed into one), that
+nothing anywhere sets `color: var(--saffron)`, that the focus ring clears 3:1
+and every dark panel overrides it, and that the certificate's labels are
+readable.
+
+Ancestry is the rendered pass's job; tokens are the test's.
 
 ---
 

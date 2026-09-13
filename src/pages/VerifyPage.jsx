@@ -86,7 +86,7 @@ export default function VerifyPage() {
                 style={{
                   font: 'inherit', fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace',
                   fontSize: 16, padding: '14px 18px', borderRadius: 12,
-                  border: '1.6px solid var(--hair-2)', background: '#fff',
+                  border: '1.6px solid var(--control-line)', background: '#fff',
                   minWidth: 280, flex: '1 1 280px', textTransform: 'uppercase',
                 }}
               />

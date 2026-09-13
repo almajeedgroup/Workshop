@@ -29,8 +29,15 @@ export default function Wordmark({
   className = '',
   ...rest
 }) {
+  // The tone class goes on BOTH the mark and the wrapper. `.wm-by` is a
+  // SIBLING of the mark, not a child of it, so `.wm-invert .wm-by` matched
+  // nothing while the class lived only on the inner span — the lockup's
+  // second line kept its light-ground grey and sat on the navy footer at
+  // 2.97:1, which is how an invisible by-line shipped.
+  const toned = `wm-${wordmarkTone(tone)}`;
+
   const mark = (
-    <span className={`wm wm-${wordmarkTone(tone)}`} role="img" aria-label={BRAND_SPOKEN}>
+    <span className={`wm ${toned}`} role="img" aria-label={BRAND_SPOKEN}>
       <span className="wm-head">{WORDMARK.head}</span>
       <span className="wm-tail">
         {WORDMARK.tail[0]}
@@ -41,11 +48,11 @@ export default function Wordmark({
   );
 
   if (!lockup) {
-    return <Tag className={`wm-wrap ${className}`.trim()} {...rest}>{mark}</Tag>;
+    return <Tag className={`wm-wrap ${toned} ${className}`.trim()} {...rest}>{mark}</Tag>;
   }
 
   return (
-    <Tag className={`wm-wrap wm-lockup ${className}`.trim()} {...rest}>
+    <Tag className={`wm-wrap wm-lockup ${toned} ${className}`.trim()} {...rest}>
       {mark}
       <span className="wm-by">{brandBy()}</span>
     </Tag>

@@ -69,7 +69,7 @@ export default function ProgrammesPage() {
           <div className="wrap">
             <div className="grid g2" style={{ alignItems: 'start' }}>
               <div data-reveal>
-                <span className="idx" style={{ fontFamily: 'var(--display)', fontSize: 13, letterSpacing: '.14em', color: 'var(--saffron)' }}>
+                <span className="idx">
                   {p.n}
                 </span>
                 <div className="ico" style={{ marginTop: 14 }}>{p.icon}</div>
