@@ -84,7 +84,7 @@ export default function CertificatesPage() {
           <div className="shead" data-reveal>
             <span className="eyebrow">How it works</span>
             <h2>Verification, in three steps</h2>
-            <p className="lede" style={{ color: '#A9B4C9' }}>
+            <p className="lede" style={{ color: 'var(--on-dark-soft)' }}>
               No account, no fee, no waiting on us to reply to an email.
             </p>
           </div>
@@ -113,8 +113,8 @@ export default function CertificatesPage() {
                 {['The name it was awarded to', 'Which award, and for which programme',
                   'The dates of the programme and when it was issued',
                   'Anything else the same person has been awarded'].map((t) => (
-                  <li key={t} style={{ color: '#A9B4C9' }}>
-                    <IconCheck width="16" height="16" style={{ color: '#4ED17F' }} />{t}
+                  <li key={t} style={{ color: 'var(--on-dark-soft)' }}>
+                    <IconCheck width="16" height="16" style={{ color: 'var(--lime)' }} />{t}
                   </li>
                 ))}
               </ul>
@@ -129,8 +129,8 @@ export default function CertificatesPage() {
               <ul className="ticks">
                 {['No phone number', 'No date of birth', 'No email or postal address',
                   'No way to search the register by name'].map((t) => (
-                  <li key={t} style={{ color: '#A9B4C9' }}>
-                    <IconCheck width="16" height="16" style={{ color: '#4ED17F' }} />{t}
+                  <li key={t} style={{ color: 'var(--on-dark-soft)' }}>
+                    <IconCheck width="16" height="16" style={{ color: 'var(--lime)' }} />{t}
                   </li>
                 ))}
               </ul>
@@ -155,8 +155,8 @@ export default function CertificatesPage() {
                 A missing record looks like a mistake. A marked one tells the truth.
               </p>
             </div>
-            <div className="card" data-reveal style={{ borderColor: 'rgba(221,73,1,.25)', background: 'var(--saffron-wash)' }}>
-              <h3 style={{ color: 'var(--saffron-ink)' }}>Three possible answers</h3>
+            <div className="card" data-reveal style={{ borderColor: 'rgba(194,38,26,.25)', background: 'var(--alert-wash)' }}>
+              <h3 style={{ color: 'var(--alert)' }}>Three possible answers</h3>
               <ul className="ticks" style={{ marginTop: 16 }}>
                 <li><IconCheck width="16" height="16" /><strong>Genuine</strong> — issued by us and still valid.</li>
                 <li><IconCheck width="16" height="16" /><strong>Withdrawn</strong> — was issued, since revoked, and should not be relied on.</li>

@@ -384,7 +384,7 @@ export default function RegisterPage() {
                   {sending ? 'Sending…' : 'Complete registration'} <IconArrow />
                 </button>
                 {!phoneOk && form.whatsapp && (
-                  <p style={{ marginTop: 10, fontSize: 13, color: 'var(--saffron-ink)' }}>
+                  <p style={{ marginTop: 10, fontSize: 13, color: 'var(--alert)' }}>
                     That does not look like a complete mobile number.
                   </p>
                 )}

@@ -11,34 +11,64 @@
    ===================================================================== */
 
 .site{
-  /* ink */
-  --ink:#031A43; --ink-2:#1B2C4F; --ink-soft:#4A5670; --ink-faint:#616B7D;   /* was #7C879B — 3.62:1 */
+  /* ---------------------------------------------------------------
+     The theme IS the mark: WORK in near-black, SH●P in lime, on paper.
+     Two colours and a grey scale — no third accent, because a brand
+     with three accents has none.
+
+     THE RULE, and it is forced on us by the lime itself:
+
+       --lime  #32CD32  is 2.12:1 on white. It can never be text and
+                        nothing white can sit on it. It IS light, so it
+                        carries NEAR-BLACK at 9.35:1 — that is its job.
+                        Buttons, chips, the dot in the mark, the bars.
+       --lime-ink #186E18  is lime taken down until it can be read:
+                        6.40:1 on paper, 5.70:1 on the deepest band.
+                        Labels, links, the accent in a heading.
+
+     Same discipline as styles.css, arrived at from the other end: there
+     the palette is light and carries black; here the one brand colour
+     happens to be light too, so it behaves the same way.
+
+     The navy and saffron this file used to run on are gone. They were the
+     school's tricolour, which the certificate still carries — but the site
+     is WORKSHOP, and two systems on one page is neither.
+     --------------------------------------------------------------- */
+
+  /* ink — neutral greys, not blue-tinted: a navy body text beside a
+     near-black wordmark reads as two typefaces' worth of mismatch */
+  --ink:#0A0A0A;             /* BRAND_INK, the same value brand.js holds */
+  --ink-2:#2B2B2B;           /* 14.16:1 */
+  --ink-soft:#454545;        /* 9.59:1  — body copy */
+  --ink-faint:#616161;       /* 6.19:1 on paper, 5.52:1 on paper-3 */
+
   /* surface */
-  --paper:#FFFFFF; --paper-2:#FBFAF6; --paper-3:#F3F1EA;
-  /* accent */
-  /* Saffron comes in two strengths, and which one you reach for is decided
-     by whether it is CARRYING TEXT, not by taste.
+  --paper:#FFFFFF; --paper-2:#FAFAF7; --paper-3:#F2F2EE;
 
-       --saffron      2.92:1 on white. A fill, a bar, a glow. Never text, and
-                      never behind text either.
-       --saffron-ink  5.18:1 on white and 4.96:1 on the soft band, and white
-                      on it is 5.18:1 — so it works as a label AND as a button
-                      that white sits on. This is the one for anything read.
+  /* brand */
+  --lime:#32CD32;            /* BRAND_LIME. A FILL. Ink on it: 9.35:1 */
+  --lime-deep:#28A828;       /* the same fill under the pointer, 6.34:1 */
+  --lime-ink:#186E18;        /* lime when it has to be READ */
+  --lime-wash:rgba(50,205,50,.13);
 
-     The bright one shipped as the primary button, the active nav link, the
-     card numerals and the focus ring; every one of those was below AA, and
-     the focus ring was below the 3:1 that WCAG 2.2 asks of an indicator. */
-  --saffron:#F17304; --saffron-ink:#C2410C; --saffron-ink-2:#9A330A;
-  --saffron-2:#DD4901;       /* still fine as a FILL under white or an icon */
-  --saffron-wash:rgba(241,115,4,.09);
-  --green:#0A7A2C; --green-2:#0D5436; --green-wash:rgba(10,122,44,.09);
+  /* the one colour that is not the brand's, because "withdrawn" and
+     "never issued" must not be said in the same green as "genuine" */
+  --alert:#C2261A;           /* 5.86:1 as text, and white on it is 5.86:1 */
+  --alert-wash:rgba(194,38,26,.08);
+
+  /* on the near-black band and the footer. Named, because the pages had
+     these as raw hexes inline and a theme change cannot find those. */
+  --on-dark:#D6D6D6;         /* 13.62:1 */
+  --on-dark-soft:#C7C7C7;    /* 11.71:1 — lede and list copy */
+  --on-dark-faint:#8F8F8F;   /* 6.12:1  — captions */
+
   /* lines */
-  --hair:rgba(3,26,67,.10); --hair-2:rgba(3,26,67,.18);
-  /* --hair-2 is 1.46:1 — fine as a decorative rule, invisible as the edge
-     of something you are meant to type into. Controls get their own. */
-  --control-line:#616B7D;
-  --shadow-1:0 1px 2px rgba(3,26,67,.05), 0 8px 24px rgba(3,26,67,.06);
-  --shadow-2:0 2px 6px rgba(3,26,67,.07), 0 18px 44px rgba(3,26,67,.11);
+  --hair:rgba(10,10,10,.10); --hair-2:rgba(10,10,10,.16);
+  /* --hair-2 is a decorative rule, invisible as the edge of something you
+     are meant to type into. Controls get their own, at 6.19:1. */
+  --control-line:#616161;
+  --shadow-1:0 1px 2px rgba(10,10,10,.05), 0 8px 24px rgba(10,10,10,.07);
+  --shadow-2:0 2px 6px rgba(10,10,10,.08), 0 18px 44px rgba(10,10,10,.13);
   /* rhythm */
   --wrap:1180px; --pad:clamp(20px,5vw,56px); --gap:clamp(20px,3vw,32px);
   --radius:16px; --radius-lg:24px;
@@ -58,12 +88,12 @@
 /* Grid and flex children default to min-width:auto, which lets wide content
    push a track past its share. */
 .site .grid > *,.site .hero-grid > *,.site .cols > *{min-width:0}
-.site :focus-visible{outline:3px solid var(--saffron-ink); outline-offset:3px; border-radius:4px}
-/* Saffron on a dark ground is 2.86:1 — under the 3:1 an indicator needs.
-   Every dark panel flips the ring to paper instead. */
+.site :focus-visible{outline:3px solid var(--ink); outline-offset:3px; border-radius:4px}
+/* Ink on the near-black band is 1:1 — invisible. Every dark panel flips the
+   ring to paper; the lime band keeps ink, which is 9.35:1 on it. */
 .site .band-dark :focus-visible,
-.site .cta-band :focus-visible,
 .site .ftr :focus-visible{outline-color:#FFFFFF}
+.site .cta-band :focus-visible{outline-color:var(--ink)}
 
 /* ---------- skip link ---------- */
 .site .skip{
@@ -97,18 +127,27 @@
 .site .lede{font-size:clamp(16px,1.75vw,20px); line-height:1.75; font-weight:300; color:var(--ink-soft)}
 .site .eyebrow{
   font-size:12px; font-weight:600; letter-spacing:.22em; text-transform:uppercase;
-  color:var(--saffron-ink); margin-bottom:16px; display:block;
+  color:var(--lime-ink); margin-bottom:16px; display:block;
 }
 .site .measure{max-width:62ch}
 .site a{color:inherit}
 
-/* tricolour rule */
+/* The brand's three tones, in the order the mark reads them: lime, paper,
+   ink. It used to be the Indian tricolour; that lives on the certificate,
+   which is the document that earns it. */
 .site .tri{display:flex; gap:4px}
 .site .tri i{display:block; height:5px; width:44px; border-radius:3px}
-.site .tri i:nth-child(1){background:var(--saffron)}
+.site .tri i:nth-child(1){background:var(--lime)}
 .site .tri i:nth-child(2){background:#fff; box-shadow:inset 0 0 0 1px var(--hair-2)}
-.site .tri i:nth-child(3){background:var(--green)}
+.site .tri i:nth-child(3){background:var(--ink)}
 .site .tri.center{justify-content:center}
+/* On a dark ground the ink bar is the ground, so the device loses a third of
+   itself — which is what the footer was shipping. Ink and paper swap, exactly
+   as the mark does in its inverted tone. */
+.site .band-dark .tri i:nth-child(2),
+.site .ftr .tri i:nth-child(2){background:transparent; box-shadow:inset 0 0 0 1px rgba(255,255,255,.5)}
+.site .band-dark .tri i:nth-child(3),
+.site .ftr .tri i:nth-child(3){background:#fff; box-shadow:none}
 
 /* ---------- buttons ---------- */
 .site .btn{
@@ -116,15 +155,32 @@
   font:inherit; font-size:15px; font-weight:600; letter-spacing:0;
   padding:14px 28px; border-radius:999px; border:0; cursor:pointer;
   text-decoration:none; text-transform:none; white-space:nowrap; max-width:100%;
-  background:var(--saffron-ink); color:#fff;
+  /* Lime is a LIGHT colour: white on it is 2.12:1 and ink on it is 9.35:1.
+     So the primary button is lime with near-black on it, which is also
+     exactly how the mark is drawn. */
+  background:var(--lime); color:var(--ink);
   transition:transform .16s cubic-bezier(.2,.7,.3,1), box-shadow .16s ease, background .16s ease;
 }
-.site .btn:hover{background:var(--saffron-ink-2); color:#fff; transform:translateY(-2px); box-shadow:0 10px 26px rgba(154,51,10,.32)}
+.site .btn:hover{background:var(--lime-deep); color:var(--ink); transform:translateY(-2px); box-shadow:0 10px 26px rgba(40,168,40,.34)}
 .site .btn:active{transform:translateY(0)}
 .site .btn.ghost{background:transparent; color:var(--ink); box-shadow:inset 0 0 0 1.6px var(--hair-2)}
 .site .btn.ghost:hover{background:var(--ink); color:#fff; box-shadow:none}
 .site .btn.light{background:#fff; color:var(--ink)}
-.site .btn.light:hover{background:#fff; color:var(--saffron-ink)}
+.site .btn.light:hover{background:#fff; color:var(--lime-ink)}
+/* A ghost button takes its colour from the panel it sits on, and the two dark
+   panels are opposites: near-black wants a paper outline, lime wants an ink
+   one. This lived as an inline `color:'#fff'` on five pages, which is how the
+   closing band ended up with white-on-lime at 2.12:1 the moment the theme
+   changed. */
+.site .band-dark .btn.ghost{color:#fff; box-shadow:inset 0 0 0 1.6px rgba(255,255,255,.34)}
+.site .band-dark .btn.ghost:hover{background:#fff; color:var(--ink); box-shadow:none}
+.site .cta-band .btn.ghost{color:var(--ink); box-shadow:inset 0 0 0 1.6px rgba(10,10,10,.34)}
+.site .cta-band .btn.ghost:hover{background:var(--ink); color:#fff; box-shadow:none}
+/* A white pill on lime has a 2.12:1 edge — legible text inside a shape whose
+   boundary you cannot see. On lime everything is ink: the primary filled, the
+   secondary outlined. */
+.site .cta-band .btn.light{background:var(--ink); color:#fff}
+.site .cta-band .btn.light:hover{background:#fff; color:var(--ink)}
 .site .btn.sm{padding:10px 20px; font-size:14px}
 .site .btn svg{flex:none}
 /* A pill that will not break its label is 286px wide on a 320px screen, and
@@ -140,7 +196,7 @@
   background:rgba(255,255,255,.86); backdrop-filter:saturate(180%) blur(14px);
   border-bottom:1px solid transparent; transition:border-color .2s ease, box-shadow .2s ease;
 }
-.site .hdr.stuck{border-bottom-color:var(--hair); box-shadow:0 1px 20px rgba(3,26,67,.06)}
+.site .hdr.stuck{border-bottom-color:var(--hair); box-shadow:0 1px 20px rgba(10,10,10,.07)}
 .site .hdr .bar{display:flex; align-items:center; gap:18px; height:74px}
 .site .hdr .mark{display:flex; align-items:center; gap:11px; text-decoration:none; margin-right:auto}
 .site .hdr .mark img{height:38px; width:auto; display:block}
@@ -155,7 +211,7 @@
   transition:background .15s ease, color .15s ease;
 }
 .site .nav a:hover{background:var(--paper-3)}
-.site .nav a.on{color:var(--saffron-ink); font-weight:600}
+.site .nav a.on{color:var(--lime-ink); font-weight:600}
 .site .hdr .cta{margin-left:8px}
 
 .site .burger{
@@ -186,7 +242,7 @@
   .site .drawer.open{max-height:560px; border-top-color:var(--hair)}
   .site .drawer nav{display:flex; flex-direction:column; padding:12px 0 20px}
   .site .drawer nav a{padding:13px 4px; font-size:16px; text-decoration:none; border-bottom:1px solid var(--hair); font-weight:500}
-  .site .drawer nav a.on{color:var(--saffron-ink)}
+  .site .drawer nav a.on{color:var(--lime-ink)}
   .site .drawer .btn{margin-top:16px; width:100%}
 }
 
@@ -195,13 +251,13 @@
 .site .hero::before{
   content:''; position:absolute; inset:0; pointer-events:none;
   background:
-    radial-gradient(680px 380px at 78% -8%, rgba(241,115,4,.13), transparent 62%),
-    radial-gradient(560px 340px at 4% 108%, rgba(10,122,44,.11), transparent 60%);
+    radial-gradient(680px 380px at 78% -8%, rgba(50,205,50,.16), transparent 62%),
+    radial-gradient(560px 340px at 4% 108%, rgba(10,10,10,.055), transparent 60%);
 }
 .site .hero .wrap{position:relative}
 .site .hero-grid{display:grid; grid-template-columns:1.15fr .85fr; gap:clamp(28px,5vw,64px); align-items:center}
 @media (max-width:960px){ .site .hero-grid{grid-template-columns:1fr} }
-.site .hero h1 .accent{color:var(--saffron-ink)}
+.site .hero h1 .accent{color:var(--lime-ink)}
 .site .hero .lede{margin-top:22px; max-width:56ch}
 .site .hero .actions{display:flex; gap:12px; flex-wrap:wrap; margin-top:32px}
 .site .hero .trust{display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-top:38px; padding-top:26px; border-top:1px solid var(--hair)}
@@ -223,16 +279,16 @@
 .site .vcard input::placeholder{text-transform:none; color:var(--ink-faint); font-family:var(--text)}
 /* The outline is NOT removed here. A 9%-alpha glow and a border tint are
    not a focus indicator anybody keyboarding through the page can see. */
-.site .vcard input:focus-visible{border-color:var(--saffron-ink); box-shadow:0 0 0 4px var(--saffron-wash)}
-.site .vcard input:focus:not(:focus-visible){border-color:var(--saffron-ink); outline:none; box-shadow:0 0 0 4px var(--saffron-wash)}
+.site .vcard input:focus-visible{border-color:var(--ink); box-shadow:0 0 0 4px var(--lime-wash)}
+.site .vcard input:focus:not(:focus-visible){border-color:var(--ink); outline:none; box-shadow:0 0 0 4px var(--lime-wash)}
 .site .vcard .note{display:flex; align-items:flex-start; gap:8px; margin-top:14px; font-size:12.5px; color:var(--ink-faint); line-height:1.55}
 .site .vcard .note svg{flex:none; margin-top:2px}
 
 /* ---------- bands ---------- */
-.site .band-dark{background:var(--ink); color:#E7EBF3}
+.site .band-dark{background:var(--ink); color:var(--on-dark)}
 .site .band-dark h2,.site .band-dark h3{color:#fff}
-.site .band-dark p{color:#A9B4C9}
-.site .band-dark .eyebrow{color:#FFA24D}
+.site .band-dark p{color:var(--on-dark-soft)}
+.site .band-dark .eyebrow{color:var(--lime)}
 .site .band-dark .card{background:rgba(255,255,255,.055); border-color:rgba(255,255,255,.12)}
 .site .band-dark .card:hover{background:rgba(255,255,255,.09)}
 .site .band-soft{background:var(--paper-2)}
@@ -256,17 +312,17 @@
 .site .card p{font-size:14.5px; line-height:1.72}
 /* Not scoped to .card: the programmes page numbers its sections the same
    way outside one, and duplicating the rule inline is how it ended up
-   painted in the bright saffron that cannot be read. */
+   painted in a colour that could not be read. */
 .site .idx{
-  font-family:var(--display); font-size:13px; letter-spacing:.14em; color:var(--saffron-ink);
+  font-family:var(--display); font-size:13px; letter-spacing:.14em; color:var(--lime-ink);
   display:block; margin-bottom:14px;
 }
 .site .card .ico{
   width:46px; height:46px; border-radius:13px; display:grid; place-items:center;
-  background:var(--saffron-wash); color:var(--saffron-ink); margin-bottom:16px;
+  background:var(--lime-wash); color:var(--lime-ink); margin-bottom:16px;
 }
-.site .band-dark .card .ico{background:rgba(255,162,77,.14); color:#FFA24D}
-.site .card .ico.green{background:var(--green-wash); color:var(--green-2)}
+.site .band-dark .card .ico{background:rgba(50,205,50,.16); color:var(--lime)}
+.site .card .ico.green{background:var(--lime); color:var(--ink)}
 
 /* stats */
 .site .stats.two{grid-template-columns:repeat(2,1fr)}
@@ -274,10 +330,10 @@
 .site .stats .s{background:var(--paper); padding:26px 22px}
 .site .band-dark .stats{background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.12)}
 .site .band-dark .stats .s{background:var(--ink)}
-.site .stats .n{font-family:var(--display); font-size:clamp(28px,3.4vw,40px); line-height:1; color:var(--saffron-ink); display:block}
-.site .band-dark .stats .n{color:#FFA24D}
+.site .stats .n{font-family:var(--display); font-size:clamp(28px,3.4vw,40px); line-height:1; color:var(--lime-ink); display:block}
+.site .band-dark .stats .n{color:var(--lime)}
 .site .stats .l{font-size:12.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); margin-top:9px; display:block; font-weight:600}
-.site .band-dark .stats .l{color:#8E9BB3}
+.site .band-dark .stats .l{color:var(--on-dark-faint)}
 
 /* section heading block */
 .site .shead{max-width:660px; margin-bottom:clamp(30px,4vw,48px)}
@@ -287,7 +343,7 @@
 /* list with ticks */
 .site .ticks{list-style:none; padding:0; margin:18px 0 0; display:grid; gap:12px}
 .site .ticks li{display:flex; gap:11px; align-items:flex-start; font-size:15px; color:var(--ink-soft); line-height:1.6}
-.site .ticks svg{flex:none; margin-top:3px; color:var(--green)}
+.site .ticks svg{flex:none; margin-top:3px; color:var(--lime-ink)}
 
 /* steps */
 .site .steps{counter-reset:step; display:grid; gap:var(--gap)}
@@ -297,35 +353,37 @@
   display:grid; place-items:center; background:var(--ink); color:#fff;
   font-family:var(--display); font-size:17px;
 }
-.site .band-dark .steps .step .num{background:var(--saffron-ink); color:#fff}
+.site .band-dark .steps .step .num{background:var(--lime); color:var(--ink)}
 .site .steps .step h3{margin-bottom:6px}
 
 /* CTA band */
 .site .cta-band{
-  background:linear-gradient(135deg,var(--green-2) 0%,var(--green) 100%);
+  /* The one full-bleed moment of brand colour. Lime carries ink, never
+     white, so everything inside it is near-black. */
+  background:linear-gradient(135deg,var(--lime) 0%,var(--lime-deep) 100%);
   border-radius:var(--radius-lg); padding:clamp(32px,5vw,60px); text-align:center; color:#fff;
 }
-.site .cta-band h2{color:#fff}
-.site .cta-band p{color:rgba(255,255,255,.93); margin:16px auto 0; max-width:56ch}
+.site .cta-band h2{color:var(--ink)}
+.site .cta-band p{color:#14300F; margin:16px auto 0; max-width:56ch}
 .site .cta-band .actions{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:28px}
 
 /* ---------- footer ---------- */
-.site .ftr{background:var(--ink); color:#A9B4C9; padding-block:clamp(46px,6vw,72px) 0}
+.site .ftr{background:var(--ink); color:var(--on-dark-soft); padding-block:clamp(46px,6vw,72px) 0}
 .site .ftr .cols{display:grid; grid-template-columns:1.5fr 1fr 1fr 1.2fr; gap:clamp(24px,4vw,44px)}
 @media (max-width:860px){ .site .ftr .cols{grid-template-columns:1fr 1fr} }
 @media (max-width:520px){ .site .ftr .cols{grid-template-columns:1fr} }
 .site .ftr h4{color:#fff; font-size:12.5px; letter-spacing:.17em; text-transform:uppercase; margin-bottom:18px; font-weight:600}
-.site .ftr a{color:#A9B4C9; text-decoration:none; font-size:14.5px; display:block; padding:5px 0; transition:color .15s ease}
+.site .ftr a{color:var(--on-dark-soft); text-decoration:none; font-size:14.5px; display:block; padding:5px 0; transition:color .15s ease}
 .site .ftr a:hover{color:#fff}
 .site .ftr .brand{display:flex; align-items:center; gap:11px; margin-bottom:16px}
 .site .ftr .brand img{height:40px; width:auto}
 .site .ftr .brand .t1{font-family:var(--display); color:#fff; font-size:16px; letter-spacing:.03em; text-transform:uppercase; line-height:1.15}
-.site .ftr p,.site .ftr .about{color:#A9B4C9}
+.site .ftr p,.site .ftr .about{color:var(--on-dark-soft)}
 .site .ftr .about{font-size:14px; line-height:1.75; max-width:34ch}
 .site .ftr .base{
-  margin-top:clamp(34px,5vw,52px); border-top:1px solid rgba(255,255,255,.11);
+  margin-top:clamp(34px,5vw,52px); border-top:1px solid rgba(255,255,255,.13);
   padding-block:22px 26px; display:flex; gap:14px; justify-content:space-between; flex-wrap:wrap;
-  font-size:13px; color:#7E8CA5;
+  font-size:13px; color:var(--on-dark-faint);
 }
 .site .ftr .base a{display:inline; font-size:13px; padding:0}
 
@@ -344,11 +402,11 @@
   display:flex; gap:16px; align-items:flex-start; padding:22px 24px;
   border-radius:var(--radius); border:1px solid var(--hair); background:var(--paper-2);
 }
-.site .verdict.good{background:var(--green-wash); border-color:rgba(10,122,44,.24)}
-.site .verdict.bad{background:var(--saffron-wash); border-color:rgba(221,73,1,.26)}
+.site .verdict.good{background:var(--lime-wash); border-color:rgba(24,110,24,.28)}
+.site .verdict.bad{background:var(--alert-wash); border-color:rgba(194,38,26,.26)}
 .site .verdict .vico{flex:none; width:44px; height:44px; border-radius:50%; display:grid; place-items:center; color:#fff}
-.site .verdict.good .vico{background:var(--green-2)}
-.site .verdict.bad .vico{background:var(--saffron-2)}
+.site .verdict.good .vico{background:var(--lime-ink)}
+.site .verdict.bad .vico{background:var(--alert)}
 .site .verdict h3{margin-bottom:4px}
 .site .verdict p{font-size:14.5px}
 
@@ -371,7 +429,7 @@
 /* ---------- features ---------- */
 .site .crumbs{display:flex; align-items:center; gap:9px; font-size:13px; color:var(--ink-soft); flex-wrap:wrap}
 .site .crumbs a{text-decoration:none; color:var(--ink-soft); border-bottom:1px solid var(--hair-2); padding-bottom:1px}
-.site .crumbs a:hover{color:var(--saffron-ink); border-bottom-color:currentColor}
+.site .crumbs a:hover{color:var(--lime-ink); border-bottom-color:currentColor}
 .site .crumbs span[aria-hidden]{color:var(--ink-soft)}
 .site .crumbs > span:last-child{color:var(--ink); font-weight:600}
 
@@ -382,7 +440,7 @@
   border:1px solid var(--hair); transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease;
 }
 .site .fstrip a:hover{transform:translateY(-3px); box-shadow:var(--shadow-1); border-color:var(--hair-2)}
-.site .fstrip .fi{flex:none; width:36px; height:36px; border-radius:10px; display:grid; place-items:center; background:var(--saffron-wash); color:var(--saffron-ink)}
+.site .fstrip .fi{flex:none; width:36px; height:36px; border-radius:10px; display:grid; place-items:center; background:var(--lime-wash); color:var(--lime-ink)}
 .site .fstrip strong{display:block; font-size:15px; color:var(--ink); font-weight:600; line-height:1.3}
 .site .fstrip em{display:block; font-style:normal; font-size:13px; color:var(--ink-soft); line-height:1.55; margin-top:4px}
 
@@ -397,7 +455,7 @@
 .site .frail ul{list-style:none; padding:0; margin:0; display:grid; gap:4px}
 .site .frail a{display:flex; gap:12px; align-items:flex-start; text-decoration:none; padding:11px 12px 11px 0; border-radius:10px; transition:background .15s ease}
 .site .frail a:hover{background:var(--paper-3); padding-left:12px}
-.site .frail .fi{flex:none; width:32px; height:32px; border-radius:9px; display:grid; place-items:center; background:var(--saffron-wash); color:var(--saffron-ink)}
+.site .frail .fi{flex:none; width:32px; height:32px; border-radius:9px; display:grid; place-items:center; background:var(--lime-wash); color:var(--lime-ink)}
 .site .frail strong{display:block; font-size:14.5px; color:var(--ink); font-weight:600; line-height:1.35}
 .site .frail em{display:block; font-style:normal; font-size:12.5px; color:var(--ink-soft); line-height:1.5; margin-top:3px}
 
@@ -415,19 +473,19 @@
 }
 .site .caveat .cico{
   flex:none; width:40px; height:40px; border-radius:50%; display:grid; place-items:center;
-  background:var(--saffron-2); color:#fff;
+  background:var(--alert); color:#fff;
 }
 .site .caveat h3{margin-bottom:10px}
 .site .caveat ul{list-style:none; padding:0; margin:0; display:grid; gap:10px}
 .site .caveat li{font-size:14.5px; line-height:1.7; color:var(--ink-soft); padding-left:18px; position:relative}
-.site .caveat li::before{content:''; position:absolute; left:0; top:.62em; width:6px; height:6px; border-radius:50%; background:var(--saffron-2)}
+.site .caveat li::before{content:''; position:absolute; left:0; top:.62em; width:6px; height:6px; border-radius:50%; background:var(--alert)}
 
 .site .pager{display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap}
 .site .pg{text-decoration:none; display:grid; gap:5px; min-width:0}
 .site .pg.next{text-align:right}
 .site .pg .dir{font-size:11.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-soft); font-weight:600}
 .site .pg .t{font-size:17px; font-weight:600; color:var(--ink); display:inline-flex; align-items:center; gap:8px}
-.site .pg:hover .t{color:var(--saffron-ink)}
+.site .pg:hover .t{color:var(--lime-ink)}
 .site .pg svg{flex:none}
 @media (max-width:620px){
   .site .pager{flex-direction:column; align-items:stretch; text-align:left}

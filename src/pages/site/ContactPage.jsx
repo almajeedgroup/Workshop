@@ -102,7 +102,7 @@ export default function ContactPage() {
               <a
                 className="btn ghost"
                 href={`mailto:${ISSUER.email}`}
-                style={{ color: '#fff', boxShadow: 'inset 0 0 0 1.6px rgba(255,255,255,.45)' }}
+               
               >
                 Email us
               </a>

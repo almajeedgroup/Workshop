@@ -13,13 +13,20 @@
  * they still spell the name.
  *
  * ── On the lime ──────────────────────────────────────────────────────────
- * #32CD32 is 2.78 to one against white, so it is a WORDMARK and a FILL, and
+ * #32CD32 is 2.12 to one against white, so it is a WORDMARK and a FILL, and
  * never body text. A logotype is exempt from the contrast floor — WCAG says
  * so explicitly — which is why the mark may use it and a paragraph may not.
  *
- * It is deliberately NOT part of the admin palette. That palette's jade
- * (#00CA72) already means "the action that moves work forward", and a second
- * green sitting beside it would blunt the one meaning it has.
+ * It is a LIGHT colour, which decides everything built on it: nothing white
+ * can sit on lime, and near-black on it is 9.35 to one. That is why the
+ * public site's primary button is lime carrying ink — the button is drawn
+ * the same way the mark is. When lime has to be READ rather than filled,
+ * site.css takes it down to --lime-ink at 6.4 to one.
+ *
+ * The admin tool keeps its own five colours. Its jade (#00CA72) already
+ * means "the action that moves work forward" and every attendance mark,
+ * console tile and status pill is keyed to that name in data rather than in
+ * CSS, so swapping it is a rename across the app and not a palette change.
  */
 
 import { ISSUER } from './schema.js';
@@ -27,7 +34,7 @@ import { ISSUER } from './schema.js';
 /** Near-black, the same ink the rest of the app writes in. */
 export const BRAND_INK = '#0A0A0A';
 
-/** Classic lime green. 2.78:1 on white; 10.9:1 with black on top. */
+/** Classic lime green. 2.12:1 on white; 9.35:1 with near-black on top. */
 export const BRAND_LIME = '#32CD32';
 
 /**

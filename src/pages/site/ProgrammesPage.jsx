@@ -78,8 +78,8 @@ export default function ProgrammesPage() {
                 {p.body.map((b, k) => (
                   <p key={k} style={{ marginTop: 16, fontSize: 15.5, lineHeight: 1.75 }}>{b}</p>
                 ))}
-                <div className="card" style={{ marginTop: 24, background: 'var(--green-wash)', borderColor: 'rgba(10,122,44,.2)' }}>
-                  <h3 style={{ fontSize: 13, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--green-2)' }}>
+                <div className="card" style={{ marginTop: 24, background: 'var(--lime-wash)', borderColor: 'rgba(24,110,24,.22)' }}>
+                  <h3 style={{ fontSize: 13, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--lime-ink)' }}>
                     You leave with
                   </h3>
                   <p style={{ marginTop: 8, color: 'var(--ink)', fontSize: 15.5 }}>{p.outcome}</p>
@@ -119,7 +119,7 @@ export default function ProgrammesPage() {
             </p>
             <div className="actions">
               <Link className="btn light" to="/contact">Contact us <IconArrow /></Link>
-              <Link className="btn ghost" to="/certificates" style={{ color: '#fff', boxShadow: 'inset 0 0 0 1.6px rgba(255,255,255,.45)' }}>
+              <Link className="btn ghost" to="/certificates">
                 About the certificates
               </Link>
             </div>

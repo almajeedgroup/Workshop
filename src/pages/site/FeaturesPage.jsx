@@ -88,7 +88,7 @@ export default function FeaturesPage() {
             <div data-reveal>
               <span className="eyebrow">Built the way it is for a reason</span>
               <h2>No server, and that is the point</h2>
-              <p className="lede" style={{ color: '#A9B4C9', marginTop: 16 }}>
+              <p className="lede" style={{ color: 'var(--on-dark-soft)', marginTop: 16 }}>
                 There is nothing between your browser and the database. Spreadsheets are built
                 on your machine, recordings are saved to it, and every printed document is
                 rendered by the same page you were looking at. Less to run, less to pay for,
@@ -101,8 +101,8 @@ export default function FeaturesPage() {
                   'Exports are downloaded, never uploaded',
                   'Every award records the body that issued it',
                 ].map((t) => (
-                  <li key={t} style={{ color: '#A9B4C9' }}>
-                    <IconCheck width="16" height="16" style={{ color: '#4ED17F' }} />{t}
+                  <li key={t} style={{ color: 'var(--on-dark-soft)' }}>
+                    <IconCheck width="16" height="16" style={{ color: 'var(--lime)' }} />{t}
                   </li>
                 ))}
               </ul>

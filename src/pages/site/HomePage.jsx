@@ -160,7 +160,7 @@ export default function HomePage() {
             <div data-reveal>
               <span className="eyebrow">Certification</span>
               <h2>A certificate that proves itself</h2>
-              <p className="lede" style={{ color: '#A9B4C9', marginTop: 16 }}>
+              <p className="lede" style={{ color: 'var(--on-dark-soft)', marginTop: 16 }}>
                 Anyone can print a certificate. Ours carries a unique ID and a QR code linked to
                 a register — so the person checking it never has to take your word, or ours.
               </p>
@@ -171,14 +171,14 @@ export default function HomePage() {
                   'Withdrawn certificates say so plainly, rather than vanishing',
                   'Contact details are never shown to whoever is checking',
                 ].map((t) => (
-                  <li key={t} style={{ color: '#A9B4C9' }}>
-                    <IconCheck width="16" height="16" style={{ color: '#4ED17F' }} />{t}
+                  <li key={t} style={{ color: 'var(--on-dark-soft)' }}>
+                    <IconCheck width="16" height="16" style={{ color: 'var(--lime)' }} />{t}
                   </li>
                 ))}
               </ul>
               <div className="actions" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 30 }}>
                 <Link className="btn" to="/verify">Verify a certificate <IconArrow /></Link>
-                <Link className="btn ghost" to="/certificates" style={{ color: '#fff', boxShadow: 'inset 0 0 0 1.6px rgba(255,255,255,.3)' }}>
+                <Link className="btn ghost" to="/certificates">
                   How it works
                 </Link>
               </div>
@@ -198,7 +198,7 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-              <p style={{ marginTop: 18, fontSize: 13.5, color: '#7E8CA5' }}>
+              <p style={{ marginTop: 18, fontSize: 13.5, color: 'var(--on-dark-faint)' }}>
                 Completion · Participation · Excellence · Appreciation
               </p>
             </div>
@@ -283,7 +283,7 @@ export default function HomePage() {
               <a className="btn light" href={`tel:${ISSUER.phones[0].replace(/\s/g, '')}`}>
                 Call {ISSUER.phones[0]}
               </a>
-              <Link className="btn ghost" to="/contact" style={{ color: '#fff', boxShadow: 'inset 0 0 0 1.6px rgba(255,255,255,.45)' }}>
+              <Link className="btn ghost" to="/contact">
                 All ways to reach us
               </Link>
             </div>

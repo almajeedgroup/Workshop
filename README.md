@@ -1574,35 +1574,45 @@ their own schemes, and the ID card keeps its six colourways.
 
 ### The public site's palette
 
-`site.css` is saffron, green and navy — the tricolour the certificate uses,
-not the five-colour admin flag. It follows the same rule, and for a while it
-did not: the primary button was `--saffron` with white on it at **2.92:1**,
-the active nav link and the section eyebrows were `--saffron-2` at
-**4.18:1** and **4.0:1**, and the focus ring was saffron at **2.92:1** —
-under even the 3:1 that WCAG 2.2 asks of an indicator.
+**The theme is the mark.** `site.css` is near-black, lime and paper — WORK and
+SH●P, and a grey scale. No third accent, because a brand with three accents
+has none. The saffron-green-navy the site used to run on was the school's
+tricolour; the certificate still carries it, but the site is WORKSHOP, and two
+systems on one page is neither.
 
-So saffron now comes in two strengths, and which one you reach for is decided
-by whether it is carrying text:
+The rule is forced on us by the lime itself:
 
-| | Hex | On white | Job |
+| | Hex | | Job |
 |---|---|---|---|
-| `--saffron` | `#F17304` | 2.92:1 | Fills, bars, the tricolour, the wash. **Never text.** |
-| `--saffron-ink` | `#C2410C` | 5.18:1 | Labels, the active link, the button fill white sits on, the focus ring |
-| `--saffron-ink-2` | `#9A330A` | 7.36:1 | The button under the pointer |
-| `--saffron-2` | `#DD4901` | 4.18:1 | Icon chips and dots — graphics, which need 3:1, not 4.5:1 |
+| `--lime` | `#32CD32` | 2.12:1 on white · **9.35:1 under ink** | The fill. Buttons, chips, bars, the dot. **Never text on paper, and nothing white on it.** |
+| `--lime-deep` | `#28A828` | 6.34:1 under ink | The same fill under the pointer |
+| `--lime-ink` | `#186E18` | 6.40:1 on paper | Lime taken down until it can be read: labels, links, the accent in a heading |
+| `--ink` | `#0A0A0A` | 19.8:1 | All type, the focus ring, the dark band — `BRAND_INK`, the value `brand.js` holds |
+| `--alert` | `#C2261A` | 5.86:1 both ways | The only non-brand colour, because *withdrawn* and *never issued* must not be said in the same green as *genuine* |
 
-Two more tokens exist for the same reason:
+Lime is a **light** colour. That is the whole design: it cannot be text and
+nothing white can sit on it, but it carries near-black at 9.35:1 — which is
+exactly how the mark is drawn, and why the primary button is lime with ink on
+it. It is the same discipline `styles.css` states, arrived at from the other
+end: there the palette is light and carries black; here the one brand colour
+happens to be light too, so it behaves the same way.
 
-- `--ink-faint` (`#616B7D`) is the small-label grey. It was `#7C879B` —
-  **3.62:1**, a label colour that could not be read.
-- `--control-line` (`#616B7D`) is the edge of something you type into.
-  `--hair-2` was doing that job at **1.46:1**, which is a decorative rule,
-  not a boundary.
+Three greys carry the near-black band and the footer, named rather than
+inlined — `--on-dark` (13.62:1), `--on-dark-soft` (11.71:1) and
+`--on-dark-faint` (6.12:1). They were raw hexes inside five page components,
+which is exactly what a theme change cannot find. Lime is the accent there, at
+9.35:1 on near-black — the mark's inverted tone, in CSS.
 
-Saffron on a dark panel is 2.86:1, so `.band-dark`, `.cta-band` and the
-footer each flip the focus ring to white. And the verify field no longer sets
-`outline:none` — a 9%-alpha glow is not a focus indicator anybody keyboarding
-through the page can see.
+Two neutral tokens do the small jobs: `--ink-faint` (`#616161`) for a label,
+and `--control-line` (`#616161`) for the edge of something you type into —
+`--hair-2` was doing that at **1.46:1**, which is a decorative rule, not a
+boundary.
+
+Ink is 1:1 on the near-black band, so `.band-dark` and the footer flip the
+focus ring to paper, and the lime band keeps ink at 9.35:1. A ghost button
+takes its colour from the panel it sits on, in CSS rather than inline — that
+was a `color:'#fff'` on five pages, and it is how the closing band ended up
+white-on-lime at 2.12:1 the moment the theme changed.
 
 ### How the colours are checked
 
@@ -1640,14 +1650,22 @@ shade.
 
 **Static.** `tests/contrast.test.js` does the sums in `npm test`. It does not
 try to guess what sits behind an arbitrary selector — a static reader cannot
-know that `.band-dark p` is light text on navy rather than grey on paper, and
-one that guesses produces a page of false findings nobody reads. It checks
-what the file alone can settle: that `--saffron-ink` clears 4.5:1 on all three
-page grounds *and* carries white, that `--saffron` is still too light to be
-text (if that ever passes, the two tokens have collapsed into one), that
-nothing anywhere sets `color: var(--saffron)`, that the focus ring clears 3:1
-and every dark panel overrides it, and that the certificate's labels are
-readable.
+know that `.band-dark p` is light text on near-black rather than grey on
+paper, and one that guesses produces a page of false findings nobody reads. It
+checks what the file alone can settle:
+
+- ink on `--lime` clears 4.5:1, and **white on it does not** — if that second
+  assertion ever passes, the lime has been darkened and every button carrying
+  ink needs looking at again;
+- `--lime` is not readable as text on paper, and `color: var(--lime)` appears
+  only inside a dark scope, where it is 9.35:1;
+- `--lime-ink` clears 4.5:1 on all three page grounds;
+- all three `--on-dark` greys clear 4.5:1 on the band;
+- `--alert` is readable on paper and carries white;
+- the focus ring clears 3:1 and every dark panel overrides it;
+- the retired saffron and navy tokens are **gone, not merely unused** — half a
+  theme is worse than either;
+- and the certificate's labels are readable.
 
 Ancestry is the rendered pass's job; tokens are the test's.
 

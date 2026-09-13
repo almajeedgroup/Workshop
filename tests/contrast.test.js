@@ -71,36 +71,75 @@ test('the contrast sum agrees with the values WCAG publishes', () => {
 
 /* ---------------- the public palette ---------------- */
 
-test('the readable saffron is readable, both ways round', () => {
-  // It is used as a label on the two page grounds AND as a button fill with
-  // white on it. All three have to hold, or one of its jobs is broken.
-  const ink = of('--saffron-ink');
+test('lime is a LIGHT colour, and everything follows from that', () => {
+  // #32CD32 is 2.12:1 on white. It cannot be text and nothing white can sit
+  // on it. What it can do is carry near-black at 9.35:1 — which is how the
+  // mark itself is drawn, and why the primary button is lime with ink on it.
+  const lime = of('--lime');
+  const ink = of('--ink');
+
+  const carriesInk = contrast(ink, lime);
+  assert.ok(carriesInk >= 4.5, `ink on --lime is ${carriesInk}:1`);
+
+  const carriesWhite = contrast([255, 255, 255], lime);
+  assert.ok(carriesWhite < 4.5,
+    `white on --lime is now ${carriesWhite}:1 — if this passes, --lime has been `
+    + 'darkened and every button carrying ink needs looking at again');
+
+  const asText = contrast(lime, of('--paper'));
+  assert.ok(asText < 4.5, `--lime is ${asText}:1 on paper — it is not a text colour`);
+
+  // The same fill under the pointer has the same job.
+  const hover = contrast(ink, of('--lime-deep'));
+  assert.ok(hover >= 4.5, `ink on --lime-deep is ${hover}:1`);
+});
+
+test('lime taken down until it can be read, is read everywhere', () => {
   for (const ground of ['--paper', '--paper-2', '--paper-3']) {
-    const r = contrast(ink, of(ground));
-    assert.ok(r >= 4.5, `--saffron-ink is ${r}:1 on ${ground}`);
+    const r = contrast(of('--lime-ink'), of(ground));
+    assert.ok(r >= 4.5, `--lime-ink is ${r}:1 on ${ground}`);
   }
-  const onFill = contrast([255, 255, 255], ink);
-  assert.ok(onFill >= 4.5, `white on --saffron-ink is ${onFill}:1`);
-
-  // And the hover state must not be the one that fails.
-  const hover = contrast([255, 255, 255], of('--saffron-ink-2'));
-  assert.ok(hover >= 4.5, `white on --saffron-ink-2 is ${hover}:1`);
 });
 
-test('the bright saffron is still too light to be text, which is why the other one exists', () => {
-  // If this ever passes, the two tokens have collapsed into one and the
-  // comment above them has stopped being true.
-  const r = contrast(of('--saffron'), of('--paper'));
-  assert.ok(r < 4.5, `--saffron is now ${r}:1 — it is meant to be the unreadable fill`);
-});
-
-test('nothing paints the unreadable saffron as text', () => {
-  // The rule the stylesheet states: the bright one is a fill, a bar, a glow.
+test('lime is only ever text on a dark ground', () => {
+  // It is 9.35:1 on near-black and 2.12:1 on paper, so `color: var(--lime)`
+  // is correct inside .band-dark and a bug anywhere else.
   const offenders = [];
   for (const [, sel, body] of code(site).matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-    if (/(?:^|;)\s*color\s*:\s*var\(--saffron(?:-2)?\)/.test(body)) offenders.push(sel.trim());
+    if (!/(?:^|;)\s*color\s*:\s*var\(--lime\)/.test(body)) continue;
+    if (!/band-dark|ftr|on-dark/.test(sel)) offenders.push(sel.trim());
   }
   assert.deepEqual(offenders, []);
+});
+
+test('the near-black band’s three text tones are all readable on it', () => {
+  for (const name of ['--on-dark', '--on-dark-soft', '--on-dark-faint']) {
+    const r = contrast(of(name), of('--ink'));
+    assert.ok(r >= 4.5, `${name} is ${r}:1 on the band`);
+  }
+  // And the accent that replaces them: lime on near-black.
+  const accent = contrast(of('--lime'), of('--ink'));
+  assert.ok(accent >= 4.5, `--lime is ${accent}:1 on the band`);
+});
+
+test('the one non-brand colour says "wrong" and can be read doing it', () => {
+  // Withdrawn and never-issued must not be said in the same green as genuine.
+  for (const ground of ['--paper', '--paper-2', '--paper-3']) {
+    const r = contrast(of('--alert'), of(ground));
+    assert.ok(r >= 4.5, `--alert is ${r}:1 on ${ground}`);
+  }
+  const onFill = contrast([255, 255, 255], of('--alert'));
+  assert.ok(onFill >= 4.5, `white on --alert is ${onFill}:1`);
+});
+
+test('the retired palette is gone, not merely unused', () => {
+  // Saffron and navy were the school's tricolour. The certificate still
+  // carries it; the site is WORKSHOP. Half a theme is worse than either.
+  for (const token of ['--saffron', '--saffron-ink', '--saffron-2', '--green', '--green-2']) {
+    assert.equal(S[token], undefined, `${token} is still declared in site.css`);
+  }
+  assert.ok(!/var\(--saffron|var\(--green(?![\w-])/.test(code(site)),
+    'site.css still references a retired token');
 });
 
 test('the faint ink is faint, not invisible', () => {

@@ -104,7 +104,7 @@ export default function AboutPage() {
           <div className="shead" data-reveal>
             <span className="eyebrow">Signatories</span>
             <h2>Who signs our certificates</h2>
-            <p className="lede" style={{ color: '#A9B4C9' }}>
+            <p className="lede" style={{ color: 'var(--on-dark-soft)' }}>
               Every certificate carries these three offices, each marked verified against the
               register rather than signed by hand.
             </p>
@@ -113,7 +113,7 @@ export default function AboutPage() {
             {SIGNATORIES.map((s, i) => (
               <div className="card" key={s.name} data-reveal style={{ transitionDelay: `${i * 70}ms` }}>
                 <h3>{s.name}</h3>
-                <p style={{ marginTop: 8, fontSize: 13, letterSpacing: '.1em', textTransform: 'uppercase', color: '#FFA24D', fontWeight: 600 }}>
+                <p style={{ marginTop: 8, fontSize: 13, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--lime)', fontWeight: 600 }}>
                   {s.role}
                 </p>
                 <p style={{ marginTop: 6 }}>{s.org}</p>
@@ -130,7 +130,7 @@ export default function AboutPage() {
             <p>Our programmes are open to school and college students, and to graduates.</p>
             <div className="actions">
               <Link className="btn light" to="/programmes">See the programmes <IconArrow /></Link>
-              <Link className="btn ghost" to="/contact" style={{ color: '#fff', boxShadow: 'inset 0 0 0 1.6px rgba(255,255,255,.45)' }}>
+              <Link className="btn ghost" to="/contact">
                 Get in touch
               </Link>
             </div>
