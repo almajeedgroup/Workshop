@@ -6,6 +6,7 @@ import Wordmark from '../Wordmark.jsx';
 const LINKS = [
   { to: '/', label: 'Home', end: true },
   { to: '/programmes', label: 'Programmes' },
+  { to: '/features', label: 'Features' },
   { to: '/certificates', label: 'Certificates' },
   { to: '/about', label: 'About' },
   { to: '/contact', label: 'Contact' },

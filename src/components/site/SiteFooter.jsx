@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ISSUER } from '../../lib/schema.js';
+import { brandLockup } from '../../lib/brand.js';
 import Wordmark from '../Wordmark.jsx';
 
 export default function SiteFooter() {
@@ -11,7 +12,7 @@ export default function SiteFooter() {
           <div>
             <div className="brand">
               <img src="/crests/al-majeed.png" alt="" />
-              <Wordmark lockup style={{ fontSize: 24 }} />
+              <Wordmark lockup tone="invert" style={{ fontSize: 24 }} />
             </div>
             <p className="about">
               Research methodology, artificial intelligence and innovation practice —
@@ -24,6 +25,7 @@ export default function SiteFooter() {
             <h4>Explore</h4>
             <Link to="/">Home</Link>
             <Link to="/programmes">Programmes</Link>
+            <Link to="/features">Features</Link>
             <Link to="/certificates">Certificates</Link>
             <Link to="/about">About</Link>
             <Link to="/contact">Contact</Link>
@@ -48,7 +50,9 @@ export default function SiteFooter() {
         </div>
 
         <div className="base">
-          <span>© {year} {ISSUER.operator}. {ISSUER.unitLine}.</span>
+          {/* `unitLine` already begins "by Al-Majeed…", so pairing it with
+              `operator` printed the school's name twice in one sentence. */}
+          <span>© {year} {brandLockup()}. In association with {ISSUER.association}.</span>
           <span>
             <Link to="/verify">Verify</Link>
             {' · '}

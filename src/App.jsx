@@ -11,6 +11,8 @@ import AboutPage from './pages/site/AboutPage.jsx';
 import ProgrammesPage from './pages/site/ProgrammesPage.jsx';
 import CertificatesPage from './pages/site/CertificatesPage.jsx';
 import ContactPage from './pages/site/ContactPage.jsx';
+import FeaturesPage from './pages/site/FeaturesPage.jsx';
+import FeaturePage from './pages/site/FeaturePage.jsx';
 import RegisterPage from './pages/site/RegisterPage.jsx';
 import JoinClassPage from './pages/site/JoinClassPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
@@ -56,6 +58,8 @@ const TITLES = [
   [/^\/w\/[^/]+\/class/, 'Class'],
   [/^\/w\/[^/]+/, 'Workshop'],
   [/^\/programmes/, 'Programmes'],
+  [/^\/features\/[^/]+/, 'Feature'],
+  [/^\/features/, 'Features'],
   [/^\/certificates/, 'Certificates'],
   [/^\/about/, 'About'],
   [/^\/contact/, 'Contact'],
@@ -131,6 +135,8 @@ const PUBLIC = [
   ['/', <HomePage />],
   ['/programmes', <ProgrammesPage />],
   ['/certificates', <CertificatesPage />],
+  ['/features', <FeaturesPage />],
+  ['/features/:slug', <FeaturePage />],
   ['/about', <AboutPage />],
   ['/contact', <ContactPage />],
   ['/verify', <VerifyPage />],

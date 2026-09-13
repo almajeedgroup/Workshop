@@ -18,7 +18,7 @@ export default function AboutPage() {
             <p className="lede" style={{ marginTop: 22 }}>
               {ISSUER.operator} teaches research method,
               artificial intelligence and innovation practice — working with{' '}
-              {ISSUER.unitLine} and partner institutions across {ISSUER.city}.
+              {ISSUER.association} and partner institutions across {ISSUER.city}.
             </p>
           </div>
         </div>

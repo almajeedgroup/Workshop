@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ISSUER } from '../../lib/schema.js';
+import { BRAND_NAME } from '../../lib/brand.js';
+import { FEATURES, featurePath } from '../../lib/features.js';
+import FeatureIcon from '../../components/site/FeatureIcon.jsx';
 import { CRESTS } from '../../lib/certificates.js';
 import {
   IconSpark, IconBook, IconBulb, IconShield, IconQr, IconCheck,
@@ -228,6 +231,41 @@ export default function HomePage() {
                 </div></div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------- what it runs on ---------------- */}
+      <section className="band-soft">
+        <div className="wrap">
+          <div className="shead" data-reveal>
+            <span className="eyebrow">The system behind it</span>
+            <h2>{BRAND_NAME}, end to end</h2>
+            <p className="lede">
+              Registration, tickets, online classes, attendance, ID cards, certificates and a
+              public register anyone can check — one system, built for how these programmes
+              actually run. Every part of it is written up.
+            </p>
+          </div>
+
+          {/* Generated from the catalogue, so a feature shipped later cannot
+              quietly go unmentioned on the page that promises all of them. */}
+          <ul className="fstrip">
+            {FEATURES.map((f, i) => (
+              <li key={f.slug} data-reveal style={{ transitionDelay: `${Math.min(i, 6) * 45}ms` }}>
+                <Link to={featurePath(f)}>
+                  <span className="fi"><FeatureIcon name={f.icon} width="19" height="19" /></span>
+                  <span>
+                    <strong>{f.name}</strong>
+                    <em>{f.tagline}</em>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          <div style={{ marginTop: 'var(--gap)' }} data-reveal>
+            <Link className="btn ghost" to="/features">Every feature in detail <IconArrow /></Link>
           </div>
         </div>
       </section>

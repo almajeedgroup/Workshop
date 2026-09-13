@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ISSUER } from '../../lib/schema.js';
+import { brandLockup } from '../../lib/brand.js';
 import { IconPhone, IconMail, IconPin, IconQr, IconArrow } from '../../components/site/Icons.jsx';
 
 export default function ContactPage() {
@@ -92,7 +93,7 @@ export default function ContactPage() {
           <div className="cta-band" data-reveal>
             <h2>{ISSUER.site}</h2>
             <p>
-              {ISSUER.operator} · {ISSUER.unitLine}
+              {brandLockup()} · {ISSUER.association}
             </p>
             <div className="actions">
               <a className="btn light" href={`tel:${ISSUER.phones[0].replace(/\s/g, '')}`}>

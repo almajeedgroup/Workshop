@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import {
   WORDMARK, BRAND_NAME, BRAND_SPOKEN, BRAND_LIME, BRAND_INK,
   brandLockup, brandBy, brandTitle,
@@ -149,4 +149,38 @@ test('the mark prints in colour', () => {
 
 test('the second line has a floor, so it never sets at four pixels', () => {
   assert.match(css, /font-size:\s*max\(\s*[\d.]+px/);
+});
+
+/* ---------------- the name, printed once ---------------- */
+
+test('nothing prints the school’s name twice in one breath', () => {
+  // `unitLine` now READS "by Al-Majeed School…", so any line that also prints
+  // `operator` says the school's name twice: "© 2026 Al-Majeed School of
+  // Research Methodology and Innovation. by Al-Majeed School of Research
+  // Methodology and Innovation." That shipped on three public pages.
+  assert.ok(ISSUER.unitLine.includes(ISSUER.operator), 'unitLine no longer contains the operator — revisit this check');
+
+  const dir = new URL('../src/', import.meta.url);
+  const offenders = [];
+  const walk = (d) => {
+    for (const e of readdirSync(d, { withFileTypes: true })) {
+      const at = new URL(`${e.name}${e.isDirectory() ? '/' : ''}`, d);
+      if (e.isDirectory()) { walk(at); continue; }
+      if (!/\.jsx?$/.test(e.name)) continue;
+      readFileSync(at, 'utf8').split('\n').forEach((line, i) => {
+        if (line.includes('ISSUER.operator') && line.includes('ISSUER.unitLine')) {
+          offenders.push(`${e.name}:${i + 1}`);
+        }
+      });
+    }
+  };
+  walk(dir);
+  assert.deepEqual(offenders, [], `the school is named twice at ${offenders.join(', ')}`);
+});
+
+test('the mark is inverted wherever it sits on the dark footer', () => {
+  // Default tone paints WORK in near-black. On the navy footer that is the
+  // brand name rendered invisible, which is how it shipped.
+  const footer = readFileSync(new URL('../src/components/site/SiteFooter.jsx', import.meta.url), 'utf8');
+  assert.match(footer, /<Wordmark[^>]*tone="invert"/);
 });
