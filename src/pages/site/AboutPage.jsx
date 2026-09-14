@@ -11,11 +11,11 @@ export default function AboutPage() {
         <div className="wrap">
           <div style={{ maxWidth: 760 }} data-reveal>
             <span className="eyebrow">About</span>
-            <h1 className="display" style={{ fontSize: 'clamp(32px,5vw,56px)' }}>
+            <h1 className="display t-display-lg" >
               Who we are
             </h1>
-            <div className="tri" style={{ marginTop: 22 }}><i /><i /><i /></div>
-            <p className="lede" style={{ marginTop: 22 }}>
+            <div className="tri mt-6"><i /><i /><i /></div>
+            <p className="lede mt-6">
               {ISSUER.operator} teaches research method,
               artificial intelligence and innovation practice — working with{' '}
               {ISSUER.association} and partner institutions across {ISSUER.city}.
@@ -30,17 +30,17 @@ export default function AboutPage() {
             <div data-reveal>
               <span className="eyebrow">What we believe</span>
               <h2>Understanding shows up in what you can make</h2>
-              <p style={{ marginTop: 18, fontSize: 16, lineHeight: 1.8 }}>
+              <p className="t-lg" style={{ marginTop: 18, lineHeight: 1.8 }}>
                 A student who can recite how a language model works, and a student who has built
                 something with one, do not know the same thing. We teach for the second kind of
                 knowing.
               </p>
-              <p style={{ marginTop: 16, fontSize: 16, lineHeight: 1.8 }}>
+              <p className="t-lg" style={{ marginTop: 16, lineHeight: 1.8 }}>
                 That shapes everything: seats are capped so the room stays a workshop; sessions
                 run in person; and every programme is built backwards from an outcome the
                 participant can show somebody.
               </p>
-              <p style={{ marginTop: 16, fontSize: 16, lineHeight: 1.8 }}>
+              <p className="t-lg" style={{ marginTop: 16, lineHeight: 1.8 }}>
                 It shapes the certificate too. A document that cannot be checked is a decoration.
                 Ours carries an ID and a QR code linked to a register, so it keeps meaning
                 something long after the programme ends.
@@ -62,11 +62,11 @@ export default function AboutPage() {
               <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--hair)', display: 'grid', gap: 12 }}>
                 <div style={{ display: 'flex', gap: 11 }}>
                   <IconPin width="18" height="18" style={{ color: 'var(--ink-faint)', flex: 'none', marginTop: 2 }} />
-                  <span style={{ fontSize: 14.5, color: 'var(--ink-soft)' }}>{ISSUER.city}</span>
+                  <span className="t-base" style={{ color: 'var(--ink-soft)' }}>{ISSUER.city}</span>
                 </div>
                 <div style={{ display: 'flex', gap: 11 }}>
                   <IconUsers width="18" height="18" style={{ color: 'var(--ink-faint)', flex: 'none', marginTop: 2 }} />
-                  <span style={{ fontSize: 14.5, color: 'var(--ink-soft)' }}>School and college students, and graduates</span>
+                  <span className="t-base" style={{ color: 'var(--ink-soft)' }}>School and college students, and graduates</span>
                 </div>
               </div>
             </div>
@@ -92,7 +92,7 @@ export default function AboutPage() {
                   alt={c.alt}
                   style={{ height: 76, width: 'auto', margin: '0 auto 16px', display: 'block' }}
                 />
-                <h3 style={{ fontSize: 15 }}>{c.alt}</h3>
+                <h3 className="t-md" >{c.alt}</h3>
               </div>
             ))}
           </div>
@@ -113,10 +113,10 @@ export default function AboutPage() {
             {SIGNATORIES.map((s, i) => (
               <div className="card" key={s.name} data-reveal style={{ transitionDelay: `${i * 70}ms` }}>
                 <h3>{s.name}</h3>
-                <p style={{ marginTop: 8, fontSize: 13, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--lime)', fontWeight: 600 }}>
+                <p className="t-sm" style={{ marginTop: 8, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--lime)', fontWeight: 600 }}>
                   {s.role}
                 </p>
-                <p style={{ marginTop: 6 }}>{s.org}</p>
+                <p className="mt-2">{s.org}</p>
               </div>
             ))}
           </div>

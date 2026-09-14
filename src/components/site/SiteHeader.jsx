@@ -32,7 +32,7 @@ export default function SiteHeader() {
         <div className="bar">
           <Link to="/" className="mark" aria-label={`${brandLockup()} — home`}>
             <img src="/crests/al-majeed.png" alt="" />
-            <Wordmark lockup className="txt" style={{ fontSize: 25 }} />
+            <Wordmark lockup className="txt t-2xl" />
           </Link>
 
           <nav className="nav" aria-label="Main">

@@ -323,7 +323,7 @@ export default function ClassPage() {
                     </ul>
                   </details>
                 )}
-                <div className="btn-row" style={{ marginTop: 10 }}>
+                <div className="btn-row mt-3">
                   <button
                     type="button"
                     className="primary"

@@ -157,7 +157,7 @@ export default function CertificateAllotPage() {
       <div className="page-head">
         <div>
           <h1>Certificates</h1>
-          <div className="count" style={{ marginTop: 4 }}>
+          <div className="count mt-1">
             {workshop.title} · {formatDateRange(workshop)}
           </div>
         </div>
@@ -172,7 +172,7 @@ export default function CertificateAllotPage() {
 
       <div className="panel">
         <h2>Which award</h2>
-        <div className="btn-row" style={{ marginTop: 10 }}>
+        <div className="btn-row mt-3">
           {CERTIFICATE_TYPES.map((t) => (
             <button
               key={t.key}
@@ -183,14 +183,14 @@ export default function CertificateAllotPage() {
             </button>
           ))}
         </div>
-        <div className="hint" style={{ marginTop: 10 }}>
+        <div className="hint mt-3">
           {certificateTypeByKey[type].title} — {certs.filter((c) => c.type === type && !c.revoked).length} issued
           so far for this workshop.
         </div>
 
         {/* The design belongs to the course, not to one award, so it is shown
             here rather than chosen here — the same sheet for every award. */}
-        <div className="hint" style={{ marginTop: 6 }}>
+        <div className="hint mt-2">
           Printed on the <strong>{design.label}</strong> sheet.{' '}
           <Link to={`/w/${id}/edit`}>Change the design</Link> to use another for this course.
           {' '}{design.note}
@@ -254,7 +254,7 @@ export default function CertificateAllotPage() {
           </div>
         )}
 
-        <div className="btn-row" style={{ marginTop: 12 }}>
+        <div className="btn-row mt-3">
           <button className="primary" onClick={issue} disabled={!picked.size || issuing}>
             {issuing ? 'Issuing…' : `Issue ${picked.size} ${certificateTypeByKey[type].label} certificate${picked.size === 1 ? '' : 's'}`}
           </button>

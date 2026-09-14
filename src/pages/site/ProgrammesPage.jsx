@@ -54,9 +54,9 @@ export default function ProgrammesPage() {
         <div className="wrap">
           <div style={{ maxWidth: 760 }} data-reveal>
             <span className="eyebrow">Programmes</span>
-            <h1 className="display" style={{ fontSize: 'clamp(32px,5vw,56px)' }}>What we teach</h1>
-            <div className="tri" style={{ marginTop: 22 }}><i /><i /><i /></div>
-            <p className="lede" style={{ marginTop: 22 }}>
+            <h1 className="display t-display-lg" >What we teach</h1>
+            <div className="tri mt-6"><i /><i /><i /></div>
+            <p className="lede mt-6">
               Short and intensive — typically six days, held in person with partner institutions.
               Every programme ends with something you made, and a certificate that can be checked.
             </p>
@@ -72,17 +72,17 @@ export default function ProgrammesPage() {
                 <span className="idx">
                   {p.n}
                 </span>
-                <div className="ico" style={{ marginTop: 14 }}>{p.icon}</div>
-                <h2 style={{ marginTop: 4 }}>{p.title}</h2>
-                <p className="lede" style={{ marginTop: 14 }}>{p.lede}</p>
+                <div className="ico mt-4">{p.icon}</div>
+                <h2 className="mt-1">{p.title}</h2>
+                <p className="lede mt-4">{p.lede}</p>
                 {p.body.map((b, k) => (
-                  <p key={k} style={{ marginTop: 16, fontSize: 15.5, lineHeight: 1.75 }}>{b}</p>
+                  <p key={k} className="t-md" style={{ marginTop: 16, lineHeight: 1.75 }}>{b}</p>
                 ))}
                 <div className="card" style={{ marginTop: 24, background: 'var(--lime-wash)', borderColor: 'rgba(24,110,24,.22)' }}>
-                  <h3 style={{ fontSize: 13, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--lime-ink)' }}>
+                  <h3 className="t-sm" style={{ letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--lime-ink)' }}>
                     You leave with
                   </h3>
-                  <p style={{ marginTop: 8, color: 'var(--ink)', fontSize: 15.5 }}>{p.outcome}</p>
+                  <p className="t-md" style={{ marginTop: 8, color: 'var(--ink)' }}>{p.outcome}</p>
                 </div>
               </div>
 
@@ -96,11 +96,11 @@ export default function ProgrammesPage() {
                 <div style={{ marginTop: 26, paddingTop: 22, borderTop: '1px solid var(--hair)', display: 'grid', gap: 14 }}>
                   <div style={{ display: 'flex', gap: 11, alignItems: 'flex-start' }}>
                     <IconUsers width="18" height="18" style={{ color: 'var(--ink-faint)', flex: 'none', marginTop: 2 }} />
-                    <span style={{ fontSize: 14.5, color: 'var(--ink-soft)' }}>Limited seats, taught in person</span>
+                    <span className="t-base" style={{ color: 'var(--ink-soft)' }}>Limited seats, taught in person</span>
                   </div>
                   <div style={{ display: 'flex', gap: 11, alignItems: 'flex-start' }}>
                     <IconPin width="18" height="18" style={{ color: 'var(--ink-faint)', flex: 'none', marginTop: 2 }} />
-                    <span style={{ fontSize: 14.5, color: 'var(--ink-soft)' }}>{ISSUER.city}, at partner campuses</span>
+                    <span className="t-base" style={{ color: 'var(--ink-soft)' }}>{ISSUER.city}, at partner campuses</span>
                   </div>
                 </div>
               </div>

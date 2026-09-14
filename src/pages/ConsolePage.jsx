@@ -67,7 +67,7 @@ export default function ConsolePage() {
       <div className="page-head">
         <div>
           <h1>Console</h1>
-          <div className="count" style={{ marginTop: 4 }}>
+          <div className="count mt-1">
             {todo.length ? `${todo.length} workshop${todo.length === 1 ? '' : 's'} need attention` : 'Nothing outstanding'}
           </div>
         </div>
@@ -114,7 +114,7 @@ export default function ConsolePage() {
             {todo.map(({ workshop, registrations, reasons }) => (
               <div className="todo-row" key={workshop.id} data-tone={reasons[0].tone}>
                 <div className="btn-row" style={{ alignItems: 'baseline' }}>
-                  <Link to={`/w/${workshop.id}`} style={{ fontWeight: 700, fontSize: 15 }}>
+                  <Link to={`/w/${workshop.id}`} className="t-md" style={{ fontWeight: 700 }}>
                     {workshop.title || 'Untitled workshop'}
                   </Link>
                   <span className="count">

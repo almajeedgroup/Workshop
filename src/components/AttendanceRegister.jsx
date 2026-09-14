@@ -43,7 +43,7 @@ export default function AttendanceRegister({
         </div>
       </div>
 
-      <div className="btn-row no-print" style={{ marginBottom: 12 }}>
+      <div className="btn-row no-print mb-3">
         <button className="primary" disabled={saving} onClick={() => onMarkAll('present')}>
           {saving ? 'Saving…' : 'Mark everyone present'}
         </button>
@@ -79,7 +79,7 @@ export default function AttendanceRegister({
         })}
       </div>
 
-      <div className="hint" style={{ marginTop: 10 }}>
+      <div className="hint mt-3">
         {ATTENDANCE_MARKS.filter((m) => m.key).map((m) => m.label).join(' · ')} — or leave
         somebody unmarked if you did not get to them.
       </div>

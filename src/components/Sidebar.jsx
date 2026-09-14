@@ -114,7 +114,7 @@ export default function Sidebar() {
 
       <nav id="sidenav" className={`side no-print${open ? ' open' : ''}`} aria-label="Sections">
         <Link to="/" className="side-brand">
-          <Wordmark lockup style={{ fontSize: 26 }} />
+          <Wordmark lockup className="t-2xl"  />
         </Link>
 
         {isAdmin && (

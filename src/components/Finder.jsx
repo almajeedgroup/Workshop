@@ -227,7 +227,7 @@ function FinderDetail({ item, people = [], onClose }) {
       </dl>
       {registrations.length > 0 && (
         <>
-          <h3 style={{ marginTop: 16 }}>Registered</h3>
+          <h3 className="mt-4">Registered</h3>
           <ul className="finder-people">
             {registrations.slice(0, 12).map((r) => (
               <li key={r.id}>

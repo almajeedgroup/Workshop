@@ -43,7 +43,7 @@ export default function CertificatePage() {
             <span className="vico"><IconAlert /></span>
             <div><h3>Not found</h3><p>{loadError}</p></div>
           </div>
-          <div style={{ marginTop: 22 }}>
+          <div className="mt-6">
             <Link className="btn" to="/verify">Check another certificate <IconArrow /></Link>
           </div>
         </div>
@@ -57,11 +57,11 @@ export default function CertificatePage() {
         <div className="wrap no-print">
           <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end', flexWrap: 'wrap' }}>
             <div>
-              <span className="eyebrow" style={{ marginBottom: 10 }}>
+              <span className="eyebrow mb-3">
                 Certificate of {cert.typeLabel || 'Award'}
               </span>
-              <h1 style={{ fontSize: 'clamp(24px,3.2vw,34px)' }}>{cert.recipientName}</h1>
-              <p style={{ marginTop: 8, fontFamily: 'ui-monospace,Menlo,monospace', fontSize: 14 }}>
+              <h1 className="t-display-sm" >{cert.recipientName}</h1>
+              <p className="t-base" style={{ marginTop: 8, fontFamily: 'ui-monospace,Menlo,monospace' }}>
                 {cert.certificateId}
               </p>
             </div>
@@ -75,7 +75,7 @@ export default function CertificatePage() {
           </div>
 
           {cert.revoked ? (
-            <div className="verdict bad" style={{ marginTop: 24 }}>
+            <div className="verdict bad mt-6">
               <span className="vico"><IconAlert /></span>
               <div>
                 <h3>This certificate has been withdrawn</h3>
@@ -83,7 +83,7 @@ export default function CertificatePage() {
               </div>
             </div>
           ) : (
-            <div className="verdict good" style={{ marginTop: 24 }}>
+            <div className="verdict good mt-6">
               <span className="vico"><IconCheckCircle /></span>
               <div>
                 <h3>Genuine</h3>

@@ -97,7 +97,7 @@ export default function RegistrationList({
                     )}
                     {!r.whatsapp && !r.email && <span className="count">—</span>}
                   </div>
-                  <div className="count" style={{ marginTop: 3 }}>
+                  <div className="count mt-1">
                     {r.whatsapp}{r.whatsapp && r.email ? ' · ' : ''}{r.email}
                   </div>
                 </td>

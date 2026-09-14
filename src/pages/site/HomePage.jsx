@@ -31,7 +31,7 @@ export default function HomePage() {
               <h1 className="display">
                 Learn it by<br /><span className="accent">building it.</span>
               </h1>
-              <div className="tri" style={{ marginTop: 26 }}><i /><i /><i /></div>
+              <div className="tri mt-6"><i /><i /><i /></div>
               <p className="lede">
                 {ISSUER.operator} runs short, intensive
                 programmes in artificial intelligence, research method and innovation practice —
@@ -43,7 +43,7 @@ export default function HomePage() {
               </div>
 
               <div className="trust">
-                <span style={{ fontSize: 12, letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--ink-faint)', fontWeight: 600 }}>
+                <span className="t-xs" style={{ letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--ink-faint)', fontWeight: 600 }}>
                   In association with
                 </span>
                 {CRESTS.slice(0, 3).map((c) => <img key={c.src} src={c.src} alt={c.alt} />)}
@@ -51,7 +51,7 @@ export default function HomePage() {
             </div>
 
             <div className="vcard" data-reveal>
-              <div className="ico green" style={{ marginBottom: 16 }}><IconQr /></div>
+              <div className="ico green mb-4"><IconQr /></div>
               <h3>Check a certificate</h3>
               <p>
                 Holding one of our certificates? Enter the ID printed at the bottom left, or
@@ -164,7 +164,7 @@ export default function HomePage() {
                 Anyone can print a certificate. Ours carries a unique ID and a QR code linked to
                 a register — so the person checking it never has to take your word, or ours.
               </p>
-              <ul className="ticks" style={{ marginTop: 24 }}>
+              <ul className="ticks mt-6">
                 {[
                   'Verified in seconds by ID or QR, with no account',
                   'Shows the award, the programme and the date issued',
@@ -198,7 +198,7 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-              <p style={{ marginTop: 18, fontSize: 13.5, color: 'var(--on-dark-faint)' }}>
+              <p className="t-sm" style={{ marginTop: 18, color: 'var(--on-dark-faint)' }}>
                 Completion · Participation · Excellence · Appreciation
               </p>
             </div>
@@ -226,7 +226,7 @@ export default function HomePage() {
                   <span className="num">{i + 1}</span>
                   <div>
                     <h3>{s.t}</h3>
-                    <p style={{ fontSize: 14.5 }}>{s.d}</p>
+                    <p className="t-base" >{s.d}</p>
                   </div>
                 </div></div>
               </div>

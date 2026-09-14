@@ -74,7 +74,7 @@ export default function PeoplePage() {
       <div className="page-head no-print">
         <div>
           <h1>Students</h1>
-          <div className="count" style={{ marginTop: 4 }}>
+          <div className="count mt-1">
             {shown.length} on {RETURNING_AT} or more courses, of {people.length} people
           </div>
         </div>
@@ -113,7 +113,7 @@ export default function PeoplePage() {
         {q && <button onClick={() => setQ('')}>Clear</button>}
       </div>
 
-      <p className="hint no-print" style={{ marginBottom: 12 }}>
+      <p className="hint no-print mb-3">
         {basis === 'registered'
           ? `Everybody registered on ${RETURNING_AT} or more courses. Registering is not the same as turning up.`
           : `Everybody marked present on ${RETURNING_AT} or more courses. A course whose register was never taken cannot count either way, so this list is shorter than the truth.`}

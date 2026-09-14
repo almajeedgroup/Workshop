@@ -12,13 +12,13 @@ export default function SiteFooter() {
           <div>
             <div className="brand">
               <img src="/crests/al-majeed.png" alt="" />
-              <Wordmark lockup tone="invert" style={{ fontSize: 24 }} />
+              <Wordmark lockup tone="invert" className="t-2xl"  />
             </div>
             <p className="about">
               Research methodology, artificial intelligence and innovation practice —
               taught hands-on in {ISSUER.city}, and certified with a record anyone can check.
             </p>
-            <div className="tri" style={{ marginTop: 20 }}><i /><i /><i /></div>
+            <div className="tri mt-5"><i /><i /><i /></div>
           </div>
 
           <div>
@@ -45,7 +45,7 @@ export default function SiteFooter() {
             ))}
             <a href={`mailto:${ISSUER.email}`}>{ISSUER.email}</a>
             <a href={ISSUER.siteUrl}>{ISSUER.site}</a>
-            <p className="about" style={{ marginTop: 12, fontSize: 13.5 }}>{ISSUER.city}</p>
+            <p className="about t-sm" style={{ marginTop: 12 }}>{ISSUER.city}</p>
           </div>
         </div>
 

@@ -68,11 +68,11 @@ export default function VerifyPage() {
         <div className="wrap">
           <div style={{ maxWidth: 720 }} data-reveal>
             <span className="eyebrow">Certificate verification</span>
-            <h1 className="display" style={{ fontSize: 'clamp(30px,4.4vw,48px)' }}>
+            <h1 className="display t-display-md" >
               Check a certificate
             </h1>
-            <div className="tri" style={{ marginTop: 20 }}><i /><i /><i /></div>
-            <p className="lede" style={{ marginTop: 20 }}>
+            <div className="tri mt-5"><i /><i /><i /></div>
+            <p className="lede mt-5">
               Enter the ID printed at the bottom left of the certificate, or scan the QR code
               beside it.
             </p>
@@ -83,12 +83,9 @@ export default function VerifyPage() {
                 onChange={(e) => setEntry(e.target.value)}
                 placeholder="e.g. AIHOW26-COM-001"
                 aria-label="Certificate ID"
-                style={{
-                  font: 'inherit', fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace',
-                  fontSize: 16, padding: '14px 18px', borderRadius: 12,
-                  border: '1.6px solid var(--control-line)', background: '#fff',
-                  minWidth: 280, flex: '1 1 280px', textTransform: 'uppercase',
-                }}
+                className="t-lg" style={{ font: 'inherit', fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace', padding: '14px 18px', borderRadius: 12,
+                  border: '1.6px solid var(--control-line)', background: 'var(--paper)',
+                  minWidth: 280, flex: '1 1 280px', textTransform: 'uppercase' }}
               />
               <button className="btn" type="submit" disabled={!entry.trim() || checking}>
                 {checking ? 'Checking…' : 'Verify'} <IconArrow />
@@ -101,7 +98,7 @@ export default function VerifyPage() {
       <section className={result || error ? '' : 'band-soft'} style={{ paddingTop: result || error ? 0 : undefined }}>
         <div className="wrap">
           {error && (
-            <div className="verdict bad" style={{ marginBottom: 24 }}>
+            <div className="verdict bad mb-6">
               <span className="vico"><IconAlert /></span>
               <div><h3>Could not check right now</h3><p>{error}</p></div>
             </div>
@@ -146,7 +143,7 @@ export default function VerifyPage() {
 
               <div className="grid g2" style={{ marginTop: 'var(--gap)', alignItems: 'start' }}>
                 <div data-reveal>
-                  <h2 style={{ fontSize: 'clamp(20px,2.4vw,26px)', marginBottom: 18 }}>
+                  <h2 className="t-display-sm" style={{ marginBottom: 18 }}>
                     {cert.typeLabel || 'Certificate'}
                   </h2>
                   <dl className="dl">
@@ -159,7 +156,7 @@ export default function VerifyPage() {
                     {cert.presentedBy && <><dt>Presented by</dt><dd>{cert.presentedBy}</dd></>}
                     <dt>Issued on</dt><dd>{formatDate(cert.issuedOn) || cert.issuedOn}</dd>
                   </dl>
-                  <div style={{ marginTop: 22 }}>
+                  <div className="mt-6">
                     <Link className="btn ghost" to={`/c/${cert.certificateId}`}>
                       View the certificate <IconArrow />
                     </Link>
@@ -169,11 +166,11 @@ export default function VerifyPage() {
                 <div className="card" data-reveal>
                   <h3>Record with us</h3>
                   {history.length <= 1 ? (
-                    <p style={{ marginTop: 10 }}>
+                    <p className="mt-3">
                       This is the only certificate we have issued to this person.
                     </p>
                   ) : (
-                    <div className="scroll-x" style={{ marginTop: 14 }}>
+                    <div className="scroll-x mt-4">
                       <table className="htable">
                         <thead>
                           <tr><th>Certificate</th><th>Award</th><th>Programme</th><th>Issued</th></tr>
@@ -197,7 +194,7 @@ export default function VerifyPage() {
                   )}
                   <div style={{ display: 'flex', gap: 9, alignItems: 'flex-start', marginTop: 20, paddingTop: 18, borderTop: '1px solid var(--hair)' }}>
                     <IconShield width="16" height="16" style={{ color: 'var(--ink-faint)', flex: 'none', marginTop: 2 }} />
-                    <span style={{ fontSize: 13, color: 'var(--ink-faint)', lineHeight: 1.6 }}>
+                    <span className="t-sm" style={{ color: 'var(--ink-faint)', lineHeight: 1.6 }}>
                       Contact details are never shown here. To confirm anything further, call{' '}
                       {ISSUER.phones.join(' or ')}.
                     </span>

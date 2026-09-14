@@ -26,7 +26,7 @@ export default function TicketDocument({ workshop, reg }) {
   return (
     <div className="ticket">
       <div className="ticket-head">
-        <Wordmark className="issuer" style={{ fontSize: 26 }} />
+        <Wordmark className="issuer t-2xl" />
         {ISSUER.unitLine && <div className="issuer-sub">{ISSUER.unitLine}</div>}
         {ISSUER.association && <div className="issuer-assoc">{ISSUER.association}</div>}
       </div>

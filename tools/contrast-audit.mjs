@@ -177,6 +177,13 @@ const NONTEXT_AUDIT = `(() => {
   for (const el of document.querySelectorAll('input,textarea,select')) {
     const r = el.getBoundingClientRect(); if (!r.width || !r.height) continue;
     const cs = getComputedStyle(el);
+    // A control can be present, focusable and keyboard-operable while being
+    // invisible on purpose: the radios behind a styled picker, and the
+    // honeypot the registration form hides off-screen. The thing a person
+    // sees is the label, which is checked as an element in its own right.
+    // Flagging the input itself means crying wolf on every page that has one.
+    if (Number(cs.opacity) < 0.1 || r.width <= 2 || r.height <= 2
+        || r.right < 0 || r.left > innerWidth) continue;
     const around = ground(el.parentElement || document.body);
     const bw = parseFloat(cs.borderTopWidth) || 0;
     if (bw < 1) {

@@ -435,7 +435,7 @@ export default function WorkshopPage() {
       <div className="page-head no-print">
         <div>
           <h1>{workshop.title || '(untitled)'}</h1>
-          <div className="count" style={{ marginTop: 4 }}>
+          <div className="count mt-1">
             {workshop.code && <span className="tag">{workshop.code}</span>}
             {workshop.mode && <span className="tag solid">{workshop.mode}</span>}
             {isFinished(workshop) && <span className="badge done">Completed</span>}
@@ -604,7 +604,7 @@ export default function WorkshopPage() {
           const setMarks = (next) => setPicked(next);
 
           return (
-            <div className="no-print carry" style={{ marginBottom: 14 }}>
+            <div className="no-print carry mb-4">
               <div className="pick-row">
                 <label htmlFor="carry-from"><strong>Bring students from</strong></label>
                 <select
@@ -640,7 +640,7 @@ export default function WorkshopPage() {
                 </button>
               </div>
 
-              <p className="count" style={{ marginTop: 8 }}>
+              <p className="count mt-2">
                 {describePlan(plan, seatsLeft, marks)}
               </p>
 
@@ -722,7 +722,7 @@ export default function WorkshopPage() {
         })()}
 
         {pasteOpen && (
-          <div className="no-print" style={{ marginBottom: 14 }}>
+          <div className="no-print mb-4">
             <textarea
               rows={8}
               className="mono-area"
@@ -732,7 +732,7 @@ export default function WorkshopPage() {
               onChange={(e) => { setPasteText(e.target.value); setPendingPaste(null); }}
               placeholder={'*Name:* …\n*DoB:* …\n*Qualification:* …\n*Course Name:* …\n*WhatsApp #:* …\n*Area:* …\n*Email ID:* …\n\n(paste as many replies as you like, one after another)'}
             />
-            <div className="btn-row" style={{ marginTop: 8 }}>
+            <div className="btn-row mt-2">
               <button className="primary" onClick={addPasted} disabled={!pasteText.trim() || adding}>
                 {adding ? 'Adding…' : 'Add registrations'}
               </button>
@@ -740,7 +740,7 @@ export default function WorkshopPage() {
             </div>
 
             {pendingPaste && (
-              <div className="notice warn" style={{ marginTop: 12 }}>
+              <div className="notice warn mt-3">
                 {pendingPaste.duplicates.length > 0 && (
                   <>
                     <strong>
@@ -763,7 +763,7 @@ export default function WorkshopPage() {
                     Adding them is allowed — confirm below if that is intended.
                   </p>
                 )}
-                <div className="btn-row" style={{ marginTop: 10 }}>
+                <div className="btn-row mt-3">
                   <button
                     className="primary"
                     disabled={adding || !pendingPaste.unique.length}

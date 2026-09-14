@@ -87,7 +87,7 @@ export default function PersonPage() {
       <div className="page-head no-print">
         <div>
           <h1>{person.name}</h1>
-          <div className="count" style={{ marginTop: 4 }}>
+          <div className="count mt-1">
             {courseCount(person)} course{courseCount(person) === 1 ? '' : 's'}
             {courseCount(person) >= RETURNING_AT && <span className="badge done">Returning</span>}
           </div>

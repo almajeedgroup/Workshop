@@ -11,18 +11,9 @@ import { IconAlert, IconPin, IconUsers } from '../../components/site/Icons.jsx';
 import '../../class.css';
 
 /* The public site styles its form fields inline, field by field, rather than
-   through a class — so these are lifted from the registration form to match
-   it exactly. A join form that looks like the admin tool on a page that
-   looks like the school site is the sort of seam people notice without
-   being able to say why. */
-const LABEL = {
-  display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: '.1em',
-  textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: 6,
-};
-const INPUT = {
-  font: 'inherit', fontSize: 16, width: '100%', padding: '12px 14px',
-  borderRadius: 11, border: '1.6px solid var(--hair-2)', background: '#fff',
-};
+   through a class — so both use `.f-label` and `.f-input` from site.css.
+   They used to each inline the same eight declarations, which is how one of
+   them kept an invisible field border after the other was fixed. */
 
 /** What the student was called last time. A class runs for days. */
 const NAME_KEY = 'class.name';
@@ -93,7 +84,7 @@ export default function JoinClassPage() {
               </p>
             </div>
           </div>
-          <div style={{ marginTop: 20 }}>
+          <div className="mt-5">
             <Link className="btn" to="/">Go to the school site</Link>
           </div>
         </div>
@@ -119,8 +110,8 @@ export default function JoinClassPage() {
     return (
       <section className="tight">
         <div className="wrap">
-          <h1 style={{ fontSize: 'clamp(20px,2.6vw,26px)' }}>{workshop.title}</h1>
-          <p style={{ marginTop: 6, marginBottom: 16, fontSize: 14, color: 'var(--ink-soft)' }}>
+          <h1 className="t-display-sm" >{workshop.title}</h1>
+          <p className="t-base" style={{ marginTop: 6, marginBottom: 16, color: 'var(--ink-soft)' }}>
             {workshop.collaborators
               ? <>In association with <strong>{workshop.collaborators}</strong></>
               : ISSUER.unitLine}
@@ -143,7 +134,7 @@ export default function JoinClassPage() {
           )}
           {/* The same notes, transcript and handouts the presenter is
               writing, read-only and live. */}
-          <div style={{ marginTop: 16 }}>
+          <div className="mt-4">
             <ClassBoard
               workshopId={workshopId}
               day={new Date().toISOString().slice(0, 10)}
@@ -151,7 +142,7 @@ export default function JoinClassPage() {
             />
           </div>
 
-          <div className="btn-row" style={{ marginTop: 14 }}>
+          <div className="btn-row mt-4">
             <button className="btn ghost" type="button" onClick={() => setJoining(false)}>
               Leave the class
             </button>
@@ -167,32 +158,32 @@ export default function JoinClassPage() {
         <div className="wrap">
           <div style={{ maxWidth: 760 }} data-reveal>
             <span className="eyebrow">Online class</span>
-            <h1 className="display" style={{ fontSize: 'clamp(28px,4.4vw,46px)' }}>
+            <h1 className="display t-display-md" >
               {workshop.title}
             </h1>
-            <div className="tri" style={{ marginTop: 20 }}><i /><i /><i /></div>
+            <div className="tri mt-5"><i /><i /><i /></div>
 
             <div style={{ display: 'flex', gap: 22, flexWrap: 'wrap', marginTop: 22 }}>
               {formatDateRange(workshop) && (
-                <span style={{ fontSize: 15, fontWeight: 600 }}>{formatDateRange(workshop)}</span>
+                <span className="t-md" style={{ fontWeight: 600 }}>{formatDateRange(workshop)}</span>
               )}
               {workshop.time && (
-                <span style={{ fontSize: 15, color: 'var(--ink-soft)' }}>{workshop.time}</span>
+                <span className="t-md" style={{ color: 'var(--ink-soft)' }}>{workshop.time}</span>
               )}
               {workshop.presentedBy && (
-                <span style={{ display: 'flex', gap: 7, alignItems: 'center', fontSize: 15, color: 'var(--ink-soft)' }}>
+                <span className="t-md" style={{ display: 'flex', gap: 7, alignItems: 'center', color: 'var(--ink-soft)' }}>
                   <IconUsers width="17" height="17" />{workshop.presentedBy}
                 </span>
               )}
               {workshop.mode === 'Hybrid' && workshop.venue && (
-                <span style={{ display: 'flex', gap: 7, alignItems: 'center', fontSize: 15, color: 'var(--ink-soft)' }}>
+                <span className="t-md" style={{ display: 'flex', gap: 7, alignItems: 'center', color: 'var(--ink-soft)' }}>
                   <IconPin width="17" height="17" />{workshop.venue}
                 </span>
               )}
             </div>
 
             {workshop.collaborators && (
-              <p style={{ marginTop: 18, fontSize: 14.5, color: 'var(--ink-soft)' }}>
+              <p className="t-base" style={{ marginTop: 18, color: 'var(--ink-soft)' }}>
                 In association with <strong style={{ color: 'var(--ink)' }}>{workshop.collaborators}</strong>
               </p>
             )}
@@ -204,12 +195,12 @@ export default function JoinClassPage() {
         <div className="wrap">
           <form className="card" onSubmit={submit} style={{ maxWidth: 520 }} data-reveal>
             <h3>Join the class</h3>
-            <p style={{ marginTop: 6, marginBottom: 18, fontSize: 14 }}>
+            <p className="t-base" style={{ marginTop: 6, marginBottom: 18 }}>
               The class is open. Your name is shown to the presenter and the
               rest of the class.
             </p>
 
-            <label htmlFor="join-name" style={LABEL}>Your full name *</label>
+            <label htmlFor="join-name" className="f-label">Your full name *</label>
             <input
               id="join-name"
               value={name}
@@ -218,10 +209,10 @@ export default function JoinClassPage() {
               autoFocus
               autoComplete="name"
               placeholder="As it is on your ticket"
-              style={INPUT}
+              className="f-input"
             />
 
-            <label htmlFor="join-ticket" style={{ ...LABEL, marginTop: 18 }}>
+            <label htmlFor="join-ticket" className="f-label mt-5">
               Ticket ID (optional)
             </label>
             <input
@@ -230,19 +221,19 @@ export default function JoinClassPage() {
               onChange={(e) => setTicket(e.target.value)}
               placeholder="e.g. AIHOW26-014"
               aria-describedby="join-ticket-hint"
-              style={INPUT}
+              className="f-input"
             />
-            <p id="join-ticket-hint" style={{ marginTop: 6, fontSize: 12.5, color: 'var(--ink-soft)' }}>
+            <p id="join-ticket-hint" className="t-xs" style={{ marginTop: 6, color: 'var(--ink-soft)' }}>
               From the ticket you were sent. Adding it makes sure today&rsquo;s
               attendance is recorded against you and not somebody with a
               similar name.
             </p>
 
-            <button className="btn" type="submit" style={{ marginTop: 18 }} disabled={!name.trim()}>
+            <button className="btn mt-5" type="submit" disabled={!name.trim()}>
               Join the class
             </button>
 
-            <p style={{ marginTop: 16, fontSize: 12.5, color: 'var(--ink-soft)' }}>
+            <p className="t-xs" style={{ marginTop: 16, color: 'var(--ink-soft)' }}>
               The class opens in its own window. You will be asked to allow
               your camera and microphone, and can check both before you go in.
               Keep this page open beside it — the notes, the transcript and any

@@ -1577,7 +1577,7 @@ is allowed, because most courses never ask.
 
 ---
 
-## 18b. Motion on the public site
+## 19. Motion on the public site
 
 GSAP drives everything that moves, and `src/lib/motion.js` is the only file
 that touches it. Scattering animation calls through the pages is how a site
@@ -1639,7 +1639,7 @@ reads as the site having frozen.
 
 ---
 
-## 19. Phone numbers
+## 20. Phone numbers
 
 Everything is stored as `+91 98452 89298` — country code, then the number.
 The sanitisers in `src/lib/db.js` and `src/lib/publicdb.js` put every `tel`
@@ -1692,13 +1692,13 @@ looking after a permanent service-account key for a one-off tidy-up.
 
 ---
 
-## 20. Tests
+## 21. Tests
 
 ```bash
 npm test
 ```
 
-Runs 597 assertions on Node's built-in test runner — no extra dependencies,
+Runs 605 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards, attendance
 sheets, online classes, the class record, search, returning students,
@@ -1712,7 +1712,78 @@ the Firebase emulator.
 
 ---
 
-## 21. Colour
+## 22. The scales
+
+`src/tokens.css` loads before every other stylesheet and is shared by both
+halves of the app. It holds no colour and paints nothing — it is the set of
+numbers the rest of the CSS is allowed to use.
+
+**Why it exists.** There were **359** inline `style={{…}}` objects across the
+pages, and a third of them were a bare `marginTop: 10` / `22` / `4` — the same
+idea written fourteen different ways in fourteen files. Every one of those
+overrides any stylesheet, so "change the app's spacing" meant editing 359
+places and missing some. That is not hypothetical: a theme change in this same
+branch left the dark band's greys and a ghost button's white behind, because
+both were inlined across five page components each.
+
+| | |
+|---|---|
+| `--sp-0 … --sp-8` | 2px, then 4 → 48 in multiples of four |
+| `--tx-3xs … --tx-3xl` | ten type steps, named by size |
+| `--tx-display-sm … -xl` | four heading clamps — a page picking its own min and max is how six pages ended up with six different hero sizes |
+
+Values were snapped to the scale from what the app already used: 6 and 10
+became 8 and 12, 14 and 18 became 16 and 20, 22 and 26 became 24, 30 became
+32. Eight hand-typed `clamp()` heroes became four steps. Nothing moved by more
+than two pixels.
+
+### The utilities, and why they carry `!important`
+
+`.mt-1 … .mt-8`, `.mb-*` and `.t-*` are the one place a utility beats a named
+class here, because "space above this" has no semantics to name. Everything
+else stays a semantic class — `.hint`, `.count`, `.lab`, `.f-label`.
+
+They assert themselves, and that is a decision rather than a shrug. They
+replaced inline styles, and an inline style beats every selector there is.
+Replacing them with ordinary classes did **not** reproduce them: measured
+across nine pages, **37 of 61 came out at the component's margin instead of
+the one that was asked for** — `.site .ticks` sets `margin:18px 0 0` and won,
+and `.site p{margin:0}` silently zeroed six more. A drop-in replacement that
+quietly renders differently is worse than no replacement.
+
+Where a utility appears on *every* instance of a component, that component's
+own default is wrong. `.ticks` carries `mt-4` in ten places because 18px was
+never the number anybody wanted. Fixing those defaults and deleting the
+utility is cleanup for the restyle.
+
+### What stays inline, deliberately
+
+Geometry that is genuinely one-off — `maxWidth: 720` on one hero,
+`display: contents`, a `flex: 1` spacer, an `aspectRatio`. The rule: **if
+changing the design should change it, it belongs in the scale. If changing the
+design would not touch it, leave it where it is.**
+
+Two inline font sizes survive on purpose: `FittedName` computes a pt size so a
+long name shrinks to fit its box on the certificate, and the attendance
+sheet's masthead is `15pt` — a print size, which the screen scale does not
+describe.
+
+### What it caught on the way
+
+The registration form and the class join form are the only two places a
+student types into this site, and they were matching each other by each
+inlining the same eight declarations. That is how one of them kept a **1.46:1
+field border** for several commits after the other was fixed — the border
+audit never reached either page, because both need a workshop id to render at
+all. They share `.f-label` and `.f-input` now, and the border is
+`--control-line` at 5.37:1 on both.
+
+Five raw `#fff` backgrounds were still being painted inline. They are
+`var(--paper)` now; a test fails on any hex colour in a page component.
+
+---
+
+## 23. Colour
 
 Black text on a white page, and the five colours on everything else.
 
@@ -1927,7 +1998,7 @@ Ancestry is the rendered pass's job; tokens are the test's.
 
 ---
 
-## 22. Attribution
+## 24. Attribution
 
 Al-Majeed School of Research Methodology and Innovation is named **in
 association with** on everything this system produces: the ticket and its
@@ -1949,7 +2020,7 @@ different ways across the code — with a comma after "Research", with `&`, and
 with `and` — which on a certificate and the ticket for the same course is the
 sort of thing people notice.
 
-## 23. Notes
+## 25. Notes
 
 **A certificate records who issued it.** It used to name its issuer by reading
 `ISSUER` at the moment somebody opened it, which is invisible until the name
@@ -2060,7 +2131,7 @@ stay where they are either way.
 
 ---
 
-## 24. Verifying the security rules
+## 26. Verifying the security rules
 
 `firestore.rules` is the only thing standing between the public internet and
 every student's phone number, so it is worth testing rather than trusting.

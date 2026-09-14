@@ -307,6 +307,25 @@
 .site .vcard .note{display:flex; align-items:flex-start; gap:8px; margin-top:14px; font-size:12.5px; color:var(--ink-faint); line-height:1.55}
 .site .vcard .note svg{flex:none; margin-top:2px}
 
+/* ---------- public forms ----------
+   The registration form and the class join form are the only two places a
+   STUDENT types into this site, and they have to look like each other. They
+   were doing it by each inlining the same eight declarations, which is how
+   one of them kept a 1.46:1 field border for three commits after the other
+   was fixed — the border audit never reached either page, because both need
+   a workshop id to render at all. */
+.site .f-label{
+  display:block; font-size:var(--tx-xs); font-weight:600; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-faint); margin-bottom:var(--sp-2);
+}
+.site .f-input{
+  font:inherit; font-size:var(--tx-lg); width:100%; padding:var(--sp-3) var(--sp-4);
+  border-radius:11px; border:1.6px solid var(--control-line); background:var(--paper);
+  color:var(--ink);
+}
+.site .f-input:focus-visible{border-color:var(--ink); box-shadow:0 0 0 4px var(--lime-wash)}
+.site .f-hint{display:block; margin-top:var(--sp-1); font-size:var(--tx-xs); color:var(--ink-faint)}
+
 /* A binary choice, offered as two targets rather than a dropdown: on a phone
    a select is a modal wheel for two options, and the answer matters enough to
    be visible without opening anything. Real radios underneath, so it is one

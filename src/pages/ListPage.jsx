@@ -225,7 +225,7 @@ export default function ListPage() {
                 shown; this searches inside all of them at once. */}
             <Finder bundles={bundles} requests={requests} />
 
-            <div className="btn-row no-print" style={{ marginBottom: 10 }}>
+            <div className="btn-row no-print mb-3">
               <button onClick={() => setOpenIds(new Set(filtered.map((w) => w.id)))}>
                 Expand all
               </button>

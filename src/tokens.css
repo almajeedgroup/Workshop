@@ -1,0 +1,163 @@
+/* =====================================================================
+   The scales
+   =====================================================================
+   Loaded before every other stylesheet, and shared by both halves of the
+   app. It holds no colour and paints nothing — it is the set of numbers
+   the rest of the CSS is allowed to use.
+
+   WHY IT EXISTS. There were 359 inline `style={{…}}` objects across the
+   pages, and a third of them were a bare `marginTop: 10` / `22` / `4` —
+   the same idea, written fourteen different ways, in fourteen files. Every
+   one of those overrides any stylesheet, so "change the app's spacing"
+   meant editing 359 places and missing some. This session has already
+   watched that happen twice with colour: a theme change left the dark
+   band's greys and a ghost button's white behind, because both were
+   inlined in five page components each.
+
+   Values were snapped to a 4px scale, from what the app actually used:
+   6 and 10 became 8 and 12, 14 and 18 became 16 and 20, 22 and 26 became
+   24, 30 became 32. Nothing moved by more than two pixels.
+
+   ── WHAT STAYS INLINE, DELIBERATELY ──────────────────────────────────
+   Geometry that is genuinely one-off — `maxWidth: 720` on one hero,
+   `display: contents`, a `flex: 1` spacer, an `aspectRatio`. Those are
+   layout for one element, not theme, and a token for each would be a
+   dictionary nobody can read. The rule is: if changing the DESIGN should
+   change it, it belongs here. If changing the design would not touch it,
+   leave it where it is.
+   ===================================================================== */
+
+:root {
+  /* ---- space ------------------------------------------------------
+     One vertical rhythm for the whole app. `--sp-0` is the hairline
+     nudge that lines an icon up with the text beside it; everything
+     else is a multiple of four. */
+  --sp-0: 2px;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 32px;
+  --sp-8: 48px;
+
+  /* ---- type -------------------------------------------------------
+     Ten steps, named by size rather than by role: a token called
+     `--tx-hint` would be wrong the first time a hint needed to be
+     bigger. Roles are classes; these are the sizes those classes use. */
+  --tx-3xs: 10px;      /* the smallest thing printed on an ID card */
+  --tx-2xs: 11.5px;    /* uppercase micro labels */
+  --tx-xs: 12.5px;     /* hints and notes */
+  --tx-sm: 13.5px;
+  --tx-base: 14.5px;   /* body */
+  --tx-md: 15.5px;
+  --tx-lg: 16px;
+  --tx-xl: 19px;
+  --tx-2xl: 25px;
+  --tx-3xl: 38px;
+
+  /* Headings that have to survive a phone and a 27-inch screen. The
+     clamp is the token: a page picking its own min and max is how six
+     pages ended up with six different hero sizes. */
+  --tx-display-sm: clamp(20px, 2.6vw, 26px);
+  --tx-display-md: clamp(30px, 4.4vw, 48px);
+  --tx-display-lg: clamp(32px, 5vw, 56px);
+  --tx-display-xl: clamp(34px, 6.2vw, 68px);
+}
+
+/* ---------------------------------------------------------------------
+   Vertical rhythm, as classes
+   ---------------------------------------------------------------------
+   The ONE place a utility beats a named class, because "space above this"
+   has no semantics to name. Everything else in this app is a semantic
+   class — `.hint`, `.count`, `.lab` — and stays that way; this is not the
+   thin end of a utility framework.
+
+   ── WHY `!important`, WHICH IS NOT A SHRUG ───────────────────────────
+   These replaced inline `style={{ marginTop: 24 }}` props, and an inline
+   style beats every selector there is. Replacing them with an ordinary
+   class did not reproduce them: measured across nine pages, 37 of 61 came
+   out at the component's margin instead of the one that was asked for —
+   `.site .ticks` sets `margin:18px 0 0` at (0,2,0) and won against a
+   (0,1,0) utility, and `.site p{margin:0}` silently zeroed six more.
+
+   So the contract is stated rather than left to specificity: a spacing
+   utility on an element wins. That is what the thing it replaced did, and
+   a drop-in replacement that quietly renders differently is worse than no
+   replacement at all.
+
+   WHERE A UTILITY APPEARS ON EVERY INSTANCE OF A COMPONENT, THE
+   COMPONENT'S OWN DEFAULT IS WRONG. `.ticks` carries `mt-4` in ten places
+   because 18px was never the number anybody wanted. Fixing those defaults
+   and deleting the utility is cleanup for the restyle, not for now.
+   --------------------------------------------------------------------- */
+
+.mt-0 { margin-top: 0 !important; }
+.mt-1 { margin-top: var(--sp-1) !important; }
+.mt-2 { margin-top: var(--sp-2) !important; }
+.mt-3 { margin-top: var(--sp-3) !important; }
+.mt-4 { margin-top: var(--sp-4) !important; }
+.mt-5 { margin-top: var(--sp-5) !important; }
+.mt-6 { margin-top: var(--sp-6) !important; }
+.mt-7 { margin-top: var(--sp-7) !important; }
+.mt-8 { margin-top: var(--sp-8) !important; }
+
+.mb-0 { margin-bottom: 0 !important; }
+.mb-1 { margin-bottom: var(--sp-1) !important; }
+.mb-2 { margin-bottom: var(--sp-2) !important; }
+.mb-3 { margin-bottom: var(--sp-3) !important; }
+.mb-4 { margin-bottom: var(--sp-4) !important; }
+.mb-5 { margin-bottom: var(--sp-5) !important; }
+.mb-6 { margin-bottom: var(--sp-6) !important; }
+.mb-7 { margin-bottom: var(--sp-7) !important; }
+.mb-8 { margin-bottom: var(--sp-8) !important; }
+
+/* The gap the page sections already use, as a step of its own. */
+.mt-gap { margin-top: var(--gap) !important; }
+
+/* ---------------------------------------------------------------------
+   Type, as classes
+   --------------------------------------------------------------------- */
+
+.t-3xs { font-size: var(--tx-3xs) !important; }
+.t-2xs { font-size: var(--tx-2xs) !important; }
+.t-xs { font-size: var(--tx-xs) !important; }
+.t-sm { font-size: var(--tx-sm) !important; }
+.t-base { font-size: var(--tx-base) !important; }
+.t-md { font-size: var(--tx-md) !important; }
+.t-lg { font-size: var(--tx-lg) !important; }
+.t-xl { font-size: var(--tx-xl) !important; }
+.t-2xl { font-size: var(--tx-2xl) !important; }
+.t-3xl { font-size: var(--tx-3xl) !important; }
+
+.t-display-sm { font-size: var(--tx-display-sm) !important; }
+.t-display-md { font-size: var(--tx-display-md) !important; }
+.t-display-lg { font-size: var(--tx-display-lg) !important; }
+.t-display-xl { font-size: var(--tx-display-xl) !important; }
+
+/* ---------------------------------------------------------------------
+   The combinations that were being retyped
+   ---------------------------------------------------------------------
+   Each of these was an inline object repeated in four or more files.
+   They are named for what they ARE, not for the properties they set.
+   --------------------------------------------------------------------- */
+
+/* An icon sitting on the same line as a run of text, nudged onto its
+   baseline. Was `{ color: var(--ink-faint), flex: none, marginTop: 2 }`
+   in six places. */
+.ico-inline { color: var(--ink-faint); flex: none; margin-top: var(--sp-0); }
+
+/* A line of text with an icon in front of it. */
+.with-icon {
+  display: flex; align-items: flex-start; gap: var(--sp-2);
+  font-size: var(--tx-md); color: var(--ink-soft); line-height: 1.6;
+}
+.with-icon svg { flex: none; margin-top: 3px; }
+
+/* A reference somebody reads character by character — a ticket ID, a
+   certificate ID, a phone number — which must never wrap. */
+.mono-flat { font-family: var(--mono); white-space: nowrap; }
+
+/* A fieldset used purely as a group label, with the browser's chrome off. */
+.plain-set { border: 0; padding-bottom: 0; margin-bottom: var(--sp-3); }

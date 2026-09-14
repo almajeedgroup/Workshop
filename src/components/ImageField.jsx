@@ -56,21 +56,21 @@ export default function ImageField({ id, value, onChange, hint }) {
           value={stored}
           placeholder="…or a path such as /payment-qr.png"
           onChange={(e) => onChange(e.target.value)}
-          style={{ marginTop: 8 }}
+          className="mt-2"
         />
       )}
 
       {stored && (
-        <div style={{ marginTop: 10 }}>
+        <div className="mt-3">
           <img
             src={stored}
             alt="Selected image"
             style={{
-              width: 150, height: 150, objectFit: 'contain', background: '#fff',
+              width: 150, height: 150, objectFit: 'contain', background: 'var(--paper)',
               border: 'var(--hair, 1px solid #ddd)', borderRadius: 8, display: 'block',
             }}
           />
-          <div className="hint" style={{ marginTop: 6 }}>
+          <div className="hint mt-2">
             {isUpload
               ? 'Stored on this workshop — no file to copy, no deploy needed.'
               : 'Read from the site’s files. It must exist there, or nothing will show.'}

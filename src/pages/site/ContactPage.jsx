@@ -10,9 +10,9 @@ export default function ContactPage() {
         <div className="wrap">
           <div style={{ maxWidth: 720 }} data-reveal>
             <span className="eyebrow">Contact</span>
-            <h1 className="display" style={{ fontSize: 'clamp(32px,5vw,56px)' }}>Get in touch</h1>
-            <div className="tri" style={{ marginTop: 22 }}><i /><i /><i /></div>
-            <p className="lede" style={{ marginTop: 22 }}>
+            <h1 className="display t-display-lg" >Get in touch</h1>
+            <div className="tri mt-6"><i /><i /><i /></div>
+            <p className="lede mt-6">
               For programme dates, registration, or anything about a certificate — a phone call
               is usually quickest.
             </p>
@@ -26,12 +26,12 @@ export default function ContactPage() {
             <div className="card" data-reveal>
               <div className="ico"><IconPhone /></div>
               <h3>Call or WhatsApp</h3>
-              <p style={{ marginBottom: 14 }}>Enquiries and registration, during the day.</p>
+              <p className="mb-4">Enquiries and registration, during the day.</p>
               {ISSUER.phones.map((p) => (
                 <a
                   key={p}
                   href={`tel:${p.replace(/\s/g, '')}`}
-                  style={{ display: 'block', fontSize: 16, fontWeight: 600, color: 'var(--ink)', textDecoration: 'none', padding: '5px 0' }}
+                  className="t-lg" style={{ display: 'block', fontWeight: 600, color: 'var(--ink)', textDecoration: 'none', padding: '5px 0' }}
                 >
                   {p}
                 </a>
@@ -41,10 +41,10 @@ export default function ContactPage() {
             <div className="card" data-reveal style={{ transitionDelay: '70ms' }}>
               <div className="ico"><IconMail /></div>
               <h3>Email</h3>
-              <p style={{ marginBottom: 14 }}>For anything that needs a written record.</p>
+              <p className="mb-4">For anything that needs a written record.</p>
               <a
                 href={`mailto:${ISSUER.email}`}
-                style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)', textDecoration: 'none', wordBreak: 'break-all' }}
+                className="t-lg" style={{ fontWeight: 600, color: 'var(--ink)', textDecoration: 'none', wordBreak: 'break-all' }}
               >
                 {ISSUER.email}
               </a>
@@ -53,9 +53,9 @@ export default function ContactPage() {
             <div className="card" data-reveal style={{ transitionDelay: '140ms' }}>
               <div className="ico"><IconPin /></div>
               <h3>Where we are</h3>
-              <p style={{ marginBottom: 14 }}>Programmes run at partner campuses.</p>
-              <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)' }}>{ISSUER.city}</p>
-              <p style={{ marginTop: 8, fontSize: 14 }}>Kabir IND PU College for Women, and others.</p>
+              <p className="mb-4">Programmes run at partner campuses.</p>
+              <p className="t-lg" style={{ fontWeight: 600, color: 'var(--ink)' }}>{ISSUER.city}</p>
+              <p className="t-base" style={{ marginTop: 8 }}>Kabir IND PU College for Women, and others.</p>
             </div>
           </div>
         </div>
@@ -67,7 +67,7 @@ export default function ContactPage() {
             <div data-reveal>
               <span className="eyebrow">Checking a certificate?</span>
               <h2>You do not need us for that</h2>
-              <p className="lede" style={{ marginTop: 16 }}>
+              <p className="lede mt-4">
                 Verification is instant and public. Enter the ID from the certificate, or scan
                 its QR code — there is no need to write in and wait for a reply.
               </p>
@@ -79,7 +79,7 @@ export default function ContactPage() {
             <div className="card" data-reveal style={{ textAlign: 'center' }}>
               <div className="ico green" style={{ margin: '0 auto 16px' }}><IconQr /></div>
               <h3>Every certificate carries a QR code</h3>
-              <p style={{ marginTop: 10 }}>
+              <p className="mt-3">
                 Point a phone camera at it and the verification page opens on that exact
                 certificate.
               </p>

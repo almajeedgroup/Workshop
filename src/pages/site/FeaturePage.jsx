@@ -37,14 +37,14 @@ export default function FeaturePage() {
             <span>{feature.name}</span>
           </nav>
 
-          <div className="hero-grid" style={{ marginTop: 30 }}>
+          <div className="hero-grid mt-7">
             <div data-reveal>
               <span className="eyebrow">{group ? group.label : 'Feature'}</span>
-              <h1 className="display" style={{ fontSize: 'clamp(30px,4.6vw,52px)' }}>
+              <h1 className="display t-display-md" >
                 {feature.name}
               </h1>
-              <div className="tri" style={{ marginTop: 22 }}><i /><i /><i /></div>
-              <p className="lede" style={{ marginTop: 22 }}>{feature.lede}</p>
+              <div className="tri mt-6"><i /><i /><i /></div>
+              <p className="lede mt-6">{feature.lede}</p>
               {feature.link && (
                 <div className="actions" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 30 }}>
                   <Link className="btn" to={feature.link.to}>{feature.link.label} <IconArrow /></Link>
@@ -53,13 +53,13 @@ export default function FeaturePage() {
             </div>
 
             <div className="vcard" data-reveal>
-              <div className="ico green" style={{ marginBottom: 16 }}>
+              <div className="ico green mb-4">
                 <FeatureIcon name={feature.icon} />
               </div>
               <h3>What you get</h3>
-              <ul className="ticks" style={{ marginTop: 14 }}>
+              <ul className="ticks mt-4">
                 {feature.points.map((p) => (
-                  <li key={p} style={{ fontSize: 14.5 }}><IconCheck width="15" height="15" />{p}</li>
+                  <li key={p} className="t-base" ><IconCheck width="15" height="15" />{p}</li>
                 ))}
               </ul>
             </div>

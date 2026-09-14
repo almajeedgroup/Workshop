@@ -66,7 +66,7 @@ export default function TicketPage() {
       <div className="page-head no-print">
         <div>
           <h1>Ticket {reg.ticketId}</h1>
-          <div className="count" style={{ marginTop: 4 }}>{reg.name} · {workshop.title}</div>
+          <div className="count mt-1">{reg.name} · {workshop.title}</div>
         </div>
         <span className="spacer" />
         <div className="btn-row">
@@ -77,10 +77,10 @@ export default function TicketPage() {
 
       <TicketDocument workshop={workshop} reg={reg} />
 
-      <div className="panel no-print" style={{ marginTop: 18 }}>
+      <div className="panel no-print mt-5">
         <h2>Send this ticket</h2>
         {actionError && <div className="notice warn">{actionError}</div>}
-        <div className="btn-row" style={{ marginBottom: 12 }}>
+        <div className="btn-row mb-3">
           {reg.whatsapp && (
             <>
               <a className="btn" href={whatsappLink(reg.whatsapp, message)} target="_blank" rel="noreferrer">
@@ -97,14 +97,14 @@ export default function TicketPage() {
           <button onClick={copy}>{copied ? 'Copied ✓' : 'Copy ticket text'}</button>
         </div>
 
-        <div className="hint" style={{ marginBottom: 8 }}>
+        <div className="hint mb-2">
           WhatsApp and email open with the message already written — review it, then send.
           To attach the ticket as a PDF, use <strong>Print / Save as PDF</strong> above and
           attach the saved file.
         </div>
 
         <details>
-          <summary style={{ cursor: 'pointer', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          <summary className="t-xs" style={{ cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             Preview message text
           </summary>
           <pre className="msg-preview">{message}</pre>

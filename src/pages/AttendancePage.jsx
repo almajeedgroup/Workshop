@@ -118,7 +118,7 @@ export default function AttendancePage() {
       <div className="page-head no-print">
         <div>
           <h1>Attendance</h1>
-          <div className="count" style={{ marginTop: 4 }}>
+          <div className="count mt-1">
             {regs.length} registered · {workshop.title}
           </div>
         </div>
@@ -149,7 +149,7 @@ export default function AttendancePage() {
         <>
           <div className="panel no-print">
             <h2>Which day</h2>
-            <p className="hint" style={{ marginTop: 0 }}>
+            <p className="hint mt-0">
               A register belongs to one day. {days.length > 1
                 ? 'Marks are saved as you tap, per day.'
                 : 'This course runs on one day.'}
@@ -179,12 +179,12 @@ export default function AttendancePage() {
         <div className="panel no-print">
           <h2>Which sheet</h2>
           {perDay ? (
-            <p className="hint" style={{ marginTop: 0 }}>
+            <p className="hint mt-0">
               This course runs {days.length} days — more than the {MAX_DAY_COLUMNS} that fit
               as columns wide enough to sign in. Print one sheet per day.
             </p>
           ) : (
-            <p className="hint" style={{ marginTop: 0 }}>
+            <p className="hint mt-0">
               One sheet covers the whole course, with a column per day. Choose a single day
               instead if you would rather each day were signed on its own sheet.
             </p>
@@ -204,7 +204,7 @@ export default function AttendancePage() {
       {mode === 'print' && (
       <div className="panel no-print">
         <h2>Before you print</h2>
-        <ul style={{ margin: '8px 0 0 18px', fontSize: 14, lineHeight: 1.75 }}>
+        <ul className="t-base" style={{ margin: '8px 0 0 18px', lineHeight: 1.75 }}>
           <li>
             Rows are 11mm tall so they can actually be signed in, and the heading
             repeats on every page.
@@ -216,7 +216,7 @@ export default function AttendancePage() {
           </li>
         </ul>
 
-        <label className="check" style={{ marginTop: 12 }}>
+        <label className="check mt-3">
           <input
             type="checkbox"
             checked={withPhones}
@@ -230,7 +230,7 @@ export default function AttendancePage() {
         </label>
 
         {Object.keys(byDay).length > 0 && (
-          <label className="check" style={{ marginTop: 12 }}>
+          <label className="check mt-3">
             <input
               type="checkbox"
               checked={withMarks}

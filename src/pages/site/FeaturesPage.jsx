@@ -18,11 +18,11 @@ export default function FeaturesPage() {
         <div className="wrap">
           <div style={{ maxWidth: 760 }} data-reveal>
             <span className="eyebrow">What {BRAND_NAME} does</span>
-            <h1 className="display" style={{ fontSize: 'clamp(32px,5.2vw,60px)' }}>
+            <h1 className="display t-display-lg" >
               Every feature,<br /><span className="accent">start to certificate.</span>
             </h1>
-            <div className="tri" style={{ marginTop: 24 }}><i /><i /><i /></div>
-            <p className="lede" style={{ marginTop: 22 }}>
+            <div className="tri mt-6"><i /><i /><i /></div>
+            <p className="lede mt-6">
               {BRAND_NAME} is the system {ISSUER.operator} runs its
               programmes on — registration through to a certificate anyone can check. Here is
               all of it, in the order a course meets it.
@@ -62,9 +62,9 @@ export default function FeaturesPage() {
                     <div className="ico"><FeatureIcon name={f.icon} /></div>
                     <h3>{f.name}</h3>
                     <p>{f.tagline}</p>
-                    <ul className="ticks" style={{ marginTop: 16 }}>
+                    <ul className="ticks mt-4">
                       {f.points.slice(0, 3).map((p) => (
-                        <li key={p} style={{ fontSize: 14 }}>
+                        <li key={p} className="t-base" >
                           <IconCheck width="15" height="15" />{p}
                         </li>
                       ))}
@@ -94,7 +94,7 @@ export default function FeaturesPage() {
                 rendered by the same page you were looking at. Less to run, less to pay for,
                 and far less that can quietly go wrong.
               </p>
-              <ul className="ticks" style={{ marginTop: 24 }}>
+              <ul className="ticks mt-6">
                 {[
                   'Registration data never leaves the school’s own database',
                   'Verification shows no contact details to anyone',
@@ -115,7 +115,7 @@ export default function FeaturesPage() {
                   The part of this that is for everybody, not just the office. Free, instant,
                   and it needs no account at all.
                 </p>
-                <div style={{ marginTop: 20 }}>
+                <div className="mt-5">
                   <Link className="btn" to="/verify">Verify a certificate <IconArrow /></Link>
                 </div>
               </div>

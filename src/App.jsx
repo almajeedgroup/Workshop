@@ -120,7 +120,7 @@ function Protected({ children }) {
             <code>firestore.rules</code>, that the rules are deployed, then sign out and
             in again.
           </p>
-          <div className="btn-row" style={{ marginTop: 14 }}>
+          <div className="btn-row mt-4">
             <button onClick={logout}>Sign out</button>
           </div>
         </div>

@@ -101,7 +101,7 @@ export default function LoginPage() {
       <div className="login-wrap">
         <div className="brand-block">
           <h1 className="vh">{BRAND_NAME}</h1>
-          <Wordmark lockup style={{ fontSize: 38 }} />
+          <Wordmark lockup className="t-3xl"  />
         </div>
         <div className="rule" />
 
@@ -121,8 +121,8 @@ export default function LoginPage() {
         </button>
 
         <div
-          className="hint"
-          style={{ textAlign: 'center', margin: '14px 0', letterSpacing: '.14em', textTransform: 'uppercase', fontSize: 10 }}
+          className="hint t-3xs"
+          style={{ textAlign: 'center', margin: '14px 0', letterSpacing: '.14em', textTransform: 'uppercase' }}
         >
           or with a password
         </div>

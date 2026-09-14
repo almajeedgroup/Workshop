@@ -27,18 +27,18 @@ export default function CertificatesPage() {
           <div className="hero-grid">
             <div data-reveal>
               <span className="eyebrow">Certificates</span>
-              <h1 className="display" style={{ fontSize: 'clamp(32px,5vw,56px)' }}>
+              <h1 className="display t-display-lg" >
                 Proof that<br /><span className="accent">stands up.</span>
               </h1>
-              <div className="tri" style={{ marginTop: 22 }}><i /><i /><i /></div>
-              <p className="lede" style={{ marginTop: 22 }}>
+              <div className="tri mt-6"><i /><i /><i /></div>
+              <p className="lede mt-6">
                 Anyone can print a certificate. Ours carries a unique ID and a QR code tied to a
                 register — so whoever is checking never has to take anybody's word for it.
               </p>
             </div>
 
             <div className="vcard" data-reveal>
-              <div className="ico green" style={{ marginBottom: 16 }}><IconQr /></div>
+              <div className="ico green mb-4"><IconQr /></div>
               <h3>Check one now</h3>
               <p>The ID is printed at the bottom left of the certificate.</p>
               <form onSubmit={verify}>
@@ -99,7 +99,7 @@ export default function CertificatesPage() {
                 <span className="num">{i + 1}</span>
                 <div>
                   <h3>{s.t}</h3>
-                  <p style={{ fontSize: 14.5, marginTop: 6 }}>{s.d}</p>
+                  <p className="t-base" style={{ marginTop: 6 }}>{s.d}</p>
                 </div>
               </div>
             ))}
@@ -123,7 +123,7 @@ export default function CertificatesPage() {
             <div className="card" data-reveal>
               <div className="ico"><IconShield /></div>
               <h3>What it never shows</h3>
-              <p style={{ marginBottom: 14 }}>
+              <p className="mb-4">
                 A certificate is public by design. What sits behind it is not.
               </p>
               <ul className="ticks">
@@ -146,18 +146,18 @@ export default function CertificatesPage() {
             <div data-reveal>
               <span className="eyebrow">Honesty</span>
               <h2>Withdrawn certificates say so</h2>
-              <p className="lede" style={{ marginTop: 16 }}>
+              <p className="lede mt-4">
                 If a certificate is ever withdrawn, its record is not deleted. It stays
                 readable and is plainly marked as withdrawn — because a copy already in
                 circulation should check as <em>withdrawn</em>, not as <em>not found</em>.
               </p>
-              <p style={{ marginTop: 16, fontSize: 15.5 }}>
+              <p className="t-md" style={{ marginTop: 16 }}>
                 A missing record looks like a mistake. A marked one tells the truth.
               </p>
             </div>
             <div className="card" data-reveal style={{ borderColor: 'rgba(194,38,26,.25)', background: 'var(--alert-wash)' }}>
               <h3 style={{ color: 'var(--alert)' }}>Three possible answers</h3>
-              <ul className="ticks" style={{ marginTop: 16 }}>
+              <ul className="ticks mt-4">
                 <li><IconCheck width="16" height="16" /><strong>Genuine</strong> — issued by us and still valid.</li>
                 <li><IconCheck width="16" height="16" /><strong>Withdrawn</strong> — was issued, since revoked, and should not be relied on.</li>
                 <li><IconCheck width="16" height="16" /><strong>Not found</strong> — no certificate with that ID was ever issued.</li>
