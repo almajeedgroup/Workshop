@@ -64,38 +64,44 @@ export default function VerifyPage() {
 
   return (
     <>
-      <section className="hero tight">
+      <section className="band hero quiet tight" data-tone="light">
         <div className="wrap">
-          <div style={{ maxWidth: 720 }} data-reveal>
-            <span className="eyebrow">Certificate verification</span>
-            <h1 className="display t-display-md" >
-              Check a certificate
-            </h1>
-            <div className="tri mt-5"><i /><i /><i /></div>
-            <p className="lede mt-5">
+          <div className="hero-mid" data-reveal>
+            <span className="ann flat"><b>Verification</b> Free, and no account needed</span>
+
+            <h1 className="display-lead sm">Check a <em>certificate</em></h1>
+
+            <p className="lede">
               Enter the ID printed at the bottom left of the certificate, or scan the QR code
               beside it.
             </p>
 
-            <form onSubmit={submit} style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 26 }}>
-              <input
-                value={entry}
-                onChange={(e) => setEntry(e.target.value)}
-                placeholder="e.g. AIHOW26-COM-001"
-                aria-label="Certificate ID"
-                className="t-lg" style={{ font: 'inherit', fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace', padding: '14px 18px', borderRadius: 12,
-                  border: '1.6px solid var(--control-line)', background: 'var(--paper)',
-                  minWidth: 280, flex: '1 1 280px', textTransform: 'uppercase' }}
-              />
-              <button className="btn" type="submit" disabled={!entry.trim() || checking}>
-                {checking ? 'Checking…' : 'Verify'} <IconArrow />
-              </button>
-            </form>
+            <div className="capture mono">
+              <form onSubmit={submit}>
+                <input
+                  value={entry}
+                  onChange={(e) => setEntry(e.target.value)}
+                  placeholder="e.g. AIHOW26-COM-001"
+                  aria-label="Certificate ID"
+                />
+                <button className="btn cta" type="submit" disabled={!entry.trim() || checking}>
+                  {checking ? 'Checking…' : 'Verify'} <IconArrow />
+                </button>
+              </form>
+              <div className="trust-strip">
+                <IconShield width="15" height="15" />
+                <span>No phone numbers or dates of birth are ever shown</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className={result || error ? '' : 'band-soft'} style={{ paddingTop: result || error ? 0 : undefined }}>
+      <section
+        className={`band ${result || error ? 'paper' : 'light'}`}
+        data-tone="light"
+        style={{ paddingTop: result || error ? 0 : undefined }}
+      >
         <div className="wrap">
           {error && (
             <div className="verdict bad mb-6">

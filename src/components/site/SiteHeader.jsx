@@ -70,9 +70,12 @@ export default function SiteHeader() {
     <header className={`hdr${stuck ? ' stuck' : ''} over-${tone}`}>
       <div className="wrap">
         <div className="bar">
+          {/* The mark alone, not the lockup: the by-line is 42 characters
+              and put the bar 208px over its own width. It introduces the
+              school in the footer, where there is room for it. */}
           <Link to="/" className="mark" aria-label={`${brandLockup()} — home`}>
             <img src="/crests/al-majeed.png" alt="" />
-            <Wordmark lockup className="txt t-2xl" />
+            <Wordmark className="txt t-2xl" />
           </Link>
 
           <nav className="nav" aria-label="Main">

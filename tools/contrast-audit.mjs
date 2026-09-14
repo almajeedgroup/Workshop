@@ -29,7 +29,18 @@
 
 import { chromium } from 'playwright-core';
 
-const BASE = process.env.BASE || 'http://localhost:4177';
+const BASE = process.env.BASE || `http://localhost:${process.env.PORT || 4177}`;
+
+/* Prove the origin answers before measuring it. A sweep pointed at a port
+   nobody was serving reported every page clean once, and a stale preview
+   left running on that port is worse: it answers, and reports a clean
+   audit of a build from last week. */
+const probe = await fetch(BASE).catch(() => null);
+if (!probe || !probe.ok) {
+  console.error(`NOTHING SERVING ${BASE} — run \`npm run build && npx vite preview --port ${process.env.PORT || 4177}\` first,`);
+  console.error('or point this at a running preview with PORT=… or BASE=…');
+  process.exit(2);
+}
 const WIDTHS = (process.env.WIDTHS || '1440,1280,1079,768,390').split(',').map(Number);
 const CHROME = process.env.CHROME_PATH || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 

@@ -3,122 +3,162 @@ import { FEATURE_GROUPS, FEATURES, featurePath, featuresInGroup } from '../../li
 import { BRAND_NAME } from '../../lib/brand.js';
 import { ISSUER } from '../../lib/schema.js';
 import FeatureIcon from '../../components/site/FeatureIcon.jsx';
+import Deck from '../../components/site/Deck.jsx';
 import { IconArrow, IconShield, IconCheck } from '../../components/site/Icons.jsx';
+
+/** One ground per group, so the deck changes colour as you move along it. */
+const POSTER_TONE = ['lime', 'soft', 'stone', 'ink'];
 
 /**
  * Everything the system does, on one page, grouped the way a course runs.
  *
  * Generated from the catalogue rather than written out, so a feature cannot
  * be shipped and left off this list.
+ *
+ * Ten features stacked into four sections made a page four screens long
+ * that nobody reached the end of. As a deck they are one screen: the four
+ * phases of a course are the tabs, and the phase you pick fills the stage.
  */
 export default function FeaturesPage() {
+  const tabs = FEATURE_GROUPS
+    .map((g, i) => ({ ...g, key: g.key, label: g.label, tone: POSTER_TONE[i % POSTER_TONE.length], n: i + 1 }))
+    .filter((g) => featuresInGroup(g.key).length);
+
   return (
     <>
-      <section className="hero tight">
+      {/* ---------------- hero ---------------- */}
+      <section className="band hero quiet tight" data-tone="light">
         <div className="wrap">
-          <div style={{ maxWidth: 760 }} data-reveal>
-            <span className="eyebrow">What {BRAND_NAME} does</span>
-            <h1 className="display t-display-lg" >
-              Every feature,<br /><span className="accent">start to certificate.</span>
-            </h1>
-            <div className="tri mt-6"><i /><i /><i /></div>
-            <p className="lede mt-6">
-              {BRAND_NAME} is the system {ISSUER.operator} runs its
-              programmes on — registration through to a certificate anyone can check. Here is
-              all of it, in the order a course meets it.
-            </p>
-          </div>
+          <div className="hero-mid" data-reveal>
+            <span className="ann flat">
+              <b>{FEATURES.length} features</b> Every one of them documented
+            </span>
 
-          <div className="stats" style={{ marginTop: 'var(--gap)' }} data-reveal>
-            {[
-              { n: String(FEATURES.length), l: 'Features, documented' },
-              { n: '4', l: 'Kinds of award' },
-              { n: 'QR', l: 'On every certificate' },
-              { n: '0', l: 'Accounts needed to verify' },
-            ].map((s) => (
-              <div className="s" key={s.l}>
-                <span className="n">{s.n}</span>
-                <span className="l">{s.l}</span>
-              </div>
-            ))}
+            <h1 className="display-lead">
+              Everything a course needs,<br /><em>start</em> to certificate
+            </h1>
+
+            <p className="lede">
+              {BRAND_NAME} is the system {ISSUER.operator} runs its programmes on.
+              Here is all of it, in the order a course meets it.
+            </p>
+
+            <div className="acts">
+              <Link className="btn" to="/verify">Verify a certificate <IconArrow /></Link>
+              <Link className="btn ghost" to="/programmes">See the programmes</Link>
+            </div>
           </div>
         </div>
       </section>
 
-      {FEATURE_GROUPS.map((group, gi) => {
-        const list = featuresInGroup(group.key);
-        if (!list.length) return null;
-        return (
-          <section key={group.key} className={gi % 2 ? 'band-soft' : ''} id={group.key}>
-            <div className="wrap">
-              <div className="shead" data-reveal>
-                <span className="eyebrow">{`0${gi + 1}`.slice(-2)} — {group.label}</span>
-                <h2>{group.blurb}</h2>
-              </div>
+      {/* ---------------- the deck ---------------- */}
+      <section className="band paper" data-tone="light">
+        <div className="wrap">
+          <div className="head" data-reveal>
+            <h2>The arc of a <em>course</em></h2>
+            <p>Four phases. Pick one to see what runs in it.</p>
+          </div>
 
-              <div className="grid g3">
-                {list.map((f, i) => (
-                  <article className="card feature" key={f.slug} data-reveal style={{ transitionDelay: `${i * 70}ms` }}>
-                    <div className="ico"><FeatureIcon name={f.icon} /></div>
-                    <h3>{f.name}</h3>
-                    <p>{f.tagline}</p>
-                    <ul className="ticks mt-4">
-                      {f.points.slice(0, 3).map((p) => (
-                        <li key={p} className="t-base" >
-                          <IconCheck width="15" height="15" />{p}
-                        </li>
-                      ))}
-                    </ul>
+          <div className="mt-7" data-reveal>
+            <Deck tabs={tabs} label="Phases of a course">
+              {(g) => (
+                <>
+                  <div className={`poster ${g.tone}`}>
+                    <span className="n">{`0${g.n}`.slice(-2)}</span>
+                    <h3>{g.blurb}</h3>
+                    <p>{featuresInGroup(g.key).length} features in this phase</p>
                     <div className="go">
-                      <Link className="btn ghost sm" to={featurePath(f)}>
-                        {f.name} in detail <IconArrow />
+                      <Link className={`btn sm ${g.tone === 'ink' ? 'light' : 'ghost'}`} to={featurePath(featuresInGroup(g.key)[0])}>
+                        Start reading <IconArrow />
                       </Link>
                     </div>
-                  </article>
-                ))}
-              </div>
-            </div>
-          </section>
-        );
-      })}
+                  </div>
 
-      <section className="band-dark">
+                  <div className="rows">
+                    {featuresInGroup(g.key).map((f) => (
+                      <Link key={f.slug} to={featurePath(f)}>
+                        <span className="fi"><FeatureIcon name={f.icon} width="19" height="19" /></span>
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <strong>{f.name}</strong>
+                          <small>{f.tagline}</small>
+                        </span>
+                        <IconArrow width="17" height="17" className="chev" />
+                      </Link>
+                    ))}
+                  </div>
+                </>
+              )}
+            </Deck>
+          </div>
+
+          <div className="mt-7" style={{ textAlign: 'center' }} data-reveal>
+            <Link className="btn ghost" to={featurePath(FEATURES[0])}>Read every feature in order <IconArrow /></Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------- the whole catalogue ---------------- */}
+      <section className="band light" data-tone="light">
         <div className="wrap">
-          <div className="grid g2" style={{ alignItems: 'center' }}>
-            <div data-reveal>
-              <span className="eyebrow">Built the way it is for a reason</span>
-              <h2>No server, and that is the point</h2>
-              <p className="lede" style={{ color: 'var(--on-dark-soft)', marginTop: 16 }}>
-                There is nothing between your browser and the database. Spreadsheets are built
-                on your machine, recordings are saved to it, and every printed document is
-                rendered by the same page you were looking at. Less to run, less to pay for,
-                and far less that can quietly go wrong.
-              </p>
-              <ul className="ticks mt-6">
+          <div className="head" data-reveal>
+            <h2>Or take the <em>whole</em> list</h2>
+            <p>Ten features, each with a page of its own — including what it will not do.</p>
+          </div>
+
+          <ul className="fstrip mt-7">
+            {FEATURES.map((f, i) => (
+              <li key={f.slug} data-reveal style={{ transitionDelay: `${Math.min(i, 6) * 45}ms` }}>
+                <Link to={featurePath(f)}>
+                  <span className="fi"><FeatureIcon name={f.icon} width="19" height="19" /></span>
+                  <span>
+                    <strong>{f.name}</strong>
+                    <em>{f.tagline}</em>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* ---------------- why there is no server ---------------- */}
+      <section className="band dark" data-tone="dark">
+        <div className="wrap">
+          <div className="head" data-reveal>
+            <h2>No server, and that is <em>the point</em></h2>
+            <p>
+              There is nothing between the browser and the database. Less to run, less to
+              pay for, and far less that can quietly go wrong.
+            </p>
+          </div>
+
+          <div className="bento mt-7">
+            <div className="bt ink" data-reveal>
+              <span className="bt-fig">0</span>
+              <span className="tile-note">servers between your browser and the register</span>
+              <span className="tile-foot"><span className="logo">By design</span></span>
+            </div>
+            <div className="bt half" data-reveal>
+              <ul className="ticks" style={{ marginTop: 0 }}>
                 {[
                   'Registration data never leaves the school’s own database',
                   'Verification shows no contact details to anyone',
                   'Exports are downloaded, never uploaded',
                   'Every award records the body that issued it',
                 ].map((t) => (
-                  <li key={t} style={{ color: 'var(--on-dark-soft)' }}>
-                    <IconCheck width="16" height="16" style={{ color: 'var(--lime)' }} />{t}
-                  </li>
+                  <li key={t}><IconCheck width="16" height="16" />{t}</li>
                 ))}
               </ul>
             </div>
-            <div data-reveal>
-              <div className="card">
-                <div className="ico green"><IconShield /></div>
-                <h3>Check a certificate</h3>
-                <p>
-                  The part of this that is for everybody, not just the office. Free, instant,
-                  and it needs no account at all.
-                </p>
-                <div className="mt-5">
-                  <Link className="btn" to="/verify">Verify a certificate <IconArrow /></Link>
-                </div>
-              </div>
+            <div className="bt lime" data-reveal>
+              <span className="bt-fig"><IconShield width="40" height="40" /></span>
+              <span className="tile-note">
+                Checking a certificate is the part of this that is for everybody, not just
+                the office. Free, instant, no account.
+              </span>
+              <span className="tile-foot">
+                <Link className="btn sm ghost" to="/verify">Verify <IconArrow /></Link>
+              </span>
             </div>
           </div>
         </div>

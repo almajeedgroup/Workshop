@@ -98,9 +98,13 @@ test('the routes carry the features hub and a page per feature', () => {
 test('the hub renders the whole catalogue, not a hand-written subset', () => {
   // If somebody replaces the generated grid with hard-coded cards, a feature
   // added later stops appearing and nothing else notices.
-  assert.match(hub, /FEATURE_GROUPS\.map/);
-  assert.match(hub, /featuresInGroup\(group\.key\)/);
-  assert.match(hub, /featurePath\(f\)/);
+  // Matched loosely on purpose: what has to hold is that the catalogue
+  // drives the page, not that the call sits on one line or that the
+  // callback's parameter is still spelt `group`. Pinning the formatting
+  // makes this fail on a reflow, which trains people to edit the test.
+  assert.match(hub, /FEATURE_GROUPS\s*\.\s*map/);
+  assert.match(hub, /featuresInGroup\(\s*\w+\.key\s*\)/);
+  assert.match(hub, /featurePath\(\s*\w+\s*\)/);
   assert.ok(!/\/features\/[a-z-]+["'`]/.test(hub), 'the hub hard-codes a feature URL');
 });
 

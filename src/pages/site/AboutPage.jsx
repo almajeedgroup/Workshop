@@ -1,138 +1,150 @@
 import { Link } from 'react-router-dom';
 import { ISSUER } from '../../lib/schema.js';
-import { CRESTS } from '../../lib/certificates.js';
-import { SIGNATORIES } from '../../lib/certificates.js';
-import { IconCheck, IconArrow, IconPin, IconUsers, IconBulb } from '../../components/site/Icons.jsx';
+import { CRESTS, SIGNATORIES } from '../../lib/certificates.js';
+import { BRAND_NAME } from '../../lib/brand.js';
+import { IconCheck, IconArrow, IconPin, IconUsers } from '../../components/site/Icons.jsx';
 
 export default function AboutPage() {
   return (
     <>
-      <section className="hero tight">
+      {/* ---------------- hero ---------------- */}
+      <section className="band hero quiet tight" data-tone="light">
         <div className="wrap">
-          <div style={{ maxWidth: 760 }} data-reveal>
-            <span className="eyebrow">About</span>
-            <h1 className="display t-display-lg" >
-              Who we are
+          <div className="hero-mid" data-reveal>
+            <span className="ann flat"><b>About</b> {ISSUER.city}</span>
+
+            <h1 className="display-lead">
+              Understanding shows up<br />in what you can <em>make</em>
             </h1>
-            <div className="tri mt-6"><i /><i /><i /></div>
-            <p className="lede mt-6">
-              {ISSUER.operator} teaches research method,
-              artificial intelligence and innovation practice — working with{' '}
-              {ISSUER.association} and partner institutions across {ISSUER.city}.
-            </p>
-          </div>
-        </div>
-      </section>
 
-      <section>
-        <div className="wrap">
-          <div className="grid g2" style={{ alignItems: 'start' }}>
-            <div data-reveal>
-              <span className="eyebrow">What we believe</span>
-              <h2>Understanding shows up in what you can make</h2>
-              <p className="t-lg" style={{ marginTop: 18, lineHeight: 1.8 }}>
-                A student who can recite how a language model works, and a student who has built
-                something with one, do not know the same thing. We teach for the second kind of
-                knowing.
-              </p>
-              <p className="t-lg" style={{ marginTop: 16, lineHeight: 1.8 }}>
-                That shapes everything: seats are capped so the room stays a workshop; sessions
-                run in person; and every programme is built backwards from an outcome the
-                participant can show somebody.
-              </p>
-              <p className="t-lg" style={{ marginTop: 16, lineHeight: 1.8 }}>
-                It shapes the certificate too. A document that cannot be checked is a decoration.
-                Ours carries an ID and a QR code linked to a register, so it keeps meaning
-                something long after the programme ends.
-              </p>
-            </div>
-
-            <div className="card" data-reveal>
-              <div className="ico"><IconBulb /></div>
-              <h3>How we work</h3>
-              <ul className="ticks">
-                {[
-                  'Taught in person, in classrooms rather than webinars',
-                  'Seats capped so nobody sits at the back',
-                  'Built around a finished piece of work, not a syllabus',
-                  'Run with partner colleges and institutions',
-                  'Certified with a public, checkable record',
-                ].map((t) => <li key={t}><IconCheck width="16" height="16" />{t}</li>)}
-              </ul>
-              <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--hair)', display: 'grid', gap: 12 }}>
-                <div style={{ display: 'flex', gap: 11 }}>
-                  <IconPin width="18" height="18" style={{ color: 'var(--ink-faint)', flex: 'none', marginTop: 2 }} />
-                  <span className="t-base" style={{ color: 'var(--ink-soft)' }}>{ISSUER.city}</span>
-                </div>
-                <div style={{ display: 'flex', gap: 11 }}>
-                  <IconUsers width="18" height="18" style={{ color: 'var(--ink-faint)', flex: 'none', marginTop: 2 }} />
-                  <span className="t-base" style={{ color: 'var(--ink-soft)' }}>School and college students, and graduates</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="band-soft">
-        <div className="wrap">
-          <div className="shead center" data-reveal>
-            <span className="eyebrow">Together with</span>
-            <h2>Who we work with</h2>
             <p className="lede">
-              Programmes are run in association with these institutions, whose names appear on
-              every certificate we issue.
+              {ISSUER.operator} teaches research method, artificial intelligence and
+              innovation practice — working with {ISSUER.association} and partner
+              institutions across {ISSUER.city}.
             </p>
+
+            <div className="acts">
+              <Link className="btn" to="/programmes">See the programmes <IconArrow /></Link>
+              <Link className="btn ghost" to="/contact">Get in touch</Link>
+            </div>
           </div>
-          <div className="grid g4" data-reveal>
+        </div>
+      </section>
+
+      {/* ---------------- what we believe ---------------- */}
+      <section className="band paper" data-tone="light">
+        <div className="wrap">
+          <div className="head left" data-reveal>
+            <h2>What we <em>believe</em></h2>
+          </div>
+
+          <div className="bento mt-7">
+            <div className="bt wide" data-reveal>
+              <p className="t-xl" style={{ lineHeight: 1.7, fontWeight: 300 }}>
+                A student who can recite how a language model works, and a student who has
+                built something with one, do not know the same thing. We teach for the
+                second kind of knowing.
+              </p>
+            </div>
+            <div className="bt lime" data-reveal>
+              <span className="bt-fig">Capped</span>
+              <span className="tile-note">seats, so the room stays a workshop and nobody sits at the back</span>
+              <span className="tile-foot"><span className="logo">In person</span></span>
+            </div>
+
+            <div className="bt stone" data-reveal>
+              <span className="bt-fig">Backwards</span>
+              <span className="tile-note">
+                from an outcome the participant can show somebody — not forwards from a syllabus
+              </span>
+              <span className="tile-foot"><span className="logo">Every programme</span></span>
+            </div>
+            <div className="bt wide" data-reveal>
+              <p className="t-xl" style={{ lineHeight: 1.7, fontWeight: 300 }}>
+                It shapes the certificate too. A document that cannot be checked is a
+                decoration. Ours carries an ID and a QR code linked to a register, so it
+                keeps meaning something long after the programme ends.
+              </p>
+              <span className="tile-foot">
+                <Link className="btn ghost sm" to="/certificates">How the certificates work <IconArrow /></Link>
+              </span>
+            </div>
+          </div>
+
+          <div className="panel mt-7" data-reveal>
+            <h3>How we work</h3>
+            <ul className="ticks" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(min(300px,100%),1fr))' }}>
+              {[
+                'Taught in person, in classrooms rather than webinars',
+                'Seats capped so nobody sits at the back',
+                'Built around a finished piece of work, not a syllabus',
+                'Run with partner colleges and institutions',
+                'Certified with a public, checkable record',
+              ].map((t) => <li key={t}><IconCheck width="16" height="16" />{t}</li>)}
+            </ul>
+            <div className="panel-foot">
+              <span><IconPin width="17" height="17" />{ISSUER.city}</span>
+              <span><IconUsers width="17" height="17" />School and college students, and graduates</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------- who we work with ---------------- */}
+      <section className="band light" data-tone="light">
+        <div className="wrap">
+          <div className="head" data-reveal>
+            <h2>Run <em>with</em> these institutions</h2>
+            <p>Their names appear on every certificate we issue.</p>
+          </div>
+          <div className="logogrid mt-7" data-reveal>
             {CRESTS.map((c) => (
-              <div className="card" key={c.src} style={{ textAlign: 'center' }}>
-                <img
-                  src={c.src}
-                  alt={c.alt}
-                  style={{ height: 76, width: 'auto', margin: '0 auto 16px', display: 'block' }}
-                />
-                <h3 className="t-md" >{c.alt}</h3>
+              <div className="cell" key={c.src}>
+                <img src={c.src} alt={c.alt} style={{ height: 64, width: 'auto' }} />
+                <small>{c.alt}</small>
               </div>
             ))}
+            <div className="cell feature">
+              <span className="name">{BRAND_NAME}</span>
+              <small>The system all of it runs on</small>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="band-dark">
+      {/* ---------------- signatories ---------------- */}
+      <section className="band dark" data-tone="dark">
         <div className="wrap">
-          <div className="shead" data-reveal>
-            <span className="eyebrow">Signatories</span>
-            <h2>Who signs our certificates</h2>
-            <p className="lede" style={{ color: 'var(--on-dark-soft)' }}>
+          <div className="head" data-reveal>
+            <h2>Who <em>signs</em> our certificates</h2>
+            <p>
               Every certificate carries these three offices, each marked verified against the
               register rather than signed by hand.
             </p>
           </div>
-          <div className="grid g3">
+          <div className="bento mt-7">
             {SIGNATORIES.map((s, i) => (
-              <div className="card" key={s.name} data-reveal style={{ transitionDelay: `${i * 70}ms` }}>
-                <h3>{s.name}</h3>
-                <p className="t-sm" style={{ marginTop: 8, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--lime)', fontWeight: 600 }}>
-                  {s.role}
-                </p>
-                <p className="mt-2">{s.org}</p>
+              <div className="bt" key={s.name} data-reveal style={{ transitionDelay: `${i * 70}ms` }}>
+                <span className="kick">{s.role}</span>
+                <h3 className="mt-2">{s.name}</h3>
+                <span className="tile-note">{s.org}</span>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="tight">
+      {/* ---------------- closing ---------------- */}
+      <section className="band paper tight" data-tone="light">
         <div className="wrap">
-          <div className="cta-band" data-reveal>
-            <h2>Come and build something</h2>
-            <p>Our programmes are open to school and college students, and to graduates.</p>
-            <div className="actions">
+          <div className="cta-panel" data-reveal>
+            <h2>Come and<br /><span className="bloom">build something</span></h2>
+            <p className="t-lg" style={{ maxWidth: '44ch', margin: 'var(--sp-5) auto 0', color: 'var(--ink)' }}>
+              Our programmes are open to school and college students, and to graduates.
+            </p>
+            <div className="acts">
               <Link className="btn light" to="/programmes">See the programmes <IconArrow /></Link>
-              <Link className="btn ghost" to="/contact">
-                Get in touch
-              </Link>
+              <Link className="btn ghost" to="/contact">Get in touch</Link>
             </div>
           </div>
         </div>

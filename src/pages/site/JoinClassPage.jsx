@@ -61,14 +61,14 @@ export default function JoinClassPage() {
   }, [workshopId]);
 
   if (loading) {
-    return <section className="tight"><div className="wrap"><p>Loading…</p></div></section>;
+    return <section className="band light tight" data-tone="light"><div className="wrap"><p>Loading…</p></div></section>;
   }
 
   const live = classIsLive(workshop);
 
   if (loadError || !live) {
     return (
-      <section className="tight">
+      <section className="band light tight" data-tone="light">
         <div className="wrap">
           <div className="verdict bad">
             <span className="vico"><IconAlert /></span>
@@ -108,7 +108,7 @@ export default function JoinClassPage() {
 
   if (joining) {
     return (
-      <section className="tight">
+      <section className="band light tight" data-tone="light">
         <div className="wrap">
           <h1 className="t-display-sm" >{workshop.title}</h1>
           <p className="t-base" style={{ marginTop: 6, marginBottom: 16, color: 'var(--ink-soft)' }}>
@@ -154,14 +154,11 @@ export default function JoinClassPage() {
 
   return (
     <>
-      <section className="hero tight">
+      <section className="band hero quiet tight" data-tone="light">
         <div className="wrap">
-          <div style={{ maxWidth: 760 }} data-reveal>
-            <span className="eyebrow">Online class</span>
-            <h1 className="display t-display-md" >
-              {workshop.title}
-            </h1>
-            <div className="tri mt-5"><i /><i /><i /></div>
+          <div style={{ maxWidth: 820 }} data-reveal>
+            <span className="ann flat"><b>Online class</b> {ISSUER.operator}</span>
+            <h1 className="display-lead sm">{workshop.title}</h1>
 
             <div style={{ display: 'flex', gap: 22, flexWrap: 'wrap', marginTop: 22 }}>
               {formatDateRange(workshop) && (
@@ -191,9 +188,9 @@ export default function JoinClassPage() {
         </div>
       </section>
 
-      <section style={{ paddingTop: 0 }}>
+      <section className="band paper" data-tone="light" style={{ paddingTop: 0 }}>
         <div className="wrap">
-          <form className="card" onSubmit={submit} style={{ maxWidth: 520 }} data-reveal>
+          <form className="panel" onSubmit={submit} style={{ maxWidth: 520 }} data-reveal>
             <h3>Join the class</h3>
             <p className="t-base" style={{ marginTop: 6, marginBottom: 18 }}>
               The class is open. Your name is shown to the presenter and the

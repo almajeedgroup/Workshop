@@ -22,6 +22,9 @@ const code = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '');
 
 const site = sheet('site.css');
 const cert = sheet('certificate.css');
+/* Shapes and tile grounds live in tokens.css, colours in site.css, and a
+   rule can reference either — so the token table spans both. */
+const base = sheet('tokens.css');
 
 /** Every custom property declared in a file, by name. */
 function tokens(text) {
@@ -53,7 +56,7 @@ function contrast(a, b) {
   return +(((Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05)).toFixed(2));
 }
 
-const S = tokens(site);
+const S = { ...tokens(base), ...tokens(site) };
 const C = tokens(cert);
 const of = (name, vars = S) => {
   const c = rgb(vars[name], vars);
@@ -101,16 +104,43 @@ test('lime taken down until it can be read, is read everywhere', () => {
   }
 });
 
+/**
+ * Where `color: var(--lime)` is allowed, and why each one is dark enough.
+ *
+ * This list is the whole exemption, so every entry names the ground it
+ * stands on and the token that paints it. The measurement below then
+ * checks those tokens are still dark — an allow-list nobody re-measures
+ * is how a ground gets lightened and takes its text with it.
+ */
+const LIME_GROUNDS = [
+  { pattern: 'band-dark', token: '--ink' },      // the dark band, retired name
+  { pattern: '\\.band\\.dark', token: '--ink' },  // the dark band
+  { pattern: 'ftr', token: '--ink' },            // the footer
+  { pattern: 'on-dark', token: '--ink' },        // text tones on that band
+  { pattern: 'over-dark', token: null },         // the nav pill, #1C1C1C
+  { pattern: '\\.bt\\.ink', token: '--tile-ink' }, // an ink bento tile
+];
+
 test('lime is only ever text on a dark ground', () => {
   // It is 9.35:1 on near-black and 2.12:1 on paper, so `color: var(--lime)`
-  // is correct inside .band-dark and a bug anywhere else.
+  // is correct on the grounds listed above and a bug anywhere else.
+  const allowed = new RegExp(LIME_GROUNDS.map((g) => g.pattern).join('|'));
   const offenders = [];
   for (const [, sel, body] of code(site).matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
     if (!/(?:^|;)\s*color\s*:\s*var\(--lime\)/.test(body)) continue;
-    // `over-dark` is the floating nav's dark pill — lime on #1C1C1C is 8.1:1.
-    if (!/band-dark|ftr|on-dark|over-dark|\.band\.dark/.test(sel)) offenders.push(sel.trim());
+    if (!allowed.test(sel)) offenders.push(sel.trim());
   }
   assert.deepEqual(offenders, []);
+});
+
+test('every ground the lime exemption names is still dark enough for it', () => {
+  const lime = of('--lime');
+  for (const { pattern, token } of LIME_GROUNDS) {
+    if (!token) continue;                       // #1C1C1C, checked by the audit
+    const r = contrast(lime, of(token));
+    assert.ok(r >= 4.5, `lime on ${token} (${pattern}) is ${r}:1 — it is on the `
+      + 'allow-list for lime text, so lightening it takes that text with it');
+  }
 });
 
 test('the near-black band’s three text tones are all readable on it', () => {

@@ -29,7 +29,7 @@ export default function FeaturePage() {
 
   return (
     <>
-      <section className="hero tight">
+      <section className="band hero quiet tight" data-tone="light">
         <div className="wrap">
           <nav className="crumbs" aria-label="Breadcrumb">
             <Link to="/features">All features</Link>
@@ -39,12 +39,12 @@ export default function FeaturePage() {
 
           <div className="hero-grid mt-7">
             <div data-reveal>
-              <span className="eyebrow">{group ? group.label : 'Feature'}</span>
-              <h1 className="display t-display-md" >
-                {feature.name}
-              </h1>
-              <div className="tri mt-6"><i /><i /><i /></div>
-              <p className="lede mt-6">{feature.lede}</p>
+              <span className="ann flat">
+                <b>Feature</b>
+                {group ? group.label : 'Across everything'}
+              </span>
+              <h1 className="display-lead sm">{feature.name}</h1>
+              <p className="lede mt-5">{feature.lede}</p>
               {feature.link && (
                 <div className="actions" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 30 }}>
                   <Link className="btn" to={feature.link.to}>{feature.link.label} <IconArrow /></Link>
@@ -52,7 +52,7 @@ export default function FeaturePage() {
               )}
             </div>
 
-            <div className="vcard" data-reveal>
+            <div className="panel soft" data-reveal>
               <div className="ico green mb-4">
                 <FeatureIcon name={feature.icon} />
               </div>
@@ -67,7 +67,7 @@ export default function FeaturePage() {
         </div>
       </section>
 
-      <section>
+      <section className="band paper" data-tone="light">
         <div className="wrap">
           <div className="fdoc">
             <div>
@@ -122,7 +122,7 @@ export default function FeaturePage() {
         </div>
       </section>
 
-      <section className="band-soft tight">
+      <section className="band light tight" data-tone="light">
         <div className="wrap">
           <div className="pager">
             {prev ? (

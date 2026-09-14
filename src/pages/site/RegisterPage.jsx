@@ -95,12 +95,12 @@ export default function RegisterPage() {
   };
 
   if (loading) {
-    return <section className="tight"><div className="wrap"><p>Loading…</p></div></section>;
+    return <section className="band light tight" data-tone="light"><div className="wrap"><p>Loading…</p></div></section>;
   }
 
   if (loadError || !workshop) {
     return (
-      <section className="tight">
+      <section className="band light tight" data-tone="light">
         <div className="wrap">
           <div className="verdict bad">
             <span className="vico"><IconAlert /></span>
@@ -138,7 +138,7 @@ export default function RegisterPage() {
     const toOffice = `https://wa.me/${normalizePhone(ISSUER.phones[0])}?text=${encodeURIComponent(receipt)}`;
 
     return (
-      <section className="tight">
+      <section className="band light tight" data-tone="light">
         <div className="wrap">
           <div className="verdict good" data-reveal>
             <span className="vico"><IconCheckCircle /></span>
@@ -148,8 +148,8 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <div className="card" style={{ marginTop: 'var(--gap)', maxWidth: 620 }}>
-            <span className="eyebrow mb-3">Your reference</span>
+          <div className="panel" style={{ marginTop: 'var(--gap)', maxWidth: 620 }}>
+            <span className="kick">Your reference</span>
             <p className="t-2xl" style={{ fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace', fontWeight: 700, color: 'var(--ink)', letterSpacing: '.04em' }}>
               {done.ref}
             </p>
@@ -193,14 +193,11 @@ export default function RegisterPage() {
 
   return (
     <>
-      <section className="hero tight">
+      <section className="band hero quiet tight" data-tone="light">
         <div className="wrap">
-          <div style={{ maxWidth: 760 }} data-reveal>
-            <span className="eyebrow">Registration</span>
-            <h1 className="display t-display-md" >
-              {workshop.title}
-            </h1>
-            <div className="tri mt-5"><i /><i /><i /></div>
+          <div style={{ maxWidth: 820 }} data-reveal>
+            <span className="ann flat"><b>Registration</b> {ISSUER.operator}</span>
+            <h1 className="display-lead sm">{workshop.title}</h1>
 
             <div style={{ display: 'flex', gap: 22, flexWrap: 'wrap', marginTop: 22 }}>
               {formatDateRange(workshop) && (
@@ -228,7 +225,7 @@ export default function RegisterPage() {
         </div>
       </section>
 
-      <section style={{ paddingTop: 0 }}>
+      <section className="band paper" data-tone="light" style={{ paddingTop: 0 }}>
         <div className="wrap">
           {closed ? (
             <div className="verdict bad">
@@ -244,7 +241,7 @@ export default function RegisterPage() {
           ) : (
             <form onSubmit={submit} className="grid g2" style={{ alignItems: 'start' }}>
               {/* details */}
-              <div className="card" data-reveal>
+              <div className="panel" data-reveal>
                 <h3>Your details</h3>
                 <p className="t-base" style={{ marginTop: 6, marginBottom: 18 }}>
                   Everything except name and WhatsApp number is optional.
@@ -306,7 +303,7 @@ export default function RegisterPage() {
               </div>
 
               {/* payment — a free course shows none of this */}
-              <div className="card" data-reveal>
+              <div className="panel" data-reveal>
                 <h3>{free ? 'Fee' : 'Payment'}</h3>
                 {free ? (
                   <p className="t-md" style={{ marginTop: 6 }}>

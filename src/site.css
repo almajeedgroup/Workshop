@@ -113,8 +113,6 @@
 
 /* ---------- layout ---------- */
 .site .wrap{max-width:var(--wrap); margin:0 auto; padding-left:var(--pad); padding-right:var(--pad)}
-.site section{padding-block:clamp(56px,8vw,104px)}
-.site section.tight{padding-block:clamp(40px,5vw,64px)}
 
 /* ---------- type ---------- */
 /* styles.css styles bare `h2` globally — including `text-transform:uppercase`,
@@ -685,6 +683,8 @@
 .site .bt.stone{background:var(--tile-stone)}
 .site .bt.ink{background:var(--tile-ink); color:#fff}
 .site .bt.ink .tile-note,.site .bt.ink .tile-by small{color:var(--on-dark-faint)}
+/* An ink tile on an ink band is the band. It needs an edge, not a fill. */
+.site .band.dark .bt.ink{box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
 /* Every tile carries near-black at 15:1 or better — see tokens.css. */
 .site .bt .bt-fig{
   font-size:clamp(34px,4.6vw,52px); font-weight:400; letter-spacing:-.03em; line-height:1;
@@ -975,3 +975,402 @@
   .site .hdr.stuck .mark .txt{display:none}
   .site .hdr .nav-acts .btn.cta{padding:var(--sp-2) var(--sp-4); font-size:var(--tx-sm)}
 }
+
+/* =====================================================================
+   The stack — panels that open one at a time
+   =====================================================================
+   A column of panels where one is open and the rest are lips. The
+   "layered" reading comes from the closed ones sitting tight against
+   each other with a single hairline, while the open one lifts out of the
+   stack on a shadow.
+
+   THE OPEN/CLOSED TRANSITION IS grid-template-rows: 0fr -> 1fr, not
+   max-height. max-height animation needs a number picked in advance, and
+   every one of these panels is a different height — pick it too small
+   and the content is clipped, too large and the close is a long pause
+   followed by a jump. A 0fr track is exactly the content's height at
+   1fr, whatever that turns out to be.
+   ===================================================================== */
+.site .stack{display:grid; gap:var(--sp-2)}
+.site .stack .pan{
+  border-radius:var(--r-lg); background:var(--paper);
+  border:1px solid var(--hair); overflow:hidden;
+  transition:box-shadow .3s ease, border-color .3s ease;
+}
+.site .stack .pan.on{box-shadow:var(--sh-lift); border-color:var(--hair-2)}
+.site .band.dark .stack .pan{background:#141414; border-color:rgba(255,255,255,.13)}
+.site .band.dark .stack .pan.on{border-color:rgba(255,255,255,.26); box-shadow:none}
+
+.site .stack .lip{
+  display:flex; align-items:center; gap:clamp(14px,2vw,24px);
+  width:100%; padding:clamp(16px,2vw,24px) clamp(16px,2.2vw,28px);
+  background:none; border:0; text-align:left; font:inherit; color:inherit;
+  cursor:pointer; transition:background .15s ease;
+}
+.site .stack .lip:hover{background:var(--paper-3)}
+.site .stack .pan.on .lip:hover{background:none}
+.site .band.dark .stack .lip:hover{background:rgba(255,255,255,.05)}
+.site .band.dark .stack .pan.on .lip:hover{background:none}
+
+.site .stack .lip .n{
+  flex:none; width:44px; height:44px; border-radius:var(--r-sm);
+  display:grid; place-items:center; background:var(--paper-3); color:var(--ink);
+  font-family:var(--display); font-size:var(--tx-lg); line-height:1;
+  transition:background .25s ease, color .25s ease;
+}
+.site .stack .pan.on .lip .n{background:var(--lime); color:var(--ink)}
+.site .band.dark .stack .lip .n{background:rgba(255,255,255,.1); color:#fff}
+.site .band.dark .stack .pan.on .lip .n{background:var(--lime); color:var(--ink)}
+
+.site .stack .lip .t{flex:1 1 auto; min-width:0}
+.site .stack .lip .t b{
+  display:block; font-family:var(--text); font-weight:400; letter-spacing:-.02em;
+  font-size:var(--tx-2xl); line-height:1.2;
+}
+.site .stack .lip .t small{display:block; margin-top:var(--sp-1); font-size:var(--tx-base); color:var(--ink-faint)}
+.site .band.dark .stack .lip .t small{color:var(--on-dark-faint)}
+
+/* The chevron rotates rather than swapping glyph, so there is one node to
+   read and nothing for a screen reader to announce twice. */
+.site .stack .lip .chev{
+  flex:none; color:var(--ink-faint);
+  transition:transform .3s cubic-bezier(.2,.7,.3,1);
+}
+.site .stack .pan.on .lip .chev{transform:rotate(180deg); color:var(--ink)}
+.site .band.dark .stack .pan.on .lip .chev{color:#fff}
+
+.site .stack .body{display:grid; grid-template-rows:0fr; transition:grid-template-rows .36s cubic-bezier(.2,.7,.3,1)}
+.site .stack .pan.on .body{grid-template-rows:1fr}
+.site .stack .body > .in{overflow:hidden}
+.site .stack .body .pad{
+  padding:0 clamp(16px,2.2vw,28px) clamp(22px,2.6vw,32px) calc(clamp(16px,2.2vw,28px) + 44px + clamp(14px,2vw,24px));
+  display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr); gap:clamp(22px,3vw,44px);
+  align-items:start;
+}
+@media (max-width:820px){
+  .site .stack .body .pad{grid-template-columns:minmax(0,1fr); padding-left:clamp(16px,2.2vw,28px)}
+}
+.site .stack .body p{font-size:var(--tx-lg); line-height:1.78}
+.site .stack .body p + p{margin-top:var(--sp-4)}
+
+/* The outcome strip: what a panel leaves you holding. */
+.site .keep{
+  margin-top:var(--sp-5); padding:var(--sp-4) var(--sp-5);
+  border-radius:var(--r-md); background:var(--lime-wash);
+  border:1px solid rgba(24,110,24,.24);
+}
+.site .keep b{
+  display:block; font-size:var(--tx-2xs); letter-spacing:.14em; text-transform:uppercase;
+  color:var(--lime-ink); font-weight:700;
+}
+.site .keep span{display:block; margin-top:var(--sp-2); font-size:var(--tx-lg); color:var(--ink)}
+.site .band.dark .keep{background:rgba(50,205,50,.13); border-color:rgba(50,205,50,.3)}
+.site .band.dark .keep b{color:var(--lime)}
+.site .band.dark .keep span{color:#fff}
+
+@media (prefers-reduced-motion:reduce){
+  .site .stack .body,.site .stack .lip .chev,.site .stack .lip .n{transition:none}
+}
+
+/* =====================================================================
+   The deck — a strip of tabs over one stage
+   =====================================================================
+   Tabs are real tabs: roving focus, arrow keys, and one tabbable stop
+   for the whole strip, because a keyboard user wants to arrow between
+   five options rather than tab past four to reach the fifth.
+   ===================================================================== */
+.site .deck .tabs{
+  display:flex; gap:var(--sp-2); flex-wrap:wrap; justify-content:center;
+}
+.site .deck .tabs button{
+  padding:var(--sp-3) var(--sp-5); border-radius:var(--r-pill);
+  border:1px solid var(--hair-2); background:var(--paper); color:var(--ink);
+  font:inherit; font-size:var(--tx-base); font-weight:500; cursor:pointer;
+  transition:background .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.site .deck .tabs button:hover{background:var(--paper-3); color:var(--ink)}
+.site .deck .tabs button[aria-selected="true"]{
+  background:var(--ink); color:#fff; border-color:var(--ink); box-shadow:var(--sh-card);
+}
+.site .deck .tabs button[aria-selected="true"]:hover{background:var(--ink-2); color:#fff}
+
+.site .deck .stage{
+  margin-top:clamp(26px,3.4vw,44px);
+  border-radius:var(--r-xl); overflow:hidden;
+  border:1px solid var(--hair); background:var(--paper); box-shadow:var(--sh-card);
+  display:grid; grid-template-columns:minmax(0,340px) minmax(0,1fr);
+}
+@media (max-width:860px){ .site .deck .stage{grid-template-columns:minmax(0,1fr)} }
+
+/* The poster half. A group gets a colour and a number, and that is the
+   whole illustration — no stock drawing pretending to be a product. */
+.site .deck .poster{
+  padding:clamp(24px,3vw,38px); display:flex; flex-direction:column;
+  background:var(--tile-lime); color:var(--ink); min-height:260px;
+}
+.site .deck .poster.soft{background:var(--tile-lime-soft)}
+.site .deck .poster.stone{background:var(--tile-stone)}
+.site .deck .poster.ink{background:var(--tile-ink); color:#fff}
+.site .deck .poster .n{
+  font-family:var(--display); font-size:clamp(52px,7vw,84px); line-height:.9; letter-spacing:-.02em;
+}
+.site .deck .poster h3{
+  font-family:var(--text); font-weight:400; letter-spacing:-.02em;
+  font-size:var(--tx-2xl); line-height:1.2; margin-top:var(--sp-4); color:inherit;
+}
+.site .deck .poster p{margin-top:var(--sp-3); font-size:var(--tx-base); color:inherit; opacity:.78}
+.site .deck .poster .go{margin-top:auto; padding-top:var(--sp-6)}
+
+/* The list half. Rows, not cards: four to six of these read as a
+   contents page, and a contents page should not be a grid of boxes. */
+.site .deck .rows{display:grid; align-content:start}
+.site .deck .rows a{
+  display:flex; align-items:flex-start; gap:var(--sp-4); text-decoration:none;
+  padding:clamp(16px,1.9vw,22px) clamp(18px,2.4vw,30px);
+  border-bottom:1px solid var(--hair); transition:background .15s ease;
+}
+.site .deck .rows a:last-child{border-bottom:0}
+.site .deck .rows a:hover{background:var(--paper-2)}
+.site .deck .rows .fi{
+  flex:none; width:36px; height:36px; border-radius:var(--r-sm); display:grid; place-items:center;
+  background:var(--lime-wash); color:var(--lime-ink);
+}
+.site .deck .rows strong{display:block; font-size:var(--tx-lg); font-weight:600; color:var(--ink)}
+.site .deck .rows small{display:block; margin-top:3px; font-size:var(--tx-base); color:var(--ink-soft); line-height:1.6}
+.site .deck .rows .chev{flex:none; margin-top:9px; color:var(--ink-faint); transition:transform .2s ease}
+.site .deck .rows a:hover .chev{transform:translateX(3px); color:var(--lime-ink)}
+
+/* =====================================================================
+   Posters — a row of cards whose picture is the typography
+   ===================================================================== */
+.site .posters{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--sp-4)}
+@media (max-width:980px){ .site .posters{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:520px){ .site .posters{grid-template-columns:minmax(0,1fr)} }
+.site .posters .pc{
+  display:flex; flex-direction:column; text-decoration:none;
+  border-radius:var(--r-lg); overflow:hidden; background:var(--paper);
+  border:1px solid var(--hair); transition:transform .25s ease, box-shadow .25s ease;
+}
+.site .posters a.pc:hover{transform:translateY(-4px); box-shadow:var(--sh-lift)}
+.site .posters .thumb{
+  aspect-ratio:4/3; max-width:100%; padding:clamp(16px,2vw,22px);
+  display:flex; flex-direction:column; justify-content:space-between;
+  background:var(--tile-stone); color:var(--ink);
+}
+.site .posters .thumb.lime{background:var(--tile-lime)}
+.site .posters .thumb.soft{background:var(--tile-lime-soft)}
+.site .posters .thumb.ink{background:var(--tile-ink); color:#fff}
+.site .posters .thumb .big{
+  font-family:var(--display); font-size:clamp(26px,3.4vw,40px); line-height:.98;
+  letter-spacing:-.01em; overflow-wrap:break-word;
+}
+.site .posters .thumb .kick{
+  font-size:var(--tx-2xs); letter-spacing:.14em; text-transform:uppercase; font-weight:700; opacity:.7;
+}
+.site .posters .cap{padding:clamp(16px,2vw,20px); display:flex; flex-direction:column; flex:1}
+.site .posters .cap b{font-size:var(--tx-lg); font-weight:600; color:var(--ink); letter-spacing:-.01em}
+.site .posters .cap p{margin-top:var(--sp-2); font-size:var(--tx-base); line-height:1.65}
+.site .band.dark .posters .pc{background:#141414; border-color:rgba(255,255,255,.13)}
+.site .band.dark .posters .cap b{color:#fff}
+
+/* A quieter hero for the pages that are not the front door. The bloom is
+   the brand and stays, at a third of the strength. */
+.site .band.hero.quiet::before{opacity:.45}
+.site .band.hero .head{margin-top:var(--sp-6)}
+.site .ann.flat{cursor:default}
+.site .ann.flat:hover{box-shadow:var(--sh-card); transform:none}
+
+/* Actions under a hero, centred with the rest of it. */
+.site .hero-mid .acts{display:flex; gap:var(--sp-3); justify-content:center; flex-wrap:wrap; margin-top:clamp(26px,3.4vw,40px)}
+.site .head.left + .acts,.site .acts.left{justify-content:flex-start}
+
+/* A smaller display heading, for the pages that are documents rather than
+   front doors. Same face and weight, two steps down. */
+.site .display-lead.sm{font-size:var(--tx-display-md); margin-top:var(--sp-5)}
+
+/* The generic panel: a rounded, hairlined surface with the shadow every
+   other surface here uses. Everything that used to reach for `.card`
+   outside a grid wanted this. */
+.site .panel{
+  border-radius:var(--r-lg); background:var(--paper); border:1px solid var(--hair);
+  box-shadow:var(--sh-card); padding:clamp(20px,2.6vw,30px);
+}
+.site .panel.soft{background:var(--tile-lime-soft); border-color:rgba(24,110,24,.18); box-shadow:none}
+.site .panel.stone{background:var(--tile-stone); border-color:var(--hair); box-shadow:none}
+.site .panel > h3{margin-bottom:var(--sp-3)}
+.site .band.dark .panel{background:#141414; border-color:rgba(255,255,255,.13); box-shadow:none}
+
+/* =====================================================================
+   Boundary: the admin's bare-element rules stop here
+   =====================================================================
+   styles.css is the admin tool and it styles bare `main` — a gap of
+   padding, a 1500px cap and auto margins, so the admin's screens sit in a
+   column. It is not scoped, so it lands on the public shell too, and a
+   band that is supposed to run edge to edge came out inset by a gap on
+   every side inside a 1500px box. Full-bleed was a lie at every width
+   above 1500 and a 32px white margin at every width below it.
+
+   The public shell does its own gutters, in .wrap. So main here is
+   nothing: no padding, no cap, no margin.
+   ===================================================================== */
+/* The header is the one row that does NOT take the content measure. The
+   bar holds a lockup, six links and two buttons; at the 1180px content
+   wrap that is 1274px of content in a 1066px box, and the right-hand
+   button hung 20px off the side of the document. It gets the viewport. */
+.site .hdr > .wrap{max-width:1560px}
+
+/* =====================================================================
+   THE BOUNDARY
+   =====================================================================
+   styles.css is the admin tool's sheet and it styles bare elements —
+   button, input, table, a, h1-h3, main, details. It loads alongside this
+   file on every page, so each of those rules lands on the public site as
+   well, and a bare element selector has nothing for `.site` to beat.
+
+   This has now cost four separate bugs: a blue hover on 49 links a page,
+   uppercase headings, a 32px inset on every full-bleed band, and
+   uppercase text inside every button on the site. They were found one at
+   a time, by eye, weeks apart.
+
+   So this is the whole surface at once, reset in one place. The list
+   below is exactly the set of bare-element selectors styles.css declares
+   — tests/boundary.test.js reads both files and fails if that set grows
+   without a reset here.
+
+   These are DEFAULTS, not overrides: every one is a single class deep
+   (0,1,1), so any real public rule (.site .btn is 0,2,0) still wins.
+   ===================================================================== */
+.site a{color:inherit; text-decoration:none; text-underline-offset:auto}
+.site button{
+  font:inherit; font-size:inherit; text-transform:none; letter-spacing:inherit;
+  padding:0; border:0; background:none; color:inherit;
+  display:inline-block; white-space:normal;
+}
+.site button:disabled{color:inherit; border-color:currentColor; background:none}
+.site input,.site textarea,.site select{
+  font:inherit; width:auto; padding:0; border:0; background:none; color:inherit;
+  border-radius:0;
+}
+.site label{display:inline}
+.site table{border-collapse:collapse; width:auto; font-size:inherit}
+.site thead{display:table-header-group}
+.site tr{break-inside:auto}
+.site th,.site td{text-align:left; padding:0; border-bottom:0; vertical-align:baseline}
+.site thead th{
+  border-bottom:0; font-size:inherit; text-transform:none; letter-spacing:inherit;
+  white-space:normal; background:none; color:inherit; position:static;
+}
+.site table input{border:0; padding:0}
+.site details{display:block}
+
+/* main is the page, not a column: the public shell does its own gutters
+   in .wrap, and a band has to reach both edges. */
+.site main{padding:0; max-width:none; margin:0; width:auto}
+
+/* The page's vertical rhythm belongs to the BANDS — the sections that are
+   direct children of main. It used to be every `section` anywhere, which
+   put 104px of padding inside each panel of an accordion whose panels are
+   sections, and would do the same to the next component that reached for
+   the right element. */
+.site main > section{padding-block:clamp(56px,8vw,104px)}
+.site main > section.tight{padding-block:clamp(40px,5vw,64px)}
+.site .stack .pan,.site .deck .stage{padding-block:0}
+
+/* The sub-line sits inside the lip's <h3>, so it inherits the admin's
+   700 unless told otherwise. */
+.site .stack .lip .t small{font-weight:400}
+/* Phases hold two features or four. Centred, a short list reads as a
+   short list; top-aligned it reads as a panel that failed to load. */
+.site .deck .rows{align-content:center}
+
+/* A footer strip inside a panel: the practical facts under the claims. */
+.site .panel-foot{
+  margin-top:var(--sp-6); padding-top:var(--sp-5); border-top:1px solid var(--hair);
+  display:flex; gap:clamp(16px,3vw,36px); flex-wrap:wrap;
+}
+.site .panel-foot span{display:flex; align-items:center; gap:var(--sp-2); font-size:var(--tx-base); color:var(--ink-soft)}
+.site .panel-foot svg{flex:none; color:var(--ink-faint)}
+
+/* A small uppercase label above a tile's heading. */
+.site .bt .kick{
+  font-size:var(--tx-2xs); letter-spacing:.14em; text-transform:uppercase;
+  font-weight:700; color:var(--lime-ink);
+}
+.site .band.dark .bt .kick{color:var(--lime-ink)}
+
+/* A contact detail is the point of the tile it sits in, so it is set at
+   the size of a heading rather than of body copy. */
+.site .bt .bigline{margin-top:var(--sp-4); display:grid; gap:var(--sp-2)}
+.site .bt .bigline a,.site .bt .bigline span{
+  display:flex; align-items:center; gap:var(--sp-3);
+  font-size:var(--tx-xl); font-weight:600; color:var(--ink); text-decoration:none;
+  letter-spacing:-.01em; min-width:0;
+}
+.site .bt .bigline a{border-bottom:1px solid transparent; width:fit-content; max-width:100%}
+.site .bt .bigline a:hover{border-bottom-color:currentColor}
+.site .bt .bigline svg{flex:none; opacity:.6}
+
+/* A certificate ID is a code, and a code is read character by character —
+   monospace so a 0 cannot be mistaken for an O while it is being typed,
+   and uppercase because that is how it is printed. */
+.site .capture.mono input{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  text-transform:uppercase; letter-spacing:.02em;
+}
+.site .capture.mono input::placeholder{text-transform:none; letter-spacing:normal}
+.site .capture .btn:disabled{opacity:.5; cursor:not-allowed; transform:none; box-shadow:none}
+
+/* .kick outside a tile: the same small label, in the page's own colours. */
+.site .kick{
+  display:block; font-size:var(--tx-2xs); letter-spacing:.14em; text-transform:uppercase;
+  font-weight:700; color:var(--ink-faint);
+}
+
+/* =====================================================================
+   A surface with its own ground stops the band's text colours
+   =====================================================================
+   `.band.dark p` and `.band.dark h2` are descendant selectors: they paint
+   everything inside the band, including the insides of a tile whose own
+   background is white. That put an 18px heading at #FFFFFF on #FFFFFF —
+   a 1:1 heading, invisible, on two pages — and body copy at 1.69:1.
+
+   So every surface that declares a background declares the text colours
+   that go with it, and the ones that are dark say so separately.
+   ===================================================================== */
+.site .band.dark .bt,
+.site .band.dark .panel,
+.site .band.dark .posters .pc{color:var(--ink)}
+.site .band.dark .bt h1,.site .band.dark .bt h2,
+.site .band.dark .bt h3,.site .band.dark .bt h4,
+.site .band.dark .panel h1,.site .band.dark .panel h2,
+.site .band.dark .panel h3,.site .band.dark .panel h4{color:var(--ink)}
+.site .band.dark .bt p,.site .band.dark .panel p{color:var(--ink-soft)}
+.site .band.dark .bt li,.site .band.dark .panel li{color:var(--ink-soft)}
+
+/* …and the tiles that ARE dark take the dark treatment back. */
+.site .band.dark .bt.ink,
+.site .bt.ink{color:#fff}
+.site .bt.ink h1,.site .bt.ink h2,.site .bt.ink h3,.site .bt.ink h4{color:#fff}
+.site .bt.ink p,.site .bt.ink li{color:var(--on-dark-soft)}
+.site .bt.ink .kick{color:var(--lime)}
+.site .band.dark .bt .kick{color:var(--lime-ink)}
+
+/* A poster thumb sets its own ground and its own ink; the generic .kick
+   colour must not follow it in. */
+.site .posters .thumb .kick{color:inherit}
+
+/* A disabled public button.
+   This has to be stated, and stated at three classes deep. The boundary
+   reset for the admin's `button:disabled` is `.site button:disabled` —
+   one class, one element, one pseudo-class, which is (0,2,1) and
+   OUTRANKS `.site .btn` at (0,2,0). So the reset meant to protect the
+   public site from the admin was quietly stripping the fill off every
+   disabled button on it: the registration form's submit button, which is
+   disabled until the form is valid, rendered as bare text. */
+.site .btn:disabled,.site .btn[aria-disabled="true"]{
+  background:var(--paper-3); color:var(--ink-faint);
+  box-shadow:inset 0 0 0 1px var(--hair-2);
+  cursor:not-allowed; transform:none;
+}
+.site .btn:disabled:hover{background:var(--paper-3); color:var(--ink-faint); transform:none}
+.site .band.dark .btn:disabled{background:rgba(255,255,255,.1); color:var(--on-dark-faint); box-shadow:none}
