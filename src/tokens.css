@@ -60,6 +60,21 @@
   /* ---- shape -------------------------------------------------------
      Corners, and the two shadows. A page with eleven radii looks like
      eleven people made it. */
+  /* ── TYPEFACES ────────────────────────────────────────────────────────
+     At :root, not under .site. They are the identity, and the admin is
+     part of the same product — it could not reach them while they were
+     scoped to the public shell. The printed certificate keeps its own
+     inside .cert-scope, because it is a different document with a
+     different history. */
+  --display: 'Anton', Impact, 'Arial Narrow', sans-serif;
+  --text: 'Poppins', 'Segoe UI', Helvetica, Arial, sans-serif;
+
+  /* The one border here that is measured rather than chosen: 6.19:1 on
+     paper. A field's edge has to be VISIBLE as the boundary of something
+     you type into — the decorative hairline that reads correctly around a
+     table cell disappears around an empty box. Both sheets need it. */
+  --control-line: #616161;
+
   --r-sm: 10px;
   --r-md: 14px;
   --r-lg: 20px;

@@ -67,16 +67,13 @@
   /* lines */
   --hair:rgba(10,10,10,.10); --hair-2:rgba(10,10,10,.16);
   /* --hair-2 is a decorative rule, invisible as the edge of something you
-     are meant to type into. Controls get their own, at 6.19:1. */
-  --control-line:#616161;
+     are meant to type into. Controls get their own, at 6.19:1 — declared
+     at :root in tokens.css, because the admin's fields need it too. */
   --shadow-1:0 1px 2px rgba(10,10,10,.05), 0 8px 24px rgba(10,10,10,.07);
   --shadow-2:0 2px 6px rgba(10,10,10,.08), 0 18px 44px rgba(10,10,10,.13);
   /* rhythm */
   --wrap:1180px; --pad:clamp(20px,5vw,56px); --gap:clamp(20px,3vw,32px);
   --radius:16px; --radius-lg:24px;
-
-  --display:'Anton',Impact,'Arial Narrow',sans-serif;
-  --text:'Poppins','Segoe UI',Helvetica,Arial,sans-serif;
 
   background:var(--paper); color:var(--ink);
   font-family:var(--text); font-weight:400; line-height:1.65;
@@ -95,7 +92,8 @@
    ring to paper; the lime band keeps ink, which is 9.35:1 on it. */
 .site .band-dark :focus-visible,
 .site .ftr :focus-visible{outline-color:#FFFFFF}
-.site .cta-band :focus-visible{outline-color:var(--ink)}
+.site .cta-band :focus-visible,
+.site .cta-panel :focus-visible{outline-color:var(--ink)}
 
 /* ---------- skip link ---------- */
 .site .skip{
@@ -188,13 +186,23 @@
      So the primary button is lime with near-black on it, which is also
      exactly how the mark is drawn. */
   background:var(--lime); color:var(--ink);
+  /* AND AN EDGE. Ink on lime is 9.35:1, so the LABEL was never the problem
+     — but lime on paper is 2.12:1, which means the pill's own shape was
+     not distinguishable from the page it sits on. 1.4.11 asks 3:1 of a
+     control's boundary, and the fill could not carry it. --lime-ink can:
+     it is the same hue taken down until it is readable. Inset, so adding
+     it moves nothing. */
+  box-shadow:inset 0 0 0 1px var(--lime-ink);
   transition:transform .16s cubic-bezier(.2,.7,.3,1), box-shadow .16s ease, background .16s ease;
 }
-.site .btn:hover{background:var(--lime-deep); color:var(--ink); transform:translateY(-2px); box-shadow:0 10px 26px rgba(40,168,40,.34)}
+.site .btn:hover{
+  background:var(--lime-deep); color:var(--ink); transform:translateY(-2px);
+  box-shadow:inset 0 0 0 1px var(--lime-ink), 0 10px 26px rgba(40,168,40,.34);
+}
 .site .btn:active{transform:translateY(0)}
 .site .btn.ghost{background:transparent; color:var(--ink); box-shadow:inset 0 0 0 1.6px var(--hair-2)}
 .site .btn.ghost:hover{background:var(--ink); color:#fff; box-shadow:none}
-.site .btn.light{background:#fff; color:var(--ink)}
+.site .btn.light{background:#fff; color:var(--ink); box-shadow:inset 0 0 0 1px var(--control-line)}
 .site .btn.light:hover{background:#fff; color:var(--lime-ink)}
 /* A ghost button takes its colour from the panel it sits on, and the two dark
    panels are opposites: near-black wants a paper outline, lime wants an ink
@@ -203,13 +211,20 @@
    changed. */
 .site .band-dark .btn.ghost{color:#fff; box-shadow:inset 0 0 0 1.6px rgba(255,255,255,.34)}
 .site .band-dark .btn.ghost:hover{background:#fff; color:var(--ink); box-shadow:none}
-.site .cta-band .btn.ghost{color:var(--ink); box-shadow:inset 0 0 0 1.6px rgba(10,10,10,.34)}
-.site .cta-band .btn.ghost:hover{background:var(--ink); color:#fff; box-shadow:none}
+.site .cta-band .btn.ghost,
+.site .cta-panel .btn.ghost{color:var(--ink); box-shadow:inset 0 0 0 1.6px rgba(10,10,10,.34)}
+.site .cta-band .btn.ghost:hover,
+.site .cta-panel .btn.ghost:hover{background:var(--ink); color:#fff; box-shadow:none}
 /* A white pill on lime has a 2.12:1 edge — legible text inside a shape whose
    boundary you cannot see. On lime everything is ink: the primary filled, the
    secondary outlined. */
-.site .cta-band .btn.light{background:var(--ink); color:#fff}
-.site .cta-band .btn.light:hover{background:#fff; color:var(--ink)}
+/* The rename from .cta-band to .cta-panel orphaned this, and white-on-lime
+   at 2.12:1 came straight back on the pages that use the new panel. Both
+   names carry it now. */
+.site .cta-band .btn.light,
+.site .cta-panel .btn.light{background:var(--ink); color:#fff; box-shadow:none}
+.site .cta-band .btn.light:hover,
+.site .cta-panel .btn.light:hover{background:#fff; color:var(--ink); box-shadow:inset 0 0 0 1px var(--ink)}
 .site .btn.sm{padding:10px 20px; font-size:14px}
 .site .btn svg{flex:none}
 /* A pill that will not break its label is 286px wide on a 320px screen, and
@@ -992,12 +1007,19 @@
    1fr, whatever that turns out to be.
    ===================================================================== */
 .site .stack{display:grid; gap:var(--sp-2)}
+/* The lip fills the panel, so the PANEL's edge is the control's edge and
+   1.4.11 wants to see it. A 1.35:1 hairline is not an edge; this is the
+   measured line, softened only by the shadow sitting under it. */
 .site .stack .pan{
   border-radius:var(--r-lg); background:var(--paper);
-  border:1px solid var(--hair); overflow:hidden;
+  border:1px solid var(--control-line); overflow:hidden;
+  box-shadow:var(--sh-card);
   transition:box-shadow .3s ease, border-color .3s ease;
 }
-.site .stack .pan.on{box-shadow:var(--sh-lift); border-color:var(--hair-2)}
+/* Open, it lifts. It does NOT soften its edge: this rule set the border
+   back to a 1.35:1 decorative hairline, which put the open panel — the one
+   being read — below the floor the closed ones clear. */
+.site .stack .pan.on{box-shadow:var(--sh-lift)}
 .site .band.dark .stack .pan{background:#141414; border-color:rgba(255,255,255,.13)}
 .site .band.dark .stack .pan.on{border-color:rgba(255,255,255,.26); box-shadow:none}
 
@@ -1084,7 +1106,10 @@
 }
 .site .deck .tabs button{
   padding:var(--sp-3) var(--sp-5); border-radius:var(--r-pill);
-  border:1px solid var(--hair-2); background:var(--paper); color:var(--ink);
+  /* A tab is a control, and an unselected one is bounded by its border
+     alone. --hair-2 is a decorative rule at 1.35:1 on paper; this is the
+     measured one. */
+  border:1px solid var(--control-line); background:var(--paper); color:var(--ink);
   font:inherit; font-size:var(--tx-base); font-weight:500; cursor:pointer;
   transition:background .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease;
 }

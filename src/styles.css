@@ -62,7 +62,9 @@
   --hair: 1px solid var(--line);
   --hairline: 1px solid var(--faint);
   --gap: 20px;
-  --font: 'Helvetica Neue', Helvetica, Arial, system-ui, sans-serif;
+  /* The admin used Helvetica while the site used Poppins, which made two
+     products out of one. --text is declared at :root in tokens.css. */
+  --font: var(--text);
   --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 }
 
@@ -91,10 +93,14 @@ body {
 a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
 a:hover { background: var(--blue); color: var(--ink); text-decoration: none; }
 
-h1, h2, h3 { font-weight: 700; letter-spacing: -0.01em; margin: 0; }
-h1 { font-size: 20px; }
-h2 { font-size: 16px; text-transform: uppercase; letter-spacing: 0.08em; }
-h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; }
+/* The page's own title takes the voice the site uses — large, regular
+   weight, tight tracking. h3 does NOT: over a table it is a LABEL, and a
+   small uppercase label is the densest way to name a column of data. The
+   two jobs are different, so they look different. */
+h1, h2, h3 { margin: 0; }
+h1 { font-size: 26px; font-weight: 400; letter-spacing: -0.02em; line-height: 1.15; }
+h2 { font-size: 18px; font-weight: 500; letter-spacing: -0.01em; line-height: 1.25; }
+h3 { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
 
 /* ---------------- layout ---------------- */
 
@@ -156,7 +162,7 @@ h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; }
 body.side-resizing { user-select: none; cursor: col-resize; }
 
 .side-brand {
-  display: block; padding: 0 16px 14px; text-decoration: none;
+  display: block; padding: 0 16px 16px; text-decoration: none;
   font-weight: 700; font-size: 15px; letter-spacing: -0.01em;
 }
 .side-brand:hover { background: none; }
@@ -168,17 +174,21 @@ body.side-resizing { user-select: none; cursor: col-resize; }
 .side-nav { list-style: none; margin: 0; padding: 0 10px; display: grid; gap: 2px; }
 .side-link {
   display: flex; align-items: center; gap: 8px;
-  padding: 8px 10px; text-decoration: none; font-size: 13px; font-weight: 600;
-  border: 1px solid transparent;
+  padding: 9px 12px; text-decoration: none; font-size: 13.5px; font-weight: 500;
+  border: 1px solid transparent; border-radius: var(--r-md);
+  transition: background .15s ease;
 }
-.side-link:hover { background: var(--blue); color: var(--ink); }
-.side-link[aria-current='page'] { background: var(--blue); color: var(--ink); border-color: var(--line); }
+.side-link:hover { background: rgba(10,10,10,.06); color: var(--ink); }
+/* Blue is still where you are. It is a filled pill now rather than a
+   bordered rectangle, which is the same statement in the new shapes. */
+.side-link[aria-current='page'] { background: var(--blue); color: var(--ink); font-weight: 600; }
 .side-link span { flex: 1; }
 
 .side-badge {
-  flex: none; min-width: 20px; padding: 1px 6px; text-align: center;
+  flex: none; min-width: 21px; padding: 1px 7px; text-align: center;
   background: var(--tangerine); color: var(--ink); font-size: 11px; font-weight: 700;
-  border: var(--hair); font-variant-numeric: tabular-nums;
+  border: 1px solid rgba(10,10,10,.2); border-radius: var(--r-pill);
+  font-variant-numeric: tabular-nums;
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 
@@ -218,12 +228,13 @@ body.side-resizing { user-select: none; cursor: col-resize; }
 }
 
 .navlink {
-  padding: 5px 10px;
-  border: var(--hair);
+  padding: 8px 13px;
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
   text-decoration: none;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background .15s ease, color .15s ease;
 }
 /* Blue is where you are and where you are going. */
 .navlink:hover { background: var(--blue); color: var(--ink); }
@@ -257,21 +268,27 @@ main { flex: 1; padding: var(--gap); max-width: 1500px; width: 100%; margin: 0 a
 
 button, .btn {
   font: inherit;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 7px 13px;
-  border: var(--hair);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  padding: 8px 16px;
+  /* A control's edge is the thing that says a control is there, so it is
+     the measured token and not a decorative hairline: 1.4.11 asks 3:1 and
+     rgba(10,10,10,.16) is 1.35:1 on paper. Container borders below stay
+     soft — a panel's edge is not a UI component. */
+  border: 1px solid var(--control-line);
+  border-radius: var(--r-pill);
   background: var(--paper);
   color: var(--ink);
   cursor: pointer;
   text-decoration: none;
-  display: inline-block;
+  display: inline-flex; align-items: center; gap: 7px;
   white-space: nowrap;
+  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
 /* An ordinary button turns blue under the pointer — the same blue that marks
    where you are elsewhere. Black stays on top throughout. */
-button:hover:not(:disabled), .btn:hover { background: var(--blue); color: var(--ink); }
+button:hover:not(:disabled), .btn:hover { background: var(--blue); color: var(--ink); border-color: var(--blue); }
 button:disabled { color: var(--muted); border-color: var(--faint); background: var(--paper); cursor: not-allowed; }
 /* `button.primary` is (0,2,0) and `button:disabled` is (0,1,1), so without
    this a disabled primary or danger button keeps its full colour and still
@@ -298,11 +315,14 @@ button.small { padding: 3px 8px; font-size: 11px; }
 input, textarea, select {
   font: inherit;
   width: 100%;
-  padding: 7px 9px;
-  border: var(--hair);
+  padding: 9px 12px;
+  /* --control-line, not --line. A field's edge has to be visible as the
+     boundary of something you type INTO, and it is the one border here
+     that is measured rather than chosen: 6.19:1 on paper. */
+  border: 1px solid var(--control-line);
   background: var(--paper);
   color: var(--ink);
-  border-radius: 0;
+  border-radius: var(--r-sm);
 }
 textarea { resize: vertical; line-height: 1.55; }
 input:focus, textarea:focus, select:focus,
@@ -340,10 +360,12 @@ label { display: block; }
 .pick-list { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 6px; }
 .pick-row {
   display: flex; align-items: center; gap: 8px;
-  border: var(--hair); padding: 6px 8px; background: var(--paper);
+  border: 1px solid rgba(10,10,10,.12); border-radius: var(--r-md);
+  padding: 7px 10px; background: var(--paper);
 }
 .pick-n {
   flex: none; width: 20px; height: 20px; display: grid; place-items: center;
+  border-radius: var(--r-pill);
   background: var(--lime); color: var(--ink); font-size: 11px; font-weight: 700;
   font-family: var(--mono);
 }
@@ -364,7 +386,14 @@ label { display: block; }
 
 /* ---------------- tables ---------------- */
 
-.table-wrap { overflow-x: auto; border: var(--hair); }
+/* The scroll container is the table's surface — `overflow: hidden` is not
+   an option here (it would kill the horizontal scroll this exists for), so
+   the radius clips the corners on its own. */
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgba(10,10,10,.10); border-radius: var(--r-lg);
+  background: var(--paper);
+}
 table { border-collapse: collapse; width: 100%; font-size: 13px; }
 th, td { text-align: left; padding: 7px 10px; border-bottom: var(--hairline); vertical-align: top; }
 /* Tangerine is the label over data. Black on it is 13.09:1 — the strongest
@@ -390,24 +419,43 @@ table input:focus { outline: 3px solid var(--blue); outline-offset: -2px; }
 
 /* ---------------- blocks ---------------- */
 
-.panel { border: var(--hair); padding: 16px; margin-bottom: 18px; }
+/* A surface, not a drawn rectangle. The hard 1px black border was the
+   admin's whole vocabulary for "this is a thing"; a radius, a hairline
+   and a shadow say the same and stop the screen reading as a wireframe. */
+.panel {
+  border: 1px solid rgba(10,10,10,.10);
+  border-radius: var(--r-lg);
+  background: var(--paper);
+  box-shadow: var(--sh-card);
+  padding: 20px;
+  margin-bottom: 18px;
+}
 .panel > h2, .panel > h3 { margin-bottom: 12px; }
 
 /* Blue says "read this", red says "something is wrong". The left edge is the
    fill, so the bright colours are used rather than the darkened ones. */
 .notice {
-  border: var(--hair); border-left: 5px solid var(--blue); padding: 10px 13px;
-  margin-bottom: 14px; font-size: 13px;
+  border: 1px solid rgba(10,10,10,.10); border-left: 5px solid var(--blue);
+  border-radius: var(--r-md); padding: 12px 15px;
+  margin-bottom: 14px; font-size: 13px; background: var(--paper);
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
-.notice.warn { border-left-color: var(--red); border-left-style: dashed; }
+/* Dashed as well as red, so colour is not the only signal. The dash moved
+   to the outline: a 5px dashed border on a rounded corner spends most of
+   its run inside the curve and paints as three stray marks. The rail stays
+   solid and the dash goes round the whole card, where it reads. */
+.notice.warn { border: 1px dashed var(--red); border-left: 5px solid var(--red); }
 .notice ul { margin: 6px 0 0; padding-left: 18px; }
 .notice li { margin: 2px 0; }
 
-.empty { border: 1px dashed var(--line); padding: 40px 20px; text-align: center; color: var(--muted); }
+.empty {
+  border: 1px dashed rgba(10,10,10,.24); border-radius: var(--r-lg);
+  padding: 44px 20px; text-align: center; color: var(--muted);
+}
 
 .tag {
-  display: inline-block; border: var(--hair); padding: 1px 7px;
+  display: inline-block; border: 1px solid rgba(10,10,10,.16); border-radius: var(--r-pill);
+  padding: 2px 9px;
   font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; margin-right: 4px;
 }
 .tag.solid { background: var(--tangerine); color: var(--ink); font-weight: 700; }
@@ -426,7 +474,12 @@ table input:focus { outline: 3px solid var(--blue); outline-offset: -2px; }
 .toolbar .spacer { flex: 1; }
 
 /* login */
-.login-wrap { max-width: 340px; margin: 12vh auto; }
+/* The one screen with nothing else on it, so it gets the surface. */
+.login-wrap {
+  max-width: 380px; margin: 10vh auto;
+  border: 1px solid rgba(10,10,10,.10); border-radius: var(--r-xl);
+  background: var(--paper); box-shadow: var(--sh-lift); padding: 32px 30px 28px;
+}
 .login-wrap .brand-block { text-align: center; margin-bottom: 26px; }
 .login-wrap .brand-block .org {
   font-size: 10px; text-transform: uppercase; letter-spacing: 0.14em;
@@ -435,12 +488,16 @@ table input:focus { outline: 3px solid var(--blue); outline-offset: -2px; }
 /* The login divider carries the full mark — it is the first thing anyone
    signing in sees, and the only colour on that screen. */
 .rule {
-  height: 3px; background-image: var(--flag); margin: 18px 0;
+  height: 4px; border-radius: 2px; background-image: var(--flag); margin: 20px 0;
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 
 /* import preview */
-.record-card { border: var(--hair); margin-bottom: 16px; }
+.record-card {
+  border: 1px solid rgba(10,10,10,.10); border-radius: var(--r-lg);
+  overflow: hidden; background: var(--paper); box-shadow: var(--sh-card);
+  margin-bottom: 16px;
+}
 .record-card > header {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   padding: 9px 13px; border-bottom: var(--hair); background: var(--tangerine); color: var(--ink);
@@ -457,12 +514,16 @@ table input:focus { outline: 3px solid var(--blue); outline-offset: -2px; }
 
 /* ---------------- stats strip ---------------- */
 
-.stats { display: flex; gap: 0; border: var(--hair); margin-bottom: 18px; flex-wrap: wrap; }
+.stats {
+  display: flex; gap: 0; flex-wrap: wrap; margin-bottom: 18px;
+  border: 1px solid rgba(10,10,10,.10); border-radius: var(--r-lg);
+  overflow: hidden; background: var(--paper); box-shadow: var(--sh-card);
+}
 /* Each figure gets its own colour, in palette order, so the strip reads as
    four things rather than one long row. A bar above the number, not behind
    it — the number stays black on white where it is easiest to read. */
 .stat {
-  flex: 1 1 120px; padding: 12px 16px; border-right: var(--hairline);
+  flex: 1 1 120px; padding: 14px 18px; border-right: var(--hairline);
   display: flex; flex-direction: column; gap: 2px;
   border-top: 5px solid var(--lime);
 }
@@ -482,8 +543,8 @@ table input:focus { outline: 3px solid var(--blue); outline-offset: -2px; }
    cannot be. Black on all four clears 4.5:1 — see the Colour section. */
 select.status {
   width: auto; min-width: 104px; font-size: 11px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.06em; padding: 4px 8px;
-  border: var(--hair); cursor: pointer;
+  text-transform: uppercase; letter-spacing: 0.06em; padding: 5px 10px;
+  border: 1px solid var(--control-line); border-radius: var(--r-pill); cursor: pointer;
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 select.status[data-status='Paid']     { background: var(--lime); }
@@ -506,7 +567,8 @@ select.status[data-mode='unset']    { background: var(--tangerine); }
 .seats { display: flex; align-items: center; gap: 9px; }
 .seat-bar {
   flex: 1; min-width: 70px; max-width: 220px; height: 8px;
-  background: var(--faint); border: var(--hair); overflow: hidden;
+  background: var(--faint); border: 1px solid rgba(10,10,10,.16);
+  border-radius: var(--r-pill); overflow: hidden;
 }
 .seat-bar span {
   display: block; height: 100%; background: var(--lime);
@@ -520,7 +582,11 @@ select.status[data-mode='unset']    { background: var(--tangerine); }
 /* ---------------- the console ---------------- */
 
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 18px; }
-.tile { border: var(--hair); padding: 14px 16px; border-top: 6px solid var(--lime); }
+.tile {
+  border: 1px solid rgba(10,10,10,.10); border-top: 6px solid var(--lime);
+  border-radius: var(--r-lg); background: var(--paper); box-shadow: var(--sh-card);
+  padding: 16px 18px;
+}
 .tile[data-tone='tangerine'] { border-top-color: var(--tangerine); }
 .tile[data-tone='red']       { border-top-color: var(--red); }
 .tile[data-tone='blue']      { border-top-color: var(--blue); }
@@ -530,14 +596,19 @@ select.status[data-mode='unset']    { background: var(--tangerine); }
 
 /* One card per workshop that needs something, with why. */
 .todo { display: grid; gap: 10px; }
-.todo-row { border: var(--hair); border-left: 6px solid var(--tangerine); padding: 12px 14px; }
+.todo-row {
+  border: 1px solid rgba(10,10,10,.10); border-left: 6px solid var(--tangerine);
+  border-radius: var(--r-md); background: var(--paper); box-shadow: var(--sh-card);
+  padding: 13px 16px;
+}
 .todo-row[data-tone='lime']      { border-left-color: var(--lime); }
 .todo-row[data-tone='tangerine'] { border-left-color: var(--tangerine); }
 .todo-row[data-tone='red']       { border-left-color: var(--red); }
 .todo-row[data-tone='blue']      { border-left-color: var(--blue); }
 .todo-row .why { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .why .r {
-  font-size: 11px; padding: 2px 8px; border: var(--hair);
+  font-size: 11px; padding: 3px 10px; border: 1px solid rgba(10,10,10,.16);
+  border-radius: var(--r-pill);
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 .why .r[data-tone='lime']      { background: var(--lime); }
@@ -550,7 +621,13 @@ select.status[data-mode='unset']    { background: var(--tangerine); }
 /* One workshop per group, with a coloured rail down the left. The rail is
    the whole point: a column of colour that can be scanned without reading. */
 .board { display: grid; gap: 12px; }
-.grp { border: var(--hair); border-left: 6px solid var(--lime); background: var(--paper); }
+/* The rail is the point, and a radius does not cost it: the left border is
+   still 6px of colour, now on a surface rather than on a drawn box. */
+.grp {
+  border: 1px solid rgba(10,10,10,.10); border-left: 6px solid var(--lime);
+  border-radius: var(--r-lg); overflow: hidden;
+  background: var(--paper); box-shadow: var(--sh-card);
+}
 .grp[data-tone='tangerine'] { border-left-color: var(--tangerine); }
 .grp[data-tone='red']       { border-left-color: var(--red); }
 .grp[data-tone='blue']      { border-left-color: var(--blue); }
@@ -558,7 +635,7 @@ select.status[data-mode='unset']    { background: var(--tangerine); }
 .grp[data-tone='quiet']     { border-left-color: var(--faint); }
 .grp[data-finished] .grp-name > a { color: var(--muted); }
 
-.grp-head { display: flex; align-items: center; gap: 12px; padding: 10px 14px; flex-wrap: wrap; }
+.grp-head { display: flex; align-items: center; gap: 12px; padding: 13px 16px; flex-wrap: wrap; }
 .grp-head .spacer { flex: 1; }
 .grp-toggle {
   border: 0; background: none; padding: 0; width: 20px; flex: none;
@@ -572,7 +649,10 @@ select.status[data-mode='unset']    { background: var(--tangerine); }
 /* Bringing a previous course's students across. Bordered rather than plain,
    because it appears inside the registrations panel and needs to read as a
    thing being set up, not as part of the list underneath it. */
-.carry { border: var(--hair); padding: 12px 14px; }
+.carry {
+  border: 1px solid rgba(10,10,10,.10); border-radius: var(--r-md);
+  background: var(--paper); padding: 14px 16px;
+}
 /* The course list is long — a title plus a count plus a date — and a select
    sized to its widest option pushed the button clean off the panel. It takes
    the space that is left instead, and the row wraps before anything is lost. */
@@ -630,9 +710,10 @@ select.status[data-mode='unset']    { background: var(--tangerine); }
 .finder-box input::-webkit-search-cancel-button { -webkit-appearance: none; }
 
 .finder-drop {
-  position: absolute; z-index: 40; left: 0; right: 0; top: calc(100% + 4px);
-  background: var(--paper); border: var(--hair);
-  box-shadow: 0 10px 30px rgba(10, 10, 10, 0.18);
+  position: absolute; z-index: 40; left: 0; right: 0; top: calc(100% + 6px);
+  background: var(--paper);
+  border: 1px solid rgba(10,10,10,.12); border-radius: var(--r-lg);
+  box-shadow: var(--sh-float);
   max-height: min(60vh, 460px); overflow-y: auto;
 }
 
@@ -690,10 +771,14 @@ select.status[data-mode='unset']    { background: var(--tangerine); }
 
 /* A course whose last day has passed. Blue rather than a status colour: it
    is a fact about the calendar, not something that needs doing. */
+/* Margin on BOTH sides. What follows a badge is often a bare text node —
+   the workshop head renders `<span class="badge">Class open</span>` and
+   then the date range with no space between them — so a badge with only a
+   left margin ends up touching the next word. */
 .badge {
-  display: inline-block; margin-left: 8px; padding: 1px 7px;
+  display: inline-block; margin-inline: 8px; padding: 2px 9px;
   font-size: 9.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
-  border: var(--hair); vertical-align: middle;
+  border: 1px solid rgba(10,10,10,.22); border-radius: var(--r-pill); vertical-align: middle;
   /* Its own colour, not the one it inherits. Inside a `.count` it was picking
      up the muted grey and landing at 1.77:1 on the blue fill — the palette's
      rule is black on top of every colour, and inheriting broke it. */
@@ -707,7 +792,9 @@ select.status[data-mode='unset']    { background: var(--tangerine); }
    action that moves work forward — which made "a class is running" look like
    "press this". It is still a link, because the only sensible response to
    seeing it is to go there. */
-.badge.on-air { background: var(--violet); color: var(--on-violet); }
+/* Violet is dark, so the hairline that reads on a light fill disappears
+   on it — it gets its own. */
+.badge.on-air { background: var(--violet); color: var(--on-violet); border-color: var(--violet); }
 .badge.off-air { background: var(--faint); }
 a.badge { text-decoration: none; }
 a.badge:hover {
@@ -728,7 +815,8 @@ a.badge:hover {
 
 /* The same colour language as the editable pill, without the control. */
 .pill {
-  display: inline-block; padding: 2px 8px; border: var(--hair);
+  display: inline-block; padding: 3px 10px;
+  border: 1px solid rgba(10,10,10,.22); border-radius: var(--r-pill);
   font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em;
   background: var(--tangerine);
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
@@ -752,7 +840,9 @@ a.badge:hover {
   padding: 24px 16px; overflow: auto;
 }
 .ov-panel {
-  background: var(--paper); border: var(--hair); width: 100%; max-width: 720px;
+  background: var(--paper);
+  border: 1px solid rgba(10,10,10,.12); border-radius: var(--r-xl);
+  width: 100%; max-width: 720px;
   margin: auto; box-shadow: 0 18px 50px rgba(0, 0, 0, .3);
 }
 .ov-panel.wide { max-width: 900px; }
@@ -804,8 +894,9 @@ a.badge:hover {
 .reg-who b { display: block; font-weight: 700; overflow-wrap: anywhere; }
 .reg-who small { display: block; font-size: 11px; color: var(--muted); font-weight: 400; margin-top: 1px; }
 .reg-mark {
-  flex: none; min-width: 78px; text-align: center; padding: 4px 10px;
-  border: var(--hair); font-size: 11px; font-weight: 700;
+  flex: none; min-width: 80px; text-align: center; padding: 4px 12px;
+  border: 1px solid rgba(10,10,10,.22); border-radius: var(--r-pill);
+  font-size: 11px; font-weight: 700;
   text-transform: uppercase; letter-spacing: 0.06em;
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
@@ -819,9 +910,15 @@ a.badge:hover {
 /* Faces, for checking somebody against their card at the door. Wide enough
    that a photograph is a photograph rather than a thumbnail. */
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
-.card-p { border: var(--hair); display: flex; gap: 12px; padding: 12px; align-items: flex-start; }
+.card-p {
+  border: 1px solid rgba(10,10,10,.10); border-radius: var(--r-lg);
+  background: var(--paper); box-shadow: var(--sh-card);
+  display: flex; gap: 12px; padding: 14px; align-items: flex-start;
+}
 .card-photo {
-  flex: none; width: 74px; height: 92px; border: var(--hair); background: var(--paper);
+  flex: none; width: 74px; height: 92px;
+  border: 1px solid rgba(10,10,10,.16); border-radius: var(--r-sm);
+  background: var(--paper);
   display: grid; place-items: center; overflow: hidden;
 }
 .card-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -839,7 +936,8 @@ a.badge:hover {
 
 .actions { display: flex; gap: 4px; flex-wrap: wrap; }
 .chip {
-  display: inline-block; border: var(--hair); padding: 2px 7px;
+  display: inline-block; border: 1px solid var(--control-line); border-radius: var(--r-pill);
+  padding: 3px 10px;
   font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em;
   text-decoration: none; white-space: nowrap;
 }
@@ -928,3 +1026,36 @@ button.chip { font: inherit; font-size: 10px; }
 .print-head .org { font-size: 10pt; letter-spacing: 0.06em; text-transform: uppercase; }
 .print-head .org.assoc { font-size: 8.5pt; color: var(--muted); margin-top: 1mm; }
 .print-head .rule { margin: 8px 0; }
+
+/* ---------------- density, where density is the point ----------------
+
+   The new shapes are for a PAGE's controls. A register is forty rows of
+   the same controls, and the padding that reads as generous once reads as
+   waste forty times: widening the chips pushed CALL and WHATSAPP onto
+   separate lines and the phone number onto a third, and the row went from
+   one line to five.
+
+   So inside a table the controls keep their radius and lose the padding.
+   The shape is the new language; the size is the old one. */
+td button, td .btn, td .chip, th button, th .btn {
+  padding: 3px 9px;
+  font-size: 11px;
+  gap: 5px;
+}
+td select.status { padding: 2px 8px; font-size: 10.5px; min-width: 92px; }
+td .actions { gap: 3px; }
+/* A phone number is one token and must not be broken across lines to save
+   a few pixels of column. */
+td .tel, td a[href^="tel:"] { white-space: nowrap; }
+
+/* `.count` is monospace because a count is a number and numbers line up
+   in a column. A PARAGRAPH wearing it is not a count — it is the sentence
+   explaining one — and several lines of 12px monospace prose is the
+   hardest thing on the screen to read. Same class, different element,
+   different job. */
+p.count {
+  font-family: var(--font);
+  font-size: 12.5px;
+  line-height: 1.7;
+  max-width: 92ch;
+}

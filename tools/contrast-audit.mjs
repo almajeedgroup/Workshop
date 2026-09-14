@@ -218,6 +218,54 @@ const NONTEXT_AUDIT = `(() => {
     const rr = ratio(over(px(cs.borderTopColor), around), around);
     if (rr < 3) out.push({ kind: 'field', issue: 'border ' + rr.toFixed(2) + ':1', sel: name(el), fg: hex(px(cs.borderTopColor)), bg: hex(around) });
   }
+
+  /* BUTTONS TOO. This used to check only input, textarea and select, which
+     is how a button border went from 21:1 to 1.35:1 across the admin with
+     a clean audit — 1.4.11 is about user interface components, and a
+     button is the commonest one on the screen.
+
+     Either edge may carry it: a filled button is bounded by its fill, an
+     outlined one by its border. It fails only when NEITHER reaches 3:1. */
+  for (const el of document.querySelectorAll('button, a.btn, .btn, .chip, [role="button"]')) {
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height || r.width <= 2 || r.height <= 2) continue;
+    const cs = getComputedStyle(el);
+    if (Number(cs.opacity) < 0.1 || cs.visibility === 'hidden') continue;
+    if (r.right < 0 || r.left > innerWidth) continue;
+    // 1.4.11 exempts inactive components by name. A submit button greyed
+    // out until its form is valid is the commonest one on this site, and
+    // flagging it every time is how a checker gets ignored.
+    if (el.disabled || el.getAttribute('aria-disabled') === 'true') continue;
+
+    const around = ground(el.parentElement || document.body);
+    const fill = px(cs.backgroundColor);
+    const byFill = fill.a > 0 ? ratio(over(fill, around), around) : 0;
+
+    const bw = parseFloat(cs.borderTopWidth) || 0;
+    const byBorder = bw >= 1 ? ratio(over(px(cs.borderTopColor), around), around) : 0;
+
+    // An inset box-shadow is how the public site draws an outlined button.
+    const ring = /inset/.test(cs.boxShadow) ? 3 : 0;
+
+    // A control's visible boundary is not always its own: an accordion's
+    // lip fills its panel, and the panel is what a person sees the edge
+    // of. Same lookup the field check does, for the same reason.
+    let byContainer = 0;
+    let n = el.parentElement;
+    for (let up = 0; n && up < 3 && byContainer < 3; up++, n = n.parentElement) {
+      const pcs = getComputedStyle(n);
+      const pw = parseFloat(pcs.borderTopWidth) || 0;
+      if (pw >= 1) byContainer = Math.max(byContainer, ratio(over(px(pcs.borderTopColor), around), around));
+    }
+
+    const best = Math.max(byFill, byBorder, ring, byContainer);
+    if (best < 3) {
+      out.push({ kind: 'control', sel: name(el),
+        issue: 'edge ' + best.toFixed(2) + ':1 (fill ' + byFill.toFixed(2)
+             + ', border ' + byBorder.toFixed(2) + ')',
+        fg: hex(bw >= 1 ? over(px(cs.borderTopColor), around) : over(fill, around)), bg: hex(around) });
+    }
+  }
   return out;
 })()`;
 
