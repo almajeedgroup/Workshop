@@ -1,5 +1,6 @@
 import Wordmark from './Wordmark.jsx';
 import { ISSUER, associationLine } from '../lib/schema.js';
+import { attendMode } from '../lib/attendmode.js';
 import { formatDate, formatDateRange } from '../lib/tickets.js';
 import { cardCrests } from '../lib/idcards.js';
 import {
@@ -73,7 +74,14 @@ export default function AttendanceSheet({ workshop, registrations, day = '', byD
                     <td className="num">{i + 1}</td>
                     <td className="tid">{r.ticketId || '—'}</td>
                     <td>
-                      <div className="nm">{r.name}</div>
+                      <div className="nm">
+                        {r.name}
+                        {/* Whoever holds this clipboard is looking for a
+                            signature. An online student is never going to
+                            give one, and a blank box beside their name reads
+                            as an absence unless the sheet says otherwise. */}
+                        {attendMode(workshop, r) === 'Online' && <b className="ol">ONLINE</b>}
+                      </div>
                       {(r.qualification || r.area) && (
                         <div className="det">
                           {[r.qualification, r.area].filter(Boolean).join(' · ')}

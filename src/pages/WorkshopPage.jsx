@@ -19,6 +19,7 @@ import { amountCollected, paymentCounts, seatsLeft as seatsLeftFor } from '../li
 import {
   visibleWorkshopFields, ISSUER, CURRENCY, workshopFee, isOnlineWorkshop,
 } from '../lib/schema.js';
+import { normalizeAttendMode, attendModeCounts, workshopAsksMode } from '../lib/attendmode.js';
 import { formatDateRange } from '../lib/tickets.js';
 import { brandLockup } from '../lib/brand.js';
 import { isFinished } from '../lib/overview.js';
@@ -116,6 +117,8 @@ export default function WorkshopPage() {
     [regs, workshop]
   );
 
+  const modeCounts = useMemo(() => attendModeCounts(workshop, regs), [workshop, regs]);
+
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return regs.filter((r) => {
@@ -125,6 +128,27 @@ export default function WorkshopPage() {
         .includes(needle);
     });
   }, [regs, q, payFilter]);
+
+  /**
+   * Change how one student attends.
+   *
+   * Only reachable on a hybrid course — the list does not offer the control
+   * otherwise, because on an Offline or Online course the course is the
+   * answer and a stored value would be ignored anyway.
+   */
+  const changeAttendMode = async (reg, value) => {
+    setBusyId(reg.id);
+    setError('');
+    try {
+      const attendMode = normalizeAttendMode(value);
+      await updateRegistration(id, reg.id, { ...reg, attendMode });
+      setRegs((prev) => prev.map((r) => (r.id === reg.id ? { ...r, attendMode } : r)));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusyId('');
+    }
+  };
 
   const changePayment = async (reg, status) => {
     setBusyId(reg.id);
@@ -449,7 +473,24 @@ export default function WorkshopPage() {
             <span className="l">{seatsLeft < 0 ? 'Over limit' : 'Seats left'}</span>
           </div>
         )}
+        {/* Only on a hybrid course. Anywhere else this is the Mode field
+            restated as a number, which is the same fact taking more room. */}
+        {workshopAsksMode(workshop) && (
+          <div className="stat">
+            <span className="n">{modeCounts.Offline}<span style={{ opacity: 0.35 }}> / </span>{modeCounts.Online}</span>
+            <span className="l">In person / online</span>
+          </div>
+        )}
       </div>
+
+      {modeCounts.unset > 0 && (
+        <div className="notice warn no-print">
+          {modeCounts.unset === 1
+            ? 'One student has not said whether they are attending in person or online.'
+            : `${modeCounts.unset} students have not said whether they are attending in person or online.`}
+          {' '}Set it in the Attending column — an unanswered row cannot be counted for either.
+        </div>
+      )}
 
       {seatsLeft !== null && seatsLeft <= 0 && (
         <div className="notice warn no-print">
@@ -777,6 +818,7 @@ export default function WorkshopPage() {
             workshop={workshop}
             rows={filtered}
             onPaymentChange={changePayment}
+            onAttendModeChange={changeAttendMode}
             onDelete={deleteOne}
             busyId={busyId}
           />

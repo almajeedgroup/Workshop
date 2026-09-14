@@ -493,6 +493,13 @@ export const WORKSHOP_FIELDS = [
  * Registration (one per registered candidate)
  * ------------------------------------------------------------------ */
 
+/**
+ * How ONE student attends. A course may also be Hybrid; a student cannot —
+ * they are either in the room or on the link. src/lib/attendmode.js decides
+ * which of these applies to a given student on a given course.
+ */
+export const ATTEND_MODES = ['Offline', 'Online'];
+
 export const PAYMENT_STATUSES = ['Pending', 'Paid', 'Waived', 'Refunded'];
 
 export const REGISTRATION_FIELDS = [
@@ -579,6 +586,16 @@ export const REGISTRATION_FIELDS = [
     inTable: true,
     aliases: ['ticket id', 'ticket no', 'ticket', 'ticket number'],
     hint: 'Allocated automatically on save — leave blank.',
+  },
+  {
+    key: 'attendMode',
+    label: 'Attending',
+    type: 'enum',
+    options: ATTEND_MODES,
+    inTable: true,
+    aliases: ['attending', 'attend mode', 'attendance mode', 'mode', 'online or offline',
+              'online/offline', 'participation mode', 'joining'],
+    hint: 'Asked of the student on a Hybrid course. On an Offline or Online course the course decides.',
   },
   {
     key: 'idRole',

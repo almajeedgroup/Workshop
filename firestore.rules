@@ -238,8 +238,8 @@ service cloud.firestore {
     // on the workshop and the writes stop at the door.
     function requestFields() {
       return ['workshopId', 'name', 'dob', 'qualification', 'courseName',
-              'whatsapp', 'area', 'email', 'paymentMode', 'paymentRef',
-              'notes', 'ref', 'status', 'hp', 'createdAt'];
+              'whatsapp', 'area', 'email', 'attendMode', 'paymentMode',
+              'paymentRef', 'notes', 'ref', 'status', 'hp', 'createdAt'];
     }
 
     // `get` on a path that does not exist raises an evaluation error rather
@@ -278,6 +278,10 @@ service cloud.firestore {
         && sized(d.get('paymentRef', ''), 200)
         && sized(d.get('paymentMode', ''), 200)
         && sized(d.get('dob', ''), 40)
+        // An enum, not free text: a stranger writes this, so the value is
+        // checked rather than merely measured. Empty is allowed — an Offline
+        // or Online course never asks, and the course settles it.
+        && d.get('attendMode', '') in ['', 'Offline', 'Online']
         && sized(d.get('ref', ''), 40);
     }
 

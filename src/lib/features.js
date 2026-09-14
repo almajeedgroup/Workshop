@@ -58,6 +58,14 @@ export const FEATURES = [
           + 'of quietly accepting more people.',
       },
       {
+        h: 'A hybrid course asks which way they are coming',
+        p: 'A course that runs both in the hall and on a video link needs to know who '
+          + 'is in which, before it prints an attendance sheet or counts chairs. The form '
+          + 'asks on hybrid courses and nowhere else — on a course that is wholly one or '
+          + 'the other, offering the choice can only collect a wrong answer. Somebody who '
+          + 'has not said reads as not said, rather than being quietly counted as either.',
+      },
+      {
         h: 'Duplicates are caught while they are still cheap',
         p: 'The same person applying twice, or applying when they are already enrolled, is '
           + 'flagged at the point of acceptance — matched on phone, then email, then name with '
@@ -68,6 +76,7 @@ export const FEATURES = [
     points: [
       'One shareable registration link per course',
       'Applications reviewed before a ticket is issued',
+      'On a hybrid course, the student says whether they are coming in person or online',
       'Registration opens and closes with a single switch',
       'Duplicate and already-enrolled applicants flagged',
       'Paste or import an existing list instead, when there is one',
@@ -253,6 +262,7 @@ export const FEATURES = [
     ],
     points: [
       'Present · late · absent · unmarked, per day',
+      'Online students marked on the sheet, so a blank box is not read as an absence',
       'Portrait sheet with signature columns for up to six days',
       'Heading repeats on every printed page',
       'Per-person and per-day totals',

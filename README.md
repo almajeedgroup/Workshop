@@ -51,6 +51,7 @@ screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 | **Verify** | Every certificate carries an ID and a QR code that anyone can check publicly, without an account. |
 | **Student list** | One button, one clean sheet: a row per student and only the columns that say something. |
 | **Export** | Excel, CSV, printable PDF — for all workshops, one workshop, or its registrations. |
+| **Attending** | A hybrid course asks each student whether they are coming in person or online, and the office can set or change it per row. |
 | **Feature pages** | The public site documents all ten features, one page each, generated from `src/lib/features.js` so nothing can ship undocumented. |
 
 ---
@@ -1420,7 +1421,70 @@ server by that one name.
 
 ---
 
-## 18. Phone numbers
+## 18. In person or online
+
+A course already says how **it** runs — Offline, Online or Hybrid. That was
+enough while every course was one or the other. A hybrid course is not: twenty
+people are in the hall and six are on a video link, and the office needs to
+know which is which before it prints an attendance sheet or counts chairs.
+
+**The course decides whether there is a choice.** On an Offline course
+everybody is in the room; on an Online course nobody is. Asking either of them
+to pick is offering a choice that does not exist, and the only thing it can
+produce is a wrong answer — somebody ticking *Online* on a course that has no
+link. So the registration form asks on **hybrid courses and nowhere else**, and
+on the other two the course's own mode is the answer for every student.
+
+That also means a stored value is never trusted over the course. Flip a hybrid
+course to Offline and everyone is in the room from that moment, whatever they
+picked while it was hybrid — and flipping it back restores what they said,
+because nothing was erased to make the first change.
+
+**Unset is not a default.** On a hybrid course, a student who has not said
+reads as *not said*, not as one of the two. Guessing Offline puts a name on an
+attendance sheet nobody can sign; guessing Online leaves a chair empty. The
+workshop screen counts them separately and says so, because "six have not said"
+is the number somebody has to act on.
+
+Where it shows:
+
+| | |
+|---|---|
+| **Registration form** | Two targets rather than a dropdown — on a phone a select is a modal wheel for two options. Real radios underneath, so it is one tab stop with arrow keys and reads as a group. Submitting is blocked until one is chosen. |
+| **Registrations table** | An *Attending* column, but only on a hybrid course — anywhere else every row would read the same word. Changed inline like payment status. Neither answer is coloured; only an unanswered row is, in tangerine, this app's caveat colour. |
+| **Workshop screen** | The split as a figure, and a notice naming how many have not said. |
+| **Ticket** | *Attending: In person* — on a hybrid course this is the line that decides whether somebody gets on a bus. |
+| **Attendance sheet** | Online students carry an outlined **ONLINE** mark beside the name, so a blank signature box is not read as an absence. |
+
+It is **not** carried forward to the next course. It is a fact about one
+course's delivery, not about a person, and the next course may not offer a
+choice at all.
+
+`src/lib/attendmode.js` holds all of it — `attendMode(workshop, reg)` is the
+one place that decides, so the sheet, the ticket, the table and the counts
+cannot disagree.
+
+### The part a stranger writes
+
+`attendMode` had to be added to `requestFields()` in `firestore.rules`, because
+the create rule uses `hasOnly` — a key the rules have not heard of does not get
+ignored, it fails the whole write, and the student sees an error with nothing
+they can do about it.
+
+It is also the one field on a request whose **value** is checked rather than
+only its length:
+
+```
+d.get('attendMode', '') in ['', 'Offline', 'Online']
+```
+
+Everything else on a request is free text and is merely measured. An enum that
+is only length-checked accepts any 200 characters somebody cares to post. Empty
+is allowed, because most courses never ask.
+
+---
+
+## 19. Phone numbers
 
 Everything is stored as `+91 98452 89298` — country code, then the number.
 The sanitisers in `src/lib/db.js` and `src/lib/publicdb.js` put every `tel`
@@ -1473,18 +1537,18 @@ looking after a permanent service-account key for a one-off tidy-up.
 
 ---
 
-## 19. Tests
+## 20. Tests
 
 ```bash
 npm test
 ```
 
-Runs 547 assertions on Node's built-in test runner — no extra dependencies,
+Runs 567 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards, attendance
 sheets, online classes, the class record, search, returning students,
-carry-forward, the phone-number migration, the brand, the feature catalogue
-and the colour contrast sums. The parser
+carry-forward, the phone-number migration, the brand, the feature catalogue,
+attendance mode and the colour contrast sums. The parser
 is heuristic and fails **silently** when it fails at all, so anything you teach
 it belongs in `tests/parser.test.js` alongside a paste that used to break it.
 
@@ -1493,7 +1557,7 @@ the Firebase emulator.
 
 ---
 
-## 20. Colour
+## 21. Colour
 
 Black text on a white page, and the five colours on everything else.
 
@@ -1708,7 +1772,7 @@ Ancestry is the rendered pass's job; tokens are the test's.
 
 ---
 
-## 21. Attribution
+## 22. Attribution
 
 Al-Majeed School of Research Methodology and Innovation is named **in
 association with** on everything this system produces: the ticket and its
@@ -1730,7 +1794,7 @@ different ways across the code — with a comma after "Research", with `&`, and
 with `and` — which on a certificate and the ticket for the same course is the
 sort of thing people notice.
 
-## 22. Notes
+## 23. Notes
 
 **A certificate records who issued it.** It used to name its issuer by reading
 `ISSUER` at the moment somebody opened it, which is invisible until the name
@@ -1841,7 +1905,7 @@ stay where they are either way.
 
 ---
 
-## 23. Verifying the security rules
+## 24. Verifying the security rules
 
 `firestore.rules` is the only thing standing between the public internet and
 every student's phone number, so it is worth testing rather than trusting.

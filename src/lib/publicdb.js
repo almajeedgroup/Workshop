@@ -18,6 +18,7 @@
  * register clean and keeps ticket issuing manual, which is how it was asked for.
  */
 
+import { normalizeAttendMode } from './attendmode.js';
 import {
   collection, doc, addDoc, setDoc, getDoc, getDocs, deleteDoc,
   query, where, serverTimestamp,
@@ -127,6 +128,9 @@ export function newRequestRef() {
 
 const REQUEST_FIELDS = [
   'name', 'dob', 'qualification', 'courseName', 'whatsapp', 'area', 'email',
+  // How they will attend. Only a hybrid course asks; on the other two the
+  // course settles it and the form sends nothing, so this arrives empty.
+  'attendMode',
   'paymentMode', 'paymentRef', 'notes',
 ];
 
@@ -144,6 +148,9 @@ export async function submitRegistrationRequest(workshopId, form) {
   // registration it becomes are the same number — which is what duplicate
   // detection compares, and what the office dials.
   data.whatsapp = str(formatPhone(data.whatsapp));
+  // The rules refuse anything but these two or empty; normalise here so a
+  // stale form value cannot cost somebody their registration.
+  data.attendMode = normalizeAttendMode(data.attendMode);
 
   data.ref = newRequestRef();
   data.status = 'new';

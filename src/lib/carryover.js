@@ -37,6 +37,8 @@ export const CARRIED_FIELDS = [
  * The fields deliberately left behind, and why. Not used by the code — it is
  * here so the next person to add a field knows which list to think about.
  *
+ *   attendMode     how they attended a DIFFERENT course, which the next one
+ *                  may not even offer a choice about
  *   ticketId       a number issued by the OLD course
  *   paymentStatus  a new course is a new fee
  *   amountPaid     ditto

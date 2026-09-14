@@ -6,6 +6,7 @@ import {
 import { formatDateRange } from '../../lib/tickets.js';
 import { normalizePhone } from '../../lib/parser.js';
 import { ISSUER, CURRENCY, isFreeWorkshop } from '../../lib/schema.js';
+import { ATTEND_MODES, attendModeLabel, workshopAsksMode } from '../../lib/attendmode.js';
 import QrCode from '../../components/QrCode.jsx';
 import {
   IconCheckCircle, IconAlert, IconArrow, IconPin, IconUsers, IconShield,
@@ -29,7 +30,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [form, setForm] = useState(() =>
-    Object.fromEntries([...FIELDS.map((f) => [f.key, '']), ['paymentRef', ''], ['hp', '']])
+    Object.fromEntries([...FIELDS.map((f) => [f.key, '']), ['attendMode', ''], ['paymentRef', ''], ['hp', '']])
   );
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState('');
@@ -66,7 +67,12 @@ export default function RegisterPage() {
   }) : ''), [workshop, fee]);
 
   const phoneOk = normalizePhone(form.whatsapp).length >= 10;
-  const canSend = form.name.trim().length > 1 && phoneOk && !sending;
+  // Only a hybrid course has anything to ask. On an Offline or Online course
+  // the course itself is the answer, and offering a choice that does not
+  // exist can only collect a wrong one.
+  const asksMode = workshopAsksMode(workshop);
+  const canSend = form.name.trim().length > 1 && phoneOk
+    && (!asksMode || form.attendMode) && !sending;
 
   const submit = async (e) => {
     e.preventDefault();
@@ -273,6 +279,35 @@ export default function RegisterPage() {
                     )}
                   </label>
                 ))}
+
+                {asksMode && (
+                  <fieldset style={{ border: 0, padding: 0, margin: '0 0 16px' }}>
+                    <legend style={{
+                      display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: '.1em',
+                      textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: 6, padding: 0,
+                    }}>
+                      How will you attend? *
+                    </legend>
+                    <div className="pickmode">
+                      {ATTEND_MODES.map((m) => (
+                        <label key={m} className={form.attendMode === m ? 'on' : undefined}>
+                          <input
+                            type="radio"
+                            name="attendMode"
+                            value={m}
+                            checked={form.attendMode === m}
+                            onChange={() => set('attendMode', m)}
+                          />
+                          <span>{attendModeLabel(m)}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <span style={{ display: 'block', marginTop: 6, fontSize: 12.5, color: 'var(--ink-faint)' }}>
+                      This course runs both ways. Tell us which you are coming for — you can
+                      change it later by calling us.
+                    </span>
+                  </fieldset>
+                )}
 
                 {/* Hidden from people; bots fill it and the server refuses the write. */}
                 <input

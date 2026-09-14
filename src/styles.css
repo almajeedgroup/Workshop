@@ -491,6 +491,14 @@ select.status[data-status='Pending']  { background: var(--tangerine); }
 select.status[data-status='Waived']   { background: var(--blue); }
 select.status[data-status='Refunded'] { background: var(--red); }
 
+/* How a student attends is not a status: neither answer is good or bad, and
+   painting them two palette colours would borrow meanings that belong to
+   something else. So both read plain, and only the row nobody has answered
+   for is coloured — tangerine, which is this app's caveat. */
+select.status[data-mode='Offline'],
+select.status[data-mode='Online']   { background: var(--paper); }
+select.status[data-mode='unset']    { background: var(--tangerine); }
+
 /* ---------------- seat pressure ---------------- */
 
 /* The app knew when a limit had been passed and said so — afterwards. This

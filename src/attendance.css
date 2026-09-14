@@ -74,6 +74,15 @@
   border:.2mm solid var(--att-line); -webkit-print-color-adjust:exact; print-color-adjust:exact;
 }
 .att-table .mk[data-tone='lime']{background:#32CD32}
+
+/* Printed beside the name, not as a column: a column costs width on every row
+   to say something about a few of them. Outlined rather than filled so it
+   survives a photocopier and a printer with no colour left. */
+.att-table .nm .ol{
+  display:inline-block; margin-left:2.5mm; padding:0 1.2mm;
+  font-size:6pt; font-weight:700; letter-spacing:.1em;
+  border:.3mm solid var(--att-line); border-radius:.8mm; vertical-align:.4mm;
+}
 .att-table .mk[data-tone='tangerine']{background:#FFCC00}
 .att-table .mk[data-tone='red']{background:#FB275D}
 /* #999 came out at 2.85:1 — a dash nobody can read is worse than a blank

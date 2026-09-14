@@ -307,6 +307,26 @@
 .site .vcard .note{display:flex; align-items:flex-start; gap:8px; margin-top:14px; font-size:12.5px; color:var(--ink-faint); line-height:1.55}
 .site .vcard .note svg{flex:none; margin-top:2px}
 
+/* A binary choice, offered as two targets rather than a dropdown: on a phone
+   a select is a modal wheel for two options, and the answer matters enough to
+   be visible without opening anything. Real radios underneath, so it is one
+   tab stop with arrow keys, reads as a group, and works without JavaScript
+   styling to lean on. */
+.site .pickmode{display:flex; gap:10px; flex-wrap:wrap}
+.site .pickmode label{
+  flex:1 1 140px; display:flex; align-items:center; justify-content:center; gap:9px;
+  padding:13px 16px; border-radius:12px; cursor:pointer;
+  border:1.6px solid var(--control-line); background:var(--paper);
+  font-size:15px; font-weight:600; color:var(--ink);
+  transition:background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.site .pickmode label:hover{background:var(--paper-3)}
+.site .pickmode label.on{background:var(--lime); border-color:var(--ink); box-shadow:inset 0 0 0 1px var(--ink)}
+/* The radio is the control; the label is the target. Kept in the layout and
+   readable by assistive tech rather than display:none'd out of existence. */
+.site .pickmode input{position:absolute; opacity:0; width:1px; height:1px; margin:0}
+.site .pickmode label:has(input:focus-visible){outline:3px solid var(--ink); outline-offset:3px}
+
 /* ---------- bands ---------- */
 .site .band-dark{background:var(--ink); color:var(--on-dark)}
 .site .band-dark h2,.site .band-dark h3{color:#fff}
