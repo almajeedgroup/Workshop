@@ -4,6 +4,7 @@
  *   workshops/{id}/classNotes/{day}       one page the presenter types on
  *   workshops/{id}/classTranscript/{day}  the day's lines, in one document
  *   workshops/{id}/classHandouts/{id}     a link, or a small PDF
+ *   workshops/{id}/classQuestions/{id}    a question from a student
  *
  * ALL THREE ARE READ BY STUDENTS, who have no account. The rules allow that
  * only while the class is open — the same switch that publishes the room —
@@ -23,6 +24,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { handoutRecord } from './classroom.js';
+import { questionRecord, sortQueue } from './questions.js';
 
 const WORKSHOPS = 'workshops';
 export const NOTES = 'classNotes';
@@ -128,4 +130,69 @@ export function watchHandouts(workshopId, onChange, onError = null) {
 
 export async function removeHandout(workshopId, handoutId) {
   await deleteDoc(doc(db, WORKSHOPS, workshopId, HANDOUTS, handoutId));
+}
+
+/* ------------------------------------------------------------------ *
+ * Questions
+ * ------------------------------------------------------------------ *
+ *
+ *   workshops/{id}/classQuestions/{qid}
+ *
+ * The one place in a class where a STUDENT writes. Everything else here is
+ * written by the presenter and read by the class; this goes the other way,
+ * so it is shaped like the registration form: public create while the class
+ * is open, capped, with a honeypot, and nothing personal on the record.
+ *
+ * One document per question rather than one per day. A class produces a
+ * handful, not one every few seconds, and the presenter marks them answered
+ * one at a time — which a shared document would turn into a write race
+ * between the queue and itself.
+ */
+
+export const QUESTIONS = 'classQuestions';
+const questionsRef = (id) => collection(db, WORKSHOPS, id, QUESTIONS);
+
+/** Public, unauthenticated, and only while the class is open. */
+export async function askQuestion(workshopId, { name, text }) {
+  const record = questionRecord({ name, text });
+  const written = await addDoc(questionsRef(workshopId), { ...record, at: serverTimestamp() });
+  return written.id;
+}
+
+/**
+ * The live queue.
+ *
+ * Ordered here rather than in the query: `sortQueue` puts answered ones at
+ * the bottom, which is two sorts on two fields and a composite index nobody
+ * needs for a list this short.
+ */
+export function watchQuestions(workshopId, onChange, onError = null) {
+  if (!workshopId) return () => {};
+  return onSnapshot(
+    questionsRef(workshopId),
+    (snap) => onChange(sortQueue(snap.docs.map((d) => ({ id: d.id, ...d.data() })))),
+    (e) => onError?.(e)
+  );
+}
+
+/** Presenter only. Answered is a state, so the class can see it was dealt with. */
+export async function markAnswered(workshopId, questionId, answered = true) {
+  await setDoc(
+    doc(db, WORKSHOPS, workshopId, QUESTIONS, questionId),
+    { state: answered ? 'answered' : 'open' },
+    { merge: true }
+  );
+}
+
+/** Presenter only. For what should not have been asked, not for what was. */
+export async function removeQuestion(workshopId, questionId) {
+  await deleteDoc(doc(db, WORKSHOPS, workshopId, QUESTIONS, questionId));
+}
+
+/** Clearing the queue between days, without deleting the day's record. */
+export async function clearAnswered(workshopId) {
+  const snap = await getDocs(questionsRef(workshopId));
+  const gone = snap.docs.filter((d) => d.data().state === 'answered');
+  await Promise.all(gone.map((d) => deleteDoc(d.ref)));
+  return gone.length;
 }

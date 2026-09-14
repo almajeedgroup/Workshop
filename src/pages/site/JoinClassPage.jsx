@@ -144,7 +144,11 @@ export default function JoinClassPage() {
           {/* The same notes, transcript and handouts the presenter is
               writing, read-only and live. */}
           <div style={{ marginTop: 16 }}>
-            <ClassBoard workshopId={workshopId} day={new Date().toISOString().slice(0, 10)} />
+            <ClassBoard
+              workshopId={workshopId}
+              day={new Date().toISOString().slice(0, 10)}
+              displayName={displayName}
+            />
           </div>
 
           <div className="btn-row" style={{ marginTop: 14 }}>

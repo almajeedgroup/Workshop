@@ -3,7 +3,9 @@ import { Link, useParams } from 'react-router-dom';
 import { getWorkshop, getRegistrations } from '../lib/db.js';
 import { setClassOpen, replaceRoom } from '../lib/meetingdb.js';
 import { setMarks } from '../lib/attendancedb.js';
+import { watchQuestions } from '../lib/classroomdb.js';
 import { attendanceRows } from '../lib/attendance.js';
+import { openCount } from '../lib/questions.js';
 import {
   classIsLive, classJoinUrl, matchRoom, marksFromRoom, roomIsGuessable, roomUrl,
   canEmbedMeeting,
@@ -13,6 +15,7 @@ import { formatDateRange } from '../lib/tickets.js';
 import JitsiRoom from '../components/JitsiRoom.jsx';
 import RoomLauncher from '../components/RoomLauncher.jsx';
 import ClassBoard from '../components/ClassBoard.jsx';
+import ClassConsole from '../components/ClassConsole.jsx';
 import '../class.css';
 
 /**
@@ -38,6 +41,7 @@ export default function ClassPage() {
   const [joined, setJoined] = useState(false);
   const [confirmRoom, setConfirmRoom] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [questions, setQuestions] = useState([]);
 
   useEffect(() => {
     let live = true;
@@ -54,6 +58,15 @@ export default function ClassPage() {
   }, [id]);
 
   // Stable, so a participant arriving does not rebuild the meeting.
+  // The console shows how many are waiting, so this page watches the queue
+  // too. Two listeners on one collection is one socket in Firestore's client
+  // and no extra reads; a count passed down from the board would mean the bar
+  // could not exist without the board being open.
+  useEffect(() => {
+    if (!id) return undefined;
+    return watchQuestions(id, setQuestions, () => {});
+  }, [id]);
+
   const handleParticipants = useCallback((list) => setInRoom(list), []);
   const handleJoined = useCallback(() => setJoined(true), []);
   const handleLeft = useCallback(() => { setJoined(false); setInRoom([]); }, []);
@@ -167,9 +180,6 @@ export default function ClassPage() {
     <main className="class-page">
       <div className="page-head no-print">
         <h1>{workshop.title || 'Untitled'}</h1>
-        <span className={`badge ${live ? 'on-air' : 'off-air'}`}>
-          {live ? 'Class open' : 'Class closed'}
-        </span>
         <span className="count">{formatDateRange(workshop) || 'no dates'} · {workshop.mode}</span>
         <span className="spacer" />
         <div className="btn-row">
@@ -177,6 +187,24 @@ export default function ClassPage() {
           <Link className="btn" to={`/w/${id}`}>← Workshop</Link>
         </div>
       </div>
+
+      {/* Everything a presenter might need mid-sentence, on one line: whether
+          it is live, how long it has been, who is in, who is waiting. The
+          close button lives here too — it is the one control that has to be
+          reachable without hunting for a panel. */}
+      <ClassConsole
+        live={live}
+        openedAt={workshop.classOpenedAt}
+        inRoom={inRoom.length}
+        waiting={openCount(questions)}
+        embedded={embed && joined}
+      >
+        {live && (
+          <button type="button" className="danger" onClick={toggle} disabled={Boolean(busy)}>
+            {busy === 'toggle' ? 'Closing…' : 'Close the class'}
+          </button>
+        )}
+      </ClassConsole>
 
       {error && <div className="notice warn">{error}</div>}
       {notice && <div className="notice">{notice}</div>}
@@ -238,13 +266,7 @@ export default function ClassPage() {
               <button type="button" onClick={copy}>{copied ? 'Copied' : 'Copy link'}</button>
               <a className="btn" href={joinLink} target="_blank" rel="noreferrer">Open as a student</a>
             </div>
-            {live && (
-              <div className="btn-row" style={{ marginTop: 8 }}>
-                <button type="button" className="danger" onClick={toggle} disabled={Boolean(busy)}>
-                  {busy === 'toggle' ? 'Closing…' : 'Close the class'}
-                </button>
-              </div>
-            )}
+
           </div>
 
           <div className="panel">

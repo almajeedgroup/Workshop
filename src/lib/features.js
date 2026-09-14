@@ -158,6 +158,15 @@ export const FEATURES = [
           + 'call rather than left at a blank screen.',
       },
       {
+        h: 'The hand nobody can see',
+        p: 'A presenter teaching into a video grid cannot read thirty faces. A student '
+          + 'types a question from their own screen and it lands on the presenter\u2019s, in a '
+          + 'queue worked oldest first. Answering marks it answered rather than deleting '
+          + 'it, so the class can see it was dealt with and the question survives the '
+          + 'session — a meeting\u2019s own chat dies with the room, along with anything in it '
+          + 'that never got answered.',
+      },
+      {
         h: 'Embedded, or launched',
         p: 'The room runs inside the page by default. Because the free public Jitsi server '
           + 'limits embedded calls, a course can instead launch the room in its own tab in one '
@@ -168,6 +177,8 @@ export const FEATURES = [
     points: [
       'Unguessable room names with a lobby',
       'Join by ticket number or phone, checked against the register',
+      'A question queue — the hand a presenter cannot see in a video grid',
+      'A console showing who is in, how long it has run, and who is waiting',
       'Presenter controls: mute all, lobby, share screen, end for all',
       'Embedded in the page, or launched in its own tab',
       'Works on a phone browser without an app',
@@ -217,6 +228,7 @@ export const FEATURES = [
       },
     ],
     points: [
+      'Questions asked during the class, kept with it afterwards',
       'Live shared notes, kept with the course',
       'Automatic transcript with timestamps',
       'Handouts and PDFs pushed to everyone mid-class',

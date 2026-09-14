@@ -48,10 +48,20 @@ export async function ensureRoom(workshopId, workshop) {
  */
 export async function setClassOpen(workshopId, workshop, open) {
   const room = open ? await ensureRoom(workshopId, workshop) : (workshop?.meetingRoom || '');
-  const next = { ...workshop, meetingRoom: room, classOpen: open ? 'Open' : 'Closed' };
+  // When the class opened, so the console can say how long it has been
+  // running. Written as an ISO string rather than a server timestamp: it is
+  // read back immediately by the same screen that wrote it, and a
+  // serverTimestamp() is null locally until the write round-trips.
+  const openedAt = open ? new Date().toISOString() : '';
+  const next = {
+    ...workshop, meetingRoom: room, classOpen: open ? 'Open' : 'Closed', classOpenedAt: openedAt,
+  };
   await setDoc(
     doc(db, WORKSHOPS, workshopId),
-    { meetingRoom: room, classOpen: next.classOpen, updatedAt: serverTimestamp() },
+    {
+      meetingRoom: room, classOpen: next.classOpen, classOpenedAt: openedAt,
+      updatedAt: serverTimestamp(),
+    },
     { merge: true }
   );
   await syncPublicWorkshop(workshopId, next);

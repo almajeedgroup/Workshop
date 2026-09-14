@@ -158,6 +158,37 @@ service cloud.firestore {
       // A link, or a PDF small enough to live in the record. There is no
       // file store behind this app, so `data` is capped well under the 1 MiB
       // document ceiling and anything bigger is shared as a link.
+      // ---- Questions, the one thing a STUDENT writes -----------------
+      //
+      // Everything else under a class is written by the presenter and read by
+      // the room. This goes the other way, so it is shaped like the
+      // registration form — the only other place a stranger can write here.
+      //
+      // The class has to be OPEN. That is the same switch that publishes the
+      // room, so a closed class takes the queue with it and a course that
+      // never met online can never be posted to at all.
+      //
+      // `hasOnly` freezes the shape because there is no schema to grow here,
+      // and an unexpected key is a good reason to refuse. The state is
+      // checked by value, not measured: a stranger writes it, and only the
+      // presenter may say something has been answered.
+      match /classQuestions/{questionId} {
+        allow read: if isAdmin() || classIsOpen(workshopId);
+        allow delete: if isAdmin();
+        // Marking one answered is the presenter's job, and theirs alone.
+        allow update: if isAdmin();
+        allow create: if classIsOpen(workshopId)
+          && request.resource.data.keys().hasOnly(['name', 'text', 'state', 'hp', 'askedAt', 'at'])
+          && request.resource.data.keys().hasAll(['name', 'text', 'state', 'hp'])
+          && request.resource.data.state == 'open'
+          && request.resource.data.hp == ''
+          && sized(request.resource.data.name, 80)
+          && request.resource.data.name.size() > 0
+          && sized(request.resource.data.text, 300)
+          && request.resource.data.text.size() > 0
+          && sized(request.resource.data.get('askedAt', ''), 40);
+      }
+
       match /classHandouts/{handoutId} {
         allow read: if isAdmin() || classIsOpen(workshopId);
         allow delete: if isAdmin();

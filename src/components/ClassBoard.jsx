@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   watchNotes, saveNotes, watchTranscript, saveTranscript, clearTranscript,
-  watchHandouts, addHandout, removeHandout,
+  watchHandouts, addHandout, removeHandout, watchQuestions,
 } from '../lib/classroomdb.js';
+import ClassQuestions from './ClassQuestions.jsx';
+import { openCount } from '../lib/questions.js';
 import {
   appendLine, transcriptLine, transcriptText, checkHandoutFile, checkHandoutLink,
   humanBytes, elapsed, MAX_HANDOUT_BYTES,
@@ -14,7 +16,9 @@ import { startRecording, recordingSupport, saveRecording } from '../lib/recorder
  * What a class leaves behind, live: notes, a transcript and handouts.
  *
  * One component, two audiences. The presenter gets the controls; a student
- * gets the same three things, read-only, updating as they are written. They
+ * gets the same four things, updating as they are written — read-only, with
+ * the exception of the question queue, which is the one place the traffic
+ * goes the other way. They
  * share a component because they must never disagree — a student reading
  * yesterday's notes because the two screens drifted is worse than no notes.
  *
@@ -23,11 +27,16 @@ import { startRecording, recordingSupport, saveRecording } from '../lib/recorder
  * class, the recording is saved to the presenter's own computer, and a
  * handout PDF has to be small enough to live in a database record.
  */
-export default function ClassBoard({ workshopId, workshop = null, day, host = false }) {
+export default function ClassBoard({
+  workshopId, workshop = null, day, host = false, displayName = '',
+}) {
+  // Notes, not questions: the presenter is usually typing, and a tab that
+  // changes under them because a question arrived is worse than a count.
   const [tab, setTab] = useState('notes');
   const [notes, setNotes] = useState('');
   const [lines, setLines] = useState([]);
   const [handouts, setHandouts] = useState([]);
+  const [questions, setQuestions] = useState([]);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
@@ -38,6 +47,7 @@ export default function ClassBoard({ workshopId, workshop = null, day, host = fa
       watchNotes(workshopId, day, setNotes, (e) => setError(e.message)),
       watchTranscript(workshopId, day, setLines, (e) => setError(e.message)),
       watchHandouts(workshopId, setHandouts, (e) => setError(e.message)),
+      watchQuestions(workshopId, setQuestions, (e) => setError(e.message)),
     ];
     return () => offs.forEach((off) => off());
   }, [workshopId, day]);
@@ -46,6 +56,8 @@ export default function ClassBoard({ workshopId, workshop = null, day, host = fa
     <div className="board-panel">
       <div className="board-tabs" role="tablist" aria-label="What the class leaves behind">
         {[
+          // Questions lead: it is the only tab where somebody is WAITING.
+          ['questions', `Questions${openCount(questions) ? ` (${openCount(questions)})` : ''}`],
           ['notes', 'Notes'],
           ['transcript', `Transcript${lines.length ? ` (${lines.length})` : ''}`],
           ['handouts', `Handouts${handouts.length ? ` (${handouts.length})` : ''}`],
@@ -66,6 +78,12 @@ export default function ClassBoard({ workshopId, workshop = null, day, host = fa
       {error && <div className="notice warn">{error}</div>}
       {notice && <div className="notice">{notice}</div>}
 
+      {tab === 'questions' && (
+        <ClassQuestions
+          workshopId={workshopId} questions={questions} host={host}
+          displayName={displayName} onError={setError} onNotice={setNotice}
+        />
+      )}
       {tab === 'notes' && (
         <Notes workshopId={workshopId} day={day} text={notes} host={host} onError={setError} />
       )}

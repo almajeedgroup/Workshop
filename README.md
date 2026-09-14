@@ -1367,6 +1367,67 @@ person.
 register that records that as absence is lying about them. Absence stays a
 decision somebody makes on the attendance screen.
 
+### The console
+
+The class screen is the one screen in this app that is not a document, and it
+is laid out like a desk rather than a page. A presenter running a class is not
+reading — they are talking — so the four things they might need mid-sentence
+are on one dark bar across the top, large enough to take in from across a
+desk, none of them needing a click:
+
+**whether it is live · how long it has been · who is in the room · who is
+waiting.** The close button lives there too, because it is the one control
+that must be reachable without hunting for a panel.
+
+The clock counts from when the class was **opened**, not from the first person
+joining — "we have been going forty minutes" is what decides whether to break.
+It recomputes from the timestamp on every tick rather than incrementing, since
+a counter that adds one per interval drifts badly on a laptop that was asleep
+for the lunch break. It ticks only while the class is live, and a class opened
+before the field existed simply has no clock rather than counting from 1970.
+
+Every colour on that bar is measured against `--ink`, not the page: paper
+19.80:1, lime 9.35:1, `#A3A3A3` 7.85:1, `#8F8F8F` 6.12:1, red 5.23:1. A static
+reader that assumes the page ground reports six failures there and all six are
+wrong — the note is in `class.css` so nobody removes a colour to satisfy a
+tool.
+
+### Questions — the hand nobody can see
+
+A presenter teaching into a video grid cannot read thirty faces. In a room
+somebody puts a hand up; online the same person types into a chat that scrolls
+away, or says nothing and leaves not understanding.
+
+A student types a question from their own screen and it lands in a queue on
+the presenter's, worked **oldest first** — a queue that reorders itself under
+the cursor is how the wrong question gets answered. Answering marks it
+answered rather than deleting it: the class sees it was dealt with, and the
+question is still there afterwards.
+
+**Why not the meeting's own chat.** Jitsi has one, and a raise-hand. Both live
+inside the call and die with it — close the room and every question asked in
+it is gone, including the ones that never got answered. A question asked here
+is attached to the course and the day, sits beside the notes and the
+transcript, and works for a student who has the join page open but cannot get
+into the room, which is exactly the person most likely to have a question.
+
+**What a stranger can do with it, said plainly.** Anyone holding the join link
+can post, the same as anyone holding the registration link can apply. There is
+no server here to rate-limit with, so the honest protections are that the link
+is unguessable, the class has to be open, the text is capped at 300
+characters, and the presenter can remove anything.
+
+`workshops/{id}/classQuestions/{qid}` is the only place under a class where a
+**student** writes, so it is shaped like the registration form rather than
+like the rest of the board:
+
+| | |
+|---|---|
+| create | only while `classIsOpen`, shape frozen with `hasOnly`, `state` must be `open`, honeypot enforced, name ≤ 80 and text ≤ 300 |
+| read | administrators, or anybody while the class is open |
+| update | **administrators only** — otherwise a student could mark their own awkward question answered |
+| delete | administrators only |
+
 ### What the class leaves behind
 
 A live class is the one thing this system produces that vanishes when it
@@ -1637,7 +1698,7 @@ looking after a permanent service-account key for a one-off tidy-up.
 npm test
 ```
 
-Runs 581 assertions on Node's built-in test runner — no extra dependencies,
+Runs 597 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards, attendance
 sheets, online classes, the class record, search, returning students,
