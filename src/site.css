@@ -274,8 +274,8 @@
 .site .hero::before{
   content:''; position:absolute; inset:0; pointer-events:none;
   background:
-    radial-gradient(680px 380px at 78% -8%, rgba(50,205,50,.16), transparent 62%),
-    radial-gradient(560px 340px at 4% 108%, rgba(10,10,10,.055), transparent 60%);
+    radial-gradient(680px 380px at 78% var(--glow-a,-8%), rgba(50,205,50,.16), transparent 62%),
+    radial-gradient(560px 340px at 4% var(--glow-b,108%), rgba(10,10,10,.055), transparent 60%);
 }
 .site .hero .wrap{position:relative}
 .site .hero-grid{display:grid; grid-template-columns:1.15fr .85fr; gap:clamp(28px,5vw,64px); align-items:center}
@@ -431,13 +431,41 @@
 .site .ftr .base a{display:inline; font-size:13px; padding:0}
 
 /* ---------- reveal ---------- */
-.site.anim [data-reveal]{opacity:0; transform:translateY(18px); transition:opacity .6s ease, transform .6s cubic-bezier(.2,.7,.3,1)}
-.site.anim [data-reveal].in{opacity:1; transform:none}
+/* The reveal used to be a CSS transition toggled by a scroll sweep. GSAP owns
+   it now and writes the opacity and transform inline once its chunk arrives.
+
+   This is the state BEFORE it arrives. `.motion` is added synchronously by
+   PublicShell — only when JavaScript is running and only when the visitor has
+   not asked for less motion — so a page with no JavaScript, or one whose
+   motion chunk fails to load, shows everything. Which is the correct fallback.
+
+   */
+.site.motion [data-reveal]{opacity:0}
+
+/* `will-change` only on what is about to move: promoting every card on the
+   page to its own layer costs more than it saves. */
+.site.motion .card,
+.site.motion .fstrip a,
+.site.motion .vcard{will-change:transform}
+
+/* One line of the display heading, masked so it can rise into view. */
+.site .hero .display .ln{display:block; overflow:hidden}
+.site .hero .display .ln-i{display:block}
+
+/* How far down the page you are, drawn on the header's bottom edge. */
+.site .scroll-rail{
+  position:absolute; left:0; right:0; bottom:-1px; height:2px;
+  background:var(--lime); transform-origin:0 50%; transform:scaleX(0);
+  pointer-events:none;
+}
+
 @media (prefers-reduced-motion:reduce){
-  .site.anim [data-reveal]{opacity:1; transform:none; transition:none}
+  /* startMotion() returns without starting anything, so this is only about
+     the motion CSS still owns. */
   .site *{scroll-behavior:auto !important}
-  .site .btn:hover,.site .card:hover{transform:none}
+  .site .btn:hover,.site .card:hover,.site .fstrip a:hover{transform:none}
   .site .hdr{position:static}
+  .site .scroll-rail{display:none}
 }
 
 /* ---------- verification result ---------- */

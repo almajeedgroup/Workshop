@@ -196,12 +196,14 @@ let findings = 0;
 for (const width of WIDTHS) {
   const seen = new Map();
   for (const path of PATHS) {
-    const page = await browser.newPage({ viewport: { width, height: 1000 } });
+    // Reduced motion, deliberately: startMotion() then does nothing and every
+    // element sits at its final colour, which is the colour being measured.
+    // It is also the accessible path, so auditing it audits the one that has
+    // to be right.
+    const page = await browser.newPage({ viewport: { width, height: 1000 }, reducedMotion: 'reduce' });
     const errors = [];
     page.on('pageerror', (e) => errors.push(String(e).slice(0, 120)));
     await page.goto(BASE + path, { waitUntil: 'networkidle' });
-    // The reveal animation starts every section at opacity 0.
-    await page.evaluate(() => document.querySelectorAll('[data-reveal]').forEach((e) => e.classList.add('in')));
     await page.waitForTimeout(200);
     for (const f of await page.evaluate(TEXT_AUDIT)) {
       const key = `${f.sel}|${f.fg}|${f.bg}|${f.size}`;
@@ -221,7 +223,7 @@ for (const width of WIDTHS) {
 }
 
 for (const path of PATHS) {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
+  const page = await browser.newPage({ viewport: { width: 1280, height: 1000 }, reducedMotion: 'reduce' });
   await page.goto(BASE + path, { waitUntil: 'networkidle' });
   const rows = [...new Map((await page.evaluate(NONTEXT_AUDIT)).map((r) => [r.kind + r.sel + r.issue, r])).values()];
   if (rows.length) {

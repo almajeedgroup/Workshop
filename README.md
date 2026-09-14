@@ -1516,6 +1516,68 @@ is allowed, because most courses never ask.
 
 ---
 
+## 18b. Motion on the public site
+
+GSAP drives everything that moves, and `src/lib/motion.js` is the only file
+that touches it. Scattering animation calls through the pages is how a site
+ends up with four competing scroll listeners, three definitions of "in view",
+and an effect nobody can find to turn off.
+
+| | |
+|---|---|
+| **reveal** | anything marked `[data-reveal]` rises into place, in the groups it appears in |
+| **headline** | the display heading arrives a line at a time |
+| **depth** | the hero's two colour washes drift at different rates as you scroll |
+| **counters** | a figure counts up to itself once, the first time it is seen |
+| **rail** | a scroll-progress hairline on the header's bottom edge |
+| **steps** | the numbered sequence lights one after another as it passes |
+| **magnetic** | buttons lean very slightly towards the pointer |
+| **tilt** | cards take a few degrees of perspective under the pointer |
+
+**Reduced motion is a full stop, not a smaller movement.** If the visitor has
+asked their operating system for less motion, `startMotion()` returns before
+creating a single tween and every element is simply shown, in its final state.
+Somebody who gets motion sickness from a parallax layer does not want a
+shorter parallax layer. A test asserts the guard comes before the first tween.
+
+That path is also the one `tools/contrast-audit.mjs` measures — it runs with
+`reducedMotion: 'reduce'`, because the final colour of a thing is the colour
+it settles at, and it is the accessible path, so auditing it audits the one
+that has to be right.
+
+### What it costs, and who pays
+
+GSAP is ~47KB gzipped and only the public site uses it, so `motion.js` is
+imported **dynamically**. It is its own chunk; the admin tool never fetches
+it, and the main bundle is the size it was before GSAP existed.
+
+That import is asynchronous, and the browser will happily paint the finished
+page before it resolves — one frame of everything visible, then it all
+disappears to animate in. So `PublicShell` adds a `.motion` class
+**synchronously, in a layout effect**, and the CSS hides `[data-reveal]` only
+under that class. Which means a page with no JavaScript, or one whose motion
+chunk fails to load, shows everything. A test asserts nothing hides
+`[data-reveal]` without `.motion` in the selector.
+
+### Two traps worth writing down
+
+`gsap.context()` runs its callback **synchronously**, so passing the `const`
+it is being assigned to into a helper throws a TDZ error before a single tween
+is made. With a `.catch()` on the dynamic import, that looked exactly like
+"the animation just does not run" — clean console, 200 on the chunk. The catch
+now reports what it caught.
+
+Splitting the headline on its `<br>` leaves the fragments `aria-hidden`, so the
+heading needs its own label — and building that from `textContent` loses the
+break and announces *"Learn it bybuilding it"*. It is built from the lines,
+joined with a space.
+
+The numbered sequence is deliberately **not pinned**. Pinning hijacks the
+scrollbar: the page stops moving while the content changes, which on a phone
+reads as the site having frozen.
+
+---
+
 ## 19. Phone numbers
 
 Everything is stored as `+91 98452 89298` — country code, then the number.
@@ -1575,7 +1637,7 @@ looking after a permanent service-account key for a one-off tidy-up.
 npm test
 ```
 
-Runs 571 assertions on Node's built-in test runner — no extra dependencies,
+Runs 581 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards, attendance
 sheets, online classes, the class record, search, returning students,
