@@ -32,6 +32,10 @@ export default function AttendancePage() {
   const [busyId, setBusyId] = useState('');
   const [saving, setSaving] = useState(false);
   const [withMarks, setWithMarks] = useState(true);
+  // On by default: the sheet was asked for with numbers on it. The switch
+  // exists because a sheet that goes round a room hands every student the
+  // whole class's phone list, and that is not always wanted.
+  const [withPhones, setWithPhones] = useState(true);
 
   useEffect(() => {
     let live = true;
@@ -212,6 +216,19 @@ export default function AttendancePage() {
           </li>
         </ul>
 
+        <label className="check" style={{ marginTop: 12 }}>
+          <input
+            type="checkbox"
+            checked={withPhones}
+            onChange={(e) => setWithPhones(e.target.checked)}
+          />
+          <span>
+            Print mobile numbers — so whoever holds the sheet can chase an absence
+            without going back to a screen. Leave it off for a sheet that will be
+            passed around the room.
+          </span>
+        </label>
+
         {Object.keys(byDay).length > 0 && (
           <label className="check" style={{ marginTop: 12 }}>
             <input
@@ -232,6 +249,7 @@ export default function AttendancePage() {
         <AttendanceSheet
           workshop={workshop}
           registrations={regs}
+          phones={withPhones}
           day={day}
           byDay={withMarks && Object.keys(byDay).length > 0 ? byDay : null}
         />

@@ -5,7 +5,7 @@ import { formatDate, formatDateRange } from '../lib/tickets.js';
 import { cardCrests } from '../lib/idcards.js';
 import {
   signatureColumns, attendanceRows, sheetSignatories, attendanceMark,
-  attendanceSummary,
+  attendanceSummary, phoneFitsAColumn,
 } from '../lib/attendance.js';
 
 /**
@@ -15,10 +15,17 @@ import {
  * the foot. The crests are the ones chosen for this course's ID cards, in the
  * same order, so a course's paperwork looks like one set of documents.
  */
-export default function AttendanceSheet({ workshop, registrations, day = '', byDay = null }) {
+export default function AttendanceSheet({
+  workshop, registrations, day = '', byDay = null, phones = true,
+}) {
   const rows = attendanceRows(registrations);
   const cols = signatureColumns(workshop, day);
   const crests = cardCrests(workshop);
+  // A number gets its own column while there is width for one. Past four
+  // signature columns there is not, and it moves into the name cell rather
+  // than squeezing the signing boxes — which are the point of the sheet.
+  const telColumn = phones && phoneFitsAColumn(cols);
+  const telInline = phones && !telColumn;
   const signatories = sheetSignatories(workshop);
   const dated = day ? formatDate(day) : formatDateRange(workshop);
   // Only meaningful on a single-day sheet; a whole-course sheet has a column
@@ -65,6 +72,7 @@ export default function AttendanceSheet({ workshop, registrations, day = '', byD
                   <th className="num">#</th>
                   <th className="tid">Ticket ID</th>
                   <th>Name</th>
+                  {telColumn && <th className="tel">Mobile</th>}
                   {cols.map((c) => <th key={c.key} className="sig">{c.label}</th>)}
                 </tr>
               </thead>
@@ -82,12 +90,23 @@ export default function AttendanceSheet({ workshop, registrations, day = '', byD
                             as an absence unless the sheet says otherwise. */}
                         {attendMode(workshop, r) === 'Online' && <b className="ol">ONLINE</b>}
                       </div>
-                      {(r.qualification || r.area) && (
-                        <div className="det">
-                          {[r.qualification, r.area].filter(Boolean).join(' · ')}
-                        </div>
-                      )}
+                      {/* When the number is folded in here the cell is about
+                          29mm wide, and a qualification and an area wrap to
+                          three lines in it — tripling the height of every row
+                          to carry what nobody reads off an attendance sheet.
+                          At that width the cell holds the name and the number
+                          and nothing else. */}
+                      {telInline
+                        ? r.whatsapp && <div className="det"><b className="tel">{r.whatsapp}</b></div>
+                        : (r.qualification || r.area) && (
+                          <div className="det">
+                            {[r.qualification, r.area].filter(Boolean).join(' · ')}
+                          </div>
+                        )}
                     </td>
+                    {telColumn && (
+                      <td className="tel">{r.whatsapp || '—'}</td>
+                    )}
                     {cols.map((c) => (
                       <td key={c.key} className="sig">
                         {/* With `byDay` this prints the register that was

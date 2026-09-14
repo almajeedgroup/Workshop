@@ -798,6 +798,38 @@ and that settles most of its design.
 - **The presenter and coordinator sign the foot**, named from the workshop
   where those are recorded, with a third blank line for whoever signs on the
   day.
+- **Mobile numbers are printed**, so whoever holds the sheet can chase an
+  absence without going back to a screen.
+
+### Where the mobile number goes
+
+It has a column of its own while there is width for one, and moves into the
+name cell when there is not. That threshold was measured on a rendered A4
+sheet rather than guessed:
+
+| Signature columns | Name column | Number |
+|---|---|---|
+| 1 (single day, or a course too long for columns) | 73–91mm | its own column |
+| 3 | 61mm | its own column |
+| **4** | ~37mm | its own column — the last width that works |
+| 5 | ~15mm | folded into the name cell |
+| 6 | 29mm | folded into the name cell |
+
+The table is 186mm across; the row number takes 9mm and the ticket ID 26mm, a
+number needs 26mm, and a name needs about 34mm before it wraps mid-word. Past
+four columns the number moves rather than squeezing the signing boxes, which
+are the point of the sheet. `MAX_COLUMNS_WITH_PHONE` and `phoneFitsAColumn()`
+in `src/lib/attendance.js` hold that rule, so the sheet and its tests agree.
+
+When it is folded into the name cell, the qualification and area come **off**
+that row. At 29mm they wrap to three lines and triple the height of every row
+to carry what nobody reads off an attendance sheet — a six-day sheet went from
+three pages to two by dropping them.
+
+**It can be turned off.** *Print mobile numbers* on the print panel is on by
+default, because that is what the sheet was asked for. Leave it off for a
+sheet that will be passed around the room: a signing sheet with a column of
+numbers on it hands every student the whole class's phone list.
 
 People are listed by ticket number — numerically, so `IIC-010` follows
 `IIC-009` rather than `IIC-001` — and anyone not yet issued one is listed
@@ -1543,7 +1575,7 @@ looking after a permanent service-account key for a one-off tidy-up.
 npm test
 ```
 
-Runs 567 assertions on Node's built-in test runner — no extra dependencies,
+Runs 571 assertions on Node's built-in test runner — no extra dependencies,
 no config — over the parser, ticket allocation, duplicate detection, totals,
 the spreadsheet writer, certificates, image shrinking, ID cards, attendance
 sheets, online classes, the class record, search, returning students,

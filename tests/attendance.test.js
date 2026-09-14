@@ -1,9 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   courseDays, signatureColumns, needsPerDaySheets, attendanceRows,
   sheetSignatories, MAX_DAY_COLUMNS,
   ATTENDANCE_MARKS, attendanceMark, nextMark, attendanceSummary, attendanceRate,
+  MAX_COLUMNS_WITH_PHONE,
+  phoneFitsAColumn,
 } from '../src/lib/attendance.js';
 
 /* ---- which days the course runs ---------------------------------- */
@@ -254,4 +257,49 @@ test('rate: nothing recorded yet reports nothing rather than zero', () => {
   assert.equal(attendanceRate({}, 'a'), null);
   assert.equal(attendanceRate({ d1: {} }, 'a'), null);
   assert.equal(attendanceRate(undefined, 'a'), null);
+});
+
+/* ---------------- mobile numbers on the sheet ---------------- */
+
+test('the number gets a column only while the signing has not taken the width', () => {
+  // Measured on a rendered A4 sheet: at five signature columns the name is
+  // down to 15mm, which wraps mid-word. Four is the last width that works.
+  assert.equal(MAX_COLUMNS_WITH_PHONE, 4);
+  assert.equal(phoneFitsAColumn([1, 2, 3, 4].map((k) => ({ key: k }))), true);
+  assert.equal(phoneFitsAColumn([1, 2, 3, 4, 5].map((k) => ({ key: k }))), false);
+  assert.equal(phoneFitsAColumn([]), true);
+  assert.equal(phoneFitsAColumn(), true);
+});
+
+test('a six-day sheet still carries the number, in the name cell', () => {
+  // The fallback is where it goes, not whether it goes. Both shapes are on
+  // the sheet; only one of them costs a signature column its width.
+  const week = signatureColumns({ startDate: '2026-04-06', endDate: '2026-04-11' });
+  assert.equal(week.length, 6);
+  assert.equal(phoneFitsAColumn(week), false);
+
+  const short = signatureColumns({ startDate: '2026-04-06', endDate: '2026-04-08' });
+  assert.equal(short.length, 3);
+  assert.equal(phoneFitsAColumn(short), true);
+});
+
+test('a course too long for columns gets its width back, and the number with it', () => {
+  // Past six days the sheet falls back to ONE undated signature column, so
+  // there is more room than on a six-day sheet, not less.
+  const long = signatureColumns({ startDate: '2026-04-06', endDate: '2026-04-20' });
+  assert.equal(long.length, 1);
+  assert.equal(phoneFitsAColumn(long), true);
+});
+
+test('the sheet asks for both shapes, and can be told not to print numbers at all', () => {
+  const sheet = readFileSync(new URL('../src/components/AttendanceSheet.jsx', import.meta.url), 'utf8');
+  assert.match(sheet, /phones = true/, 'numbers are on by default — that is what was asked for');
+  assert.match(sheet, /const telColumn = phones && phoneFitsAColumn\(cols\)/);
+  assert.match(sheet, /const telInline = phones && !telColumn/);
+  // Both paths read the same field, so the two shapes cannot show different numbers.
+  assert.equal((sheet.match(/r\.whatsapp/g) || []).length >= 2, true);
+
+  const page = readFileSync(new URL('../src/pages/AttendancePage.jsx', import.meta.url), 'utf8');
+  assert.match(page, /useState\(true\);[\s\S]{0,400}withPhones/, 'the toggle defaults to on');
+  assert.match(page, /phones=\{withPhones\}/);
 });

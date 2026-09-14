@@ -112,6 +112,29 @@ export function attendanceRate(byDay = {}, registrationId) {
  */
 export const MAX_DAY_COLUMNS = 6;
 
+/**
+ * How many signature columns can be on the sheet before a mobile number
+ * stops fitting as a column of its own.
+ *
+ * Measured on a rendered A4 sheet rather than guessed. The table is 186mm
+ * across; the row number takes 9mm and the ticket ID 26mm, so 151mm is left
+ * for the name, the number and the signatures. A number needs 26mm, and a
+ * name needs about 34mm before it starts wrapping mid-word.
+ *
+ *   4 columns  151 - 26 - (4 x 22) = 37mm of name. Fits.
+ *   5 columns  151 - 26 - (5 x 22) = 15mm of name. Does not.
+ *
+ * Past four, the number moves into the name cell instead of squeezing the
+ * one thing every row must be able to show. It is on the sheet either way —
+ * only the shape changes.
+ */
+export const MAX_COLUMNS_WITH_PHONE = 4;
+
+/** Has the signing taken so much width that the number needs to move? */
+export function phoneFitsAColumn(columns = []) {
+  return columns.length <= MAX_COLUMNS_WITH_PHONE;
+}
+
 /** A runaway range must not generate a thousand columns. */
 const MAX_DAYS = 60;
 

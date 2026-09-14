@@ -62,6 +62,17 @@
 .att-table th.sig{text-align:center}
 .att-table .num{width:9mm; text-align:center; font-weight:600}
 .att-table .tid{width:26mm; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:8pt; white-space:nowrap}
+/* A number is read digit by digit off a page and then dialled, so it is set
+   in the same tabular face as the ticket ID and never allowed to wrap —
+   a mobile number broken across two lines is a number nobody can trust. */
+.att-table .tel{
+  width:26mm; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:8pt;
+  white-space:nowrap; letter-spacing:-.01em;
+}
+.att-table th.tel{width:26mm}
+/* Folded into the name cell on a wide sheet: still monospaced, still unbroken,
+   but sharing the detail line rather than owning a column. */
+.att-table .det .tel{font-family:ui-monospace,Menlo,Consolas,monospace; font-weight:600; color:var(--att-ink); white-space:nowrap}
 .att-table .nm{font-weight:600}
 .att-table .det{font-size:7.5pt; color:var(--att-soft); font-weight:400; margin-top:.4mm}
 /* The height IS the feature: 11mm is what a signature needs. */

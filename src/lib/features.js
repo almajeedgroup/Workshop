@@ -263,6 +263,7 @@ export const FEATURES = [
     points: [
       'Present · late · absent · unmarked, per day',
       'Online students marked on the sheet, so a blank box is not read as an absence',
+      'Mobile numbers printed alongside, for chasing an absence from the sheet itself',
       'Portrait sheet with signature columns for up to six days',
       'Heading repeats on every printed page',
       'Per-person and per-day totals',
