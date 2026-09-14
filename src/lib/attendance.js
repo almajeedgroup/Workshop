@@ -27,11 +27,11 @@ import { ISSUER } from './schema.js';
  * an unfinished job into an accusation.
  *
  * The tone is the palette colour the mark is shown in, matching the payment
- * pills: jade for good, tangerine for a caveat, red for a problem.
+ * pills: lime for good, tangerine for a caveat, red for a problem.
  */
 export const ATTENDANCE_MARKS = [
   { key: '', label: 'Unmarked', short: '—', tone: 'none' },
-  { key: 'present', label: 'Present', short: 'P', tone: 'jade' },
+  { key: 'present', label: 'Present', short: 'P', tone: 'lime' },
   { key: 'late', label: 'Late', short: 'L', tone: 'tangerine' },
   { key: 'absent', label: 'Absent', short: 'A', tone: 'red' },
 ];

@@ -191,7 +191,7 @@ export function boardGroups(bundles, requests = [], today = new Date().toISOStri
       // A settled course is grey, not blue. Blue is already "a request is
       // waiting" — giving a finished, paid-up course the same rail makes the
       // two indistinguishable at exactly the glance the board is for.
-      tone: attention ? attention.reasons[0].tone : (finished ? 'quiet' : 'jade'),
+      tone: attention ? attention.reasons[0].tone : (finished ? 'quiet' : 'lime'),
       finished,
       seats: seatPressure(workshop, registrations.length),
       payments: paymentCounts(registrations),

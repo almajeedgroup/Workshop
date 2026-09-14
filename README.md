@@ -104,7 +104,7 @@ renders. Either mistake looks like the app ignoring a click.
 ### Seats as a bar
 
 `seatPressure()` in `src/lib/stats.js` turns a seat limit into something you
-can see filling: jade under three quarters, tangerine at three quarters,
+can see filling: lime under three quarters, tangerine at three quarters,
 blue when exactly full, red past the limit. The app already knew when a limit
 had been **passed** and said so — afterwards. The bar is the part somebody
 can act on.
@@ -164,7 +164,7 @@ test pins them together — a workshop that is red on one is red on the other.
 ### Payment as colour
 
 Every row carries its payment status as a coloured pill, so a group reads as a
-block of colour rather than forty words: jade paid, tangerine pending, blue
+block of colour rather than forty words: lime paid, tangerine pending, blue
 waived, red refunded.
 
 The pills on the board are **read-only**. The board is for seeing across every
@@ -1499,7 +1499,7 @@ Black text on a white page, and the five colours on everything else.
 
 | | Hex | Where |
 |---|---|---|
-| Jade Green | `#00CA72` | Flag segment 1; the primary button; the ticket band; chips under the pointer |
+| Lime | `#32CD32` | Flag segment 1; the primary button; the ticket band; chips under the pointer. **The brand colour** — the one the two halves of the app share |
 | Tangerine Yellow | `#FFCC00` | Flag segment 2; table headings; the import preview header; solid tags |
 | Radical Red | `#FB275D` | Flag segment 3; the delete button; warning notices |
 | Dodger Blue | `#1E90FF` | Flag segment 4; the current page; buttons and links under the pointer; the focus ring; notices |
@@ -1507,14 +1507,17 @@ Black text on a white page, and the five colours on everything else.
 | Near-black | `#0A0A0A` | **All** text, keylines and rules |
 | White | `#FFFFFF` | Page background |
 
-**The colours are never text.** Measured against white they come out at 2.17,
+**The colours are never text.** Measured against white they come out at 2.12,
 1.51, 3.78 and 3.24 to one, and 4.5 is the floor for readable text —
 tangerine is nowhere near it. So they are fills, borders and bars, with the
 readable colour written on top.
 
-Four of them are **light** and carry black: 9.69, 13.89, 5.55 and 6.49 to
-one. Crystal violet is **dark** and carries white — `--on-violet`, at 14.34
-to one, the strongest pairing in the palette. Black on it would be 1.46 to
+Four of them are **light** and carry black: 9.35, 13.09, 5.23 and 6.12 to
+one — measured against `--ink` `#0A0A0A`, which is what is actually painted;
+against pure black they are a shade higher.
+
+Crystal violet is **dark** and carries white — `--on-violet`, at 14.34 to one,
+the strongest pairing in the palette. Black on it would be 1.46 to
 one, which is no pairing at all.
 
 That loosens nothing. The page is white and the text on it is black; this is
@@ -1523,7 +1526,7 @@ is a palette colour *being* the text, and nothing in `styles.css` does that.
 
 Each colour means something, so the interface stays readable at a glance:
 
-- **jade** — the action that moves work forward
+- **lime** — the action that moves work forward, in the brand colour
 - **red** — the one that destroys, and anything wrong
 - **blue** — where you are, where you are going, what has focus
 - **tangerine** — headings and labels over data
@@ -1539,7 +1542,7 @@ than what the rule is. Anything filled with it uses `--on-violet`; if you
 give violet to something new, take the pair.
 
 It was given to **the live class**, which is the one thing in this app that
-is happening rather than recorded. The **Class open** badge had been jade —
+is happening rather than recorded. The **Class open** badge had been lime —
 the colour of the action that moves work forward — which made *"a class is
 running"* look like *"press this"*. Jade goes back to meaning one thing.
 
@@ -1613,6 +1616,40 @@ focus ring to paper, and the lime band keeps ink at 9.35:1. A ghost button
 takes its colour from the panel it sits on, in CSS rather than inline — that
 was a `color:'#fff'` on five pages, and it is how the closing band ended up
 white-on-lime at 2.12:1 the moment the theme changed.
+
+### One colour across both halves
+
+Lime is the only colour the tool and the site share. The admin's "action that
+moves work forward" used to be a near-identical jade `#00CA72`; it is this
+lime now, so the primary button, a paid fee and a present mark are painted in
+the colour on the door. Black on it is 9.35:1 where jade was 9.14:1, so
+nothing about the palette's rule changed — only the hue.
+
+The tone is named in **data**, not just CSS: `tone: 'lime'` in
+`lib/attendance.js` and `lib/overview.js`, `data-tone="lime"` on the register
+tiles. That is why the swap was a rename across eight files rather than one
+token, and why the tests name the tone too.
+
+The other four admin colours stay, because they mean things the brand does
+not: red destroys, blue is where you are, tangerine labels data, violet is the
+live class.
+
+### Where the two stylesheets meet
+
+`styles.css` is the admin tool and it styles bare `a`, `button` and `input`
+**globally** — including `a:hover { background: var(--blue) }`, the admin's
+under-the-pointer colour. The public site never opted into that, and for a
+while it showed: the brand lockup in the header, the footer links, the feature
+pager and every inline link in a verification result flashed Dodger Blue on
+hover, and clicking the certificate-ID field drew a blue outline round it.
+
+It is neutralised once, at the boundary in `site.css`, rather than component
+by component — the parts of the site that want a hover already say so, and the
+ones that do not are a logo and a skip link. Specificity carries the whole fix:
+`.site button:hover` is (0,2,1) so `.site .btn:hover` (0,3,0) still wins and
+the lime button keeps its own hover, and the field reset is scoped to
+`:focus:not(:focus-visible)` so it silences the mouse-click outline without
+taking the keyboard focus ring with it.
 
 ### How the colours are checked
 

@@ -195,7 +195,7 @@ test('tone: every reason carries one, and only from the palette', () => {
   const [row] = needsAttention(bundles, [{ workshopId: 'a' }]);
   assert.ok(row.reasons.length >= 2);
   for (const r of row.reasons) {
-    assert.ok(['jade', 'tangerine', 'red', 'blue'].includes(r.tone), `${r.kind} has tone ${r.tone}`);
+    assert.ok(['lime', 'tangerine', 'red', 'blue'].includes(r.tone), `${r.kind} has tone ${r.tone}`);
   }
 });
 
@@ -226,9 +226,9 @@ test('board: a settled finished course is quiet, not blue', () => {
   assert.notEqual(by.a.tone, by.old.tone);
 });
 
-test('board: a healthy live course is jade', () => {
+test('board: a healthy live course is lime', () => {
   const groups = boardGroups([{ workshop: free({ id: 'x', seatLimit: 100 }), registrations: regs('Waived') }], [], '2026-09-01');
-  assert.equal(groups[0].tone, 'jade');
+  assert.equal(groups[0].tone, 'lime');
 });
 
 test('board: the rail matches what the console says about the same workshop', () => {

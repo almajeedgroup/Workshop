@@ -23,10 +23,12 @@
  * the same way the mark is. When lime has to be READ rather than filled,
  * site.css takes it down to --lime-ink at 6.4 to one.
  *
- * The admin tool keeps its own five colours. Its jade (#00CA72) already
- * means "the action that moves work forward" and every attendance mark,
- * console tile and status pill is keyed to that name in data rather than in
- * CSS, so swapping it is a rename across the app and not a palette change.
+ * It is the ONE colour both halves of the app share. The admin tool's
+ * "action that moves work forward" used to be a near-identical jade
+ * (#00CA72); it is this lime now, so the primary button, a paid fee and a
+ * present mark are painted in the colour on the door. The other four admin
+ * colours stay, because they mean things the brand does not: red destroys,
+ * blue is where you are, tangerine labels data, violet is the live class.
  */
 
 import { ISSUER } from './schema.js';

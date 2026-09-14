@@ -25,7 +25,7 @@ export default function AttendanceRegister({
   return (
     <>
       <div className="tiles att-tiles">
-        <div className="tile" data-tone="jade">
+        <div className="tile" data-tone="lime">
           <span className="n">{summary.attended}</span>
           <span className="l">Attended</span>
         </div>

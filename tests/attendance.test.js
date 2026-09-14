@@ -175,7 +175,7 @@ test('marks: an unknown mark falls back to unmarked rather than blank', () => {
 
 test('marks: every mark carries a palette tone', () => {
   for (const m of ATTENDANCE_MARKS) {
-    assert.ok(['jade', 'tangerine', 'red', 'none'].includes(m.tone), `${m.key} has tone ${m.tone}`);
+    assert.ok(['lime', 'tangerine', 'red', 'none'].includes(m.tone), `${m.key} has tone ${m.tone}`);
   }
 });
 

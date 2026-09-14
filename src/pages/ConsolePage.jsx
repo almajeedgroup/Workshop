@@ -13,8 +13,8 @@ import Finder from '../components/Finder.jsx';
 /** Which colour each figure carries. Meaning, not position. */
 const TONE = {
   workshops: 'blue',
-  registered: 'jade',
-  collected: 'jade',
+  registered: 'lime',
+  collected: 'lime',
   waiting: 'blue',
   owing: 'tangerine',
 };

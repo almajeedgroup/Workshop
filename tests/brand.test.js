@@ -98,10 +98,11 @@ test('the lime is the one that was chosen', () => {
   assert.equal(BRAND_INK, '#0A0A0A');
 });
 
+const lin = (c) => { const v = c / 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+const lum = (hex) => { const n = parseInt(hex.slice(1), 16);
+  return 0.2126 * lin(n >> 16 & 255) + 0.7152 * lin(n >> 8 & 255) + 0.0722 * lin(n & 255); };
+
 test('the lime is a wordmark colour, and the figures say why', () => {
-  const lin = (c) => { const v = c / 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
-  const lum = (hex) => { const n = parseInt(hex.slice(1), 16);
-    return 0.2126 * lin(n >> 16 & 255) + 0.7152 * lin(n >> 8 & 255) + 0.0722 * lin(n & 255); };
   const onWhite = 1.05 / (lum(BRAND_LIME) + 0.05);
   const withBlack = (lum(BRAND_LIME) + 0.05) / 0.05;
 
@@ -112,12 +113,23 @@ test('the lime is a wordmark colour, and the figures say why', () => {
   assert.ok(withBlack > 4.5, `black on lime is ${withBlack.toFixed(2)}:1`);
 });
 
-test('the lime is not smuggled into the admin palette', () => {
-  // That palette's jade already means "the action that moves work forward".
-  // A second green beside it blunts the one meaning it has.
+test('the admin tool paints its primary action in the brand lime', () => {
+  // This used to assert the opposite — that lime stayed out of the interface,
+  // because the admin's jade already meant "the action that moves work
+  // forward". Keeping two near-identical greens for one meaning is how an app
+  // ends up looking like two apps. Jade is gone; lime carries that meaning in
+  // both halves now.
   const styles = readFileSync(new URL('../src/styles.css', import.meta.url), 'utf8');
-  assert.ok(!styles.includes(BRAND_LIME), 'lime belongs to the brand, not the interface');
-  assert.ok(!styles.includes('--lime'));
+  assert.match(styles, new RegExp(`--lime:\\s*${BRAND_LIME}`, 'i'),
+    'the admin palette no longer declares --lime as the brand value');
+  assert.ok(!/var\(--jade\)/.test(styles), 'a --jade reference survived the rename');
+});
+
+test('black on the admin lime clears the floor, the same as the jade it replaced', () => {
+  // The admin palette's whole rule is that its colours are light fills
+  // carrying black. Swapping the value must not quietly break that.
+  const withBlack = (lum(BRAND_LIME) + 0.05) / (lum(BRAND_INK) + 0.05);
+  assert.ok(withBlack >= 4.5, `near-black on the admin lime is ${withBlack.toFixed(2)}:1`);
 });
 
 /* ---------------- tones ---------------- */

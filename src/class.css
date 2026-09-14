@@ -103,10 +103,10 @@ button.big { padding: 10px 22px; font-size: 14px; }
   font-family: var(--mono); text-align: right;
 }
 
-/* Colour carries the same meanings as everywhere else: jade is fine, red is
+/* Colour carries the same meanings as everywhere else: lime is fine, red is
    wrong, grey is simply not yet. The left rail is doubled by the wording in
    the note, so colour is never the only signal. */
-.who .is-present { border-left-color: var(--jade); }
+.who .is-present { border-left-color: var(--lime); }
 .who .is-stranger { border-left-color: var(--red); }
 .who .is-missing { border-left-color: var(--faint); }
 
@@ -128,7 +128,7 @@ button.big { padding: 10px 22px; font-size: 14px; }
 
 .board-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
 .board-tabs button { font-size: 12px; padding: 5px 12px; }
-/* The class's own colour rather than the app-wide jade, so the notes, the
+/* The class's own colour rather than the app-wide lime, so the notes, the
    transcript and the handouts read as parts of the live class and not as
    three separate actions to press. */
 .board-tabs button.primary,

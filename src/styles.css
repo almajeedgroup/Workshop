@@ -19,7 +19,7 @@
 
    Each colour means something, so the interface stays readable at a glance:
 
-     jade       the action that moves work forward
+     lime       the action that moves work forward — the brand colour
      red        the one that destroys, and anything wrong
      blue       where you are, where you are going, what has focus
      tangerine  headings and labels over data
@@ -35,7 +35,11 @@
   --muted: #666666;          /* 5.74:1 — grey, deliberately not a colour */
   --faint: #E5E5E5;
 
-  --jade: #00CA72;
+  /* The brand lime, and the same value brand.js holds. It replaced a
+     near-identical jade (#00CA72) so that the action which moves work
+     forward is painted in the colour on the door. Black on it is 9.35:1;
+     lime was 9.14:1, so nothing about the rule changed. */
+  --lime: #32CD32;
   --tangerine: #FFCC00;
   --red: #FB275D;
   --blue: #1E90FF;
@@ -46,13 +50,13 @@
      work, rules off a page heading, and crosses the login panel — the three
      places the screen is divided. */
   --flag: linear-gradient(90deg,
-    var(--jade) 0 20%, var(--tangerine) 20% 40%,
+    var(--lime) 0 20%, var(--tangerine) 20% 40%,
     var(--red) 40% 60%, var(--blue) 60% 80%, var(--violet) 80% 100%);
   /* The same five running downwards, for the sidebar's edge. The horizontal
      one squeezed into a 3px-wide strip puts all five stops inside three
      pixels, which paints as a single colour. */
   --flag-down: linear-gradient(180deg,
-    var(--jade) 0 20%, var(--tangerine) 20% 40%,
+    var(--lime) 0 20%, var(--tangerine) 20% 40%,
     var(--red) 40% 60%, var(--blue) 60% 80%, var(--violet) 80% 100%);
 
   --hair: 1px solid var(--line);
@@ -277,9 +281,9 @@ button.primary:disabled, button.danger:disabled {
 }
 /* Jade for the action that moves the work forward. Black on it is 9.14:1. */
 button.primary, .btn.primary {
-  background: var(--jade); color: var(--ink); font-weight: 700;
+  background: var(--lime); color: var(--ink); font-weight: 700;
 }
-button.primary:hover:not(:disabled), .btn.primary:hover { background: var(--jade); box-shadow: inset 0 0 0 2px var(--ink); }
+button.primary:hover:not(:disabled), .btn.primary:hover { background: var(--lime); box-shadow: inset 0 0 0 2px var(--ink); }
 
 /* Red for the one that destroys something. Dashed as well as red, so it is
    still marked out for anyone who does not see the colour. Black is 5.23:1. */
@@ -340,7 +344,7 @@ label { display: block; }
 }
 .pick-n {
   flex: none; width: 20px; height: 20px; display: grid; place-items: center;
-  background: var(--jade); color: var(--ink); font-size: 11px; font-weight: 700;
+  background: var(--lime); color: var(--ink); font-size: 11px; font-weight: 700;
   font-family: var(--mono);
 }
 /* Position 1 to 4 take the palette in its own order, so the badges match the
@@ -460,12 +464,12 @@ table input:focus { outline: 3px solid var(--blue); outline-offset: -2px; }
 .stat {
   flex: 1 1 120px; padding: 12px 16px; border-right: var(--hairline);
   display: flex; flex-direction: column; gap: 2px;
-  border-top: 5px solid var(--jade);
+  border-top: 5px solid var(--lime);
 }
 .stat:nth-child(2) { border-top-color: var(--tangerine); }
 .stat:nth-child(3) { border-top-color: var(--red); }
 .stat:nth-child(4) { border-top-color: var(--blue); }
-.stat:nth-child(4n+5) { border-top-color: var(--jade); }
+.stat:nth-child(4n+5) { border-top-color: var(--lime); }
 .stat:last-child { border-right: 0; }
 .stat .n { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .stat .l { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
@@ -482,7 +486,7 @@ select.status {
   border: var(--hair); cursor: pointer;
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
-select.status[data-status='Paid']     { background: var(--jade); }
+select.status[data-status='Paid']     { background: var(--lime); }
 select.status[data-status='Pending']  { background: var(--tangerine); }
 select.status[data-status='Waived']   { background: var(--blue); }
 select.status[data-status='Refunded'] { background: var(--red); }
@@ -497,7 +501,7 @@ select.status[data-status='Refunded'] { background: var(--red); }
   background: var(--faint); border: var(--hair); overflow: hidden;
 }
 .seat-bar span {
-  display: block; height: 100%; background: var(--jade);
+  display: block; height: 100%; background: var(--lime);
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 .seat-bar[data-level='nearly'] span { background: var(--tangerine); }
@@ -508,7 +512,7 @@ select.status[data-status='Refunded'] { background: var(--red); }
 /* ---------------- the console ---------------- */
 
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 18px; }
-.tile { border: var(--hair); padding: 14px 16px; border-top: 6px solid var(--jade); }
+.tile { border: var(--hair); padding: 14px 16px; border-top: 6px solid var(--lime); }
 .tile[data-tone='tangerine'] { border-top-color: var(--tangerine); }
 .tile[data-tone='red']       { border-top-color: var(--red); }
 .tile[data-tone='blue']      { border-top-color: var(--blue); }
@@ -519,7 +523,7 @@ select.status[data-status='Refunded'] { background: var(--red); }
 /* One card per workshop that needs something, with why. */
 .todo { display: grid; gap: 10px; }
 .todo-row { border: var(--hair); border-left: 6px solid var(--tangerine); padding: 12px 14px; }
-.todo-row[data-tone='jade']      { border-left-color: var(--jade); }
+.todo-row[data-tone='lime']      { border-left-color: var(--lime); }
 .todo-row[data-tone='tangerine'] { border-left-color: var(--tangerine); }
 .todo-row[data-tone='red']       { border-left-color: var(--red); }
 .todo-row[data-tone='blue']      { border-left-color: var(--blue); }
@@ -528,7 +532,7 @@ select.status[data-status='Refunded'] { background: var(--red); }
   font-size: 11px; padding: 2px 8px; border: var(--hair);
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
-.why .r[data-tone='jade']      { background: var(--jade); }
+.why .r[data-tone='lime']      { background: var(--lime); }
 .why .r[data-tone='tangerine'] { background: var(--tangerine); }
 .why .r[data-tone='red']       { background: var(--red); }
 .why .r[data-tone='blue']      { background: var(--blue); }
@@ -538,7 +542,7 @@ select.status[data-status='Refunded'] { background: var(--red); }
 /* One workshop per group, with a coloured rail down the left. The rail is
    the whole point: a column of colour that can be scanned without reading. */
 .board { display: grid; gap: 12px; }
-.grp { border: var(--hair); border-left: 6px solid var(--jade); background: var(--paper); }
+.grp { border: var(--hair); border-left: 6px solid var(--lime); background: var(--paper); }
 .grp[data-tone='tangerine'] { border-left-color: var(--tangerine); }
 .grp[data-tone='red']       { border-left-color: var(--red); }
 .grp[data-tone='blue']      { border-left-color: var(--blue); }
@@ -596,7 +600,7 @@ select.status[data-status='Refunded'] { background: var(--red); }
   padding: 5px 4px; cursor: pointer;
 }
 .carry-list label:hover { background: var(--faint); }
-.carry-list input[type='checkbox'] { flex: none; width: 15px; height: 15px; accent-color: var(--jade); }
+.carry-list input[type='checkbox'] { flex: none; width: 15px; height: 15px; accent-color: var(--lime); }
 .carry-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .carry-list .is-flagged label { align-items: flex-start; }
 .carry-list .f-sub { flex: none; }
@@ -637,7 +641,7 @@ select.status[data-status='Refunded'] { background: var(--red); }
 .f-row:last-child { border-bottom: 0; }
 
 /* The kinds are told apart by a word AND a colour, never colour alone. */
-.f-person { border-left-color: var(--jade); }
+.f-person { border-left-color: var(--lime); }
 .f-request { border-left-color: var(--blue); }
 .f-workshop { border-left-color: var(--tangerine); }
 
@@ -691,7 +695,7 @@ select.status[data-status='Refunded'] { background: var(--red); }
 .badge.done { background: var(--blue); }
 
 /* A class happening right now. Violet: the class is the one thing in this
-   app that is live, and it had been borrowing jade — the colour of the
+   app that is live, and it had been borrowing lime — the colour of the
    action that moves work forward — which made "a class is running" look like
    "press this". It is still a link, because the only sensible response to
    seeing it is to go there. */
@@ -721,7 +725,7 @@ a.badge:hover {
   background: var(--tangerine);
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
-.pill[data-status='Paid']     { background: var(--jade); }
+.pill[data-status='Paid']     { background: var(--lime); }
 .pill[data-status='Pending']  { background: var(--tangerine); }
 .pill[data-status='Waived']   { background: var(--blue); }
 .pill[data-status='Refunded'] { background: var(--red); }
@@ -783,7 +787,7 @@ a.badge:hover {
   font-size: 14px; border-left-width: 6px;
 }
 .reg-row:hover:not(:disabled) { background: var(--paper); }
-.reg-row[data-tone='jade']      { border-left-color: var(--jade); }
+.reg-row[data-tone='lime']      { border-left-color: var(--lime); }
 .reg-row[data-tone='tangerine'] { border-left-color: var(--tangerine); }
 .reg-row[data-tone='red']       { border-left-color: var(--red); }
 .reg-row[data-tone='none']      { border-left-color: var(--faint); }
@@ -797,7 +801,7 @@ a.badge:hover {
   text-transform: uppercase; letter-spacing: 0.06em;
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
-.reg-row[data-tone='jade'] .reg-mark      { background: var(--jade); }
+.reg-row[data-tone='lime'] .reg-mark      { background: var(--lime); }
 .reg-row[data-tone='tangerine'] .reg-mark { background: var(--tangerine); }
 .reg-row[data-tone='red'] .reg-mark       { background: var(--red); }
 .reg-row[data-tone='none'] .reg-mark      { background: var(--paper); color: var(--muted); }
@@ -833,9 +837,9 @@ a.badge:hover {
 }
 /* A chip can be a link or a button. `button:hover:not(:disabled)` is more
    specific than a bare `.chip:hover`, so without naming the element here a
-   chip button hovers blue while a chip link hovers jade. */
+   chip button hovers blue while a chip link hovers lime. */
 .chip:hover,
-button.chip:hover:not(:disabled) { background: var(--jade); color: var(--ink); text-decoration: none; }
+button.chip:hover:not(:disabled) { background: var(--lime); color: var(--ink); text-decoration: none; }
 button.chip { font: inherit; font-size: 10px; }
 
 /* ---------------- ticket ---------------- */
@@ -853,7 +857,7 @@ button.chip { font: inherit; font-size: 10px; }
 
 .ticket-band {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  background: var(--jade); color: var(--ink); padding: 8px 20px;
+  background: var(--lime); color: var(--ink); padding: 8px 20px;
   font-size: 12px; text-transform: uppercase; letter-spacing: 0.14em; font-weight: 700;
 }
 .ticket-band .ticket-id { font-family: var(--mono); font-size: 15px; letter-spacing: 0.06em; }

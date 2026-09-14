@@ -132,6 +132,29 @@
 .site .measure{max-width:62ch}
 .site a{color:inherit}
 
+/* styles.css is the admin tool and it styles bare `a`, `button` and `input`
+   GLOBALLY — including `a:hover{background:var(--blue)}`, which is the admin's
+   "under the pointer" colour and has no business here. The public site never
+   opted into it, so the brand lockup in the header, the footer links, the
+   feature pager and every inline link in a verification result flashed Dodger
+   Blue on hover, and clicking the certificate-ID field drew a blue outline
+   round it.
+
+   Neutralised once, at the boundary, rather than component by component: the
+   parts of this site that want a hover already say so, and the ones that do
+   not are a logo and a skip link.
+
+   Specificity matters more than usual here. `.site button:hover` is (0,2,1)
+   so `.site .btn:hover` (0,3,0) still wins and the lime button keeps its
+   hover. The field reset is scoped to `:focus:not(:focus-visible)` so it
+   silences the mouse-click outline without taking the KEYBOARD focus ring
+   with it. */
+.site a:hover,
+.site button:hover{background:none; color:inherit}
+.site input:focus:not(:focus-visible),
+.site textarea:focus:not(:focus-visible),
+.site select:focus:not(:focus-visible){outline:none}
+
 /* The brand's three tones, in the order the mark reads them: lime, paper,
    ink. It used to be the Indian tricolour; that lives on the certificate,
    which is the document that earns it. */
