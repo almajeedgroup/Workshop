@@ -107,7 +107,8 @@ test('lime is only ever text on a dark ground', () => {
   const offenders = [];
   for (const [, sel, body] of code(site).matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
     if (!/(?:^|;)\s*color\s*:\s*var\(--lime\)/.test(body)) continue;
-    if (!/band-dark|ftr|on-dark/.test(sel)) offenders.push(sel.trim());
+    // `over-dark` is the floating nav's dark pill — lime on #1C1C1C is 8.1:1.
+    if (!/band-dark|ftr|on-dark|over-dark|\.band\.dark/.test(sel)) offenders.push(sel.trim());
   }
   assert.deepEqual(offenders, []);
 });

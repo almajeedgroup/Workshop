@@ -43,7 +43,9 @@
   --ink-faint:#616161;       /* 6.19:1 on paper, 5.52:1 on paper-3 */
 
   /* surface */
-  --paper:#FFFFFF; --paper-2:#FAFAF7; --paper-3:#F2F2EE;
+  /* Warm, not neutral. A pure-grey off-white next to near-black reads
+     cold and clinical; the whole light half of the page sits on this. */
+  --paper:#FFFFFF; --paper-2:#F7F5F2; --paper-3:#EFEDE8;
 
   /* brand */
   --lime:#32CD32;            /* BRAND_LIME. A FILL. Ink on it: 9.35:1 */
@@ -115,7 +117,13 @@
 .site section.tight{padding-block:clamp(40px,5vw,64px)}
 
 /* ---------- type ---------- */
-.site h1,.site h2,.site h3,.site h4{margin:0; font-weight:700; letter-spacing:-.015em; line-height:1.14; color:var(--ink)}
+/* styles.css styles bare `h2` globally — including `text-transform:uppercase`,
+   which is right for a dense admin table heading and wrong for every heading
+   on this site. Same boundary reset as the hover colours above it. */
+.site h1,.site h2,.site h3,.site h4{
+  margin:0; font-weight:700; letter-spacing:-.015em; line-height:1.14; color:var(--ink);
+  text-transform:none;
+}
 .site .display{
   font-family:var(--display); font-weight:400; letter-spacing:.015em;
   text-transform:uppercase; line-height:1.02;
@@ -214,28 +222,7 @@
 }
 
 /* ---------- header ---------- */
-.site .hdr{
-  position:sticky; top:0; z-index:100;
-  background:rgba(255,255,255,.86); backdrop-filter:saturate(180%) blur(14px);
-  border-bottom:1px solid transparent; transition:border-color .2s ease, box-shadow .2s ease;
-}
-.site .hdr.stuck{border-bottom-color:var(--hair); box-shadow:0 1px 20px rgba(10,10,10,.07)}
-.site .hdr .bar{display:flex; align-items:center; gap:18px; height:74px}
-.site .hdr .mark{display:flex; align-items:center; gap:11px; text-decoration:none; margin-right:auto}
-.site .hdr .mark img{height:38px; width:auto; display:block}
-.site .hdr .mark .txt{display:flex; flex-direction:column; line-height:1.12}
-.site .hdr .mark .t1{font-family:var(--display); font-size:16px; letter-spacing:.03em; text-transform:uppercase}
-.site .hdr .mark .t2{font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint); font-weight:600}
-
-.site .nav{display:flex; align-items:center; gap:4px}
-.site .nav a{
-  padding:9px 15px; border-radius:999px; text-decoration:none;
-  font-size:14.5px; font-weight:500; color:var(--ink-2);
-  transition:background .15s ease, color .15s ease;
-}
-.site .nav a:hover{background:var(--paper-3)}
-.site .nav a.on{color:var(--lime-ink); font-weight:600}
-.site .hdr .cta{margin-left:8px}
+/* (the header lives at the foot of this file — see "The navigation") */
 
 .site .burger{
   display:none; width:44px; height:44px; border:0; background:transparent; cursor:pointer;
@@ -583,3 +570,408 @@
 }
 
 @media print{ .site .hdr,.site .ftr,.site .skip{display:none !important} }
+
+/* =====================================================================
+   The page, as a sequence of full-bleed tones
+   =====================================================================
+   The site alternates warm off-white and near-black in full-bleed bands
+   with HARD edges — no gradient between them, no container margin. The
+   band is the unit of rhythm, and every band declares which tone it is so
+   the floating nav can invert against it.
+   ===================================================================== */
+
+.site .band{padding-block:clamp(72px,9vw,128px); position:relative}
+.site .band.tight{padding-block:clamp(48px,6vw,80px)}
+.site .band.dark{background:var(--ink); color:var(--on-dark)}
+.site .band.dark h1,.site .band.dark h2,.site .band.dark h3,.site .band.dark h4{color:#fff}
+.site .band.dark p{color:var(--on-dark-soft)}
+.site .band.light{background:var(--paper-2)}
+.site .band.paper{background:var(--paper)}
+
+/* A heading in this language is REGULAR weight and large — the emphasis
+   comes from size and from one italic word, not from bolding everything.
+   The hero and the closing panel are the deliberate exceptions. */
+/* The BLOCK is full width; the heading and the sentence under it each
+   get their own measure. Constraining the block instead turns the
+   sentence into a three-word-per-line poem. */
+.site .head{margin:0 auto; text-align:center}
+.site .head h2{max-width:22ch; margin-inline:auto}
+.site .head.left{margin-left:0; text-align:left}
+.site .head.left h2{margin-left:0}
+.site .head h2{
+  font-family:var(--text); font-weight:400; letter-spacing:-.02em; line-height:1.1;
+  font-size:var(--tx-display-md);
+}
+.site .head em{font-style:italic; font-weight:400}
+/* Wider than the heading: a heading wants a short measure, a sentence
+   under it wants a readable one, and 24ch turns it into a poem. */
+.site .head p{margin:var(--sp-4) auto 0; max-width:52ch; font-size:var(--tx-xl); color:var(--ink-faint); font-weight:300}
+.site .head.left p{margin-left:0}
+.site .band.dark .head p{color:var(--on-dark-faint)}
+
+/* ---------------------------------------------------------------------
+   The announcement pill above a hero
+   --------------------------------------------------------------------- */
+.site .ann{
+  display:inline-flex; align-items:center; gap:var(--sp-3);
+  padding:var(--sp-1) var(--sp-4) var(--sp-1) var(--sp-1);
+  border-radius:var(--r-pill); background:var(--paper);
+  border:1px solid var(--hair-2); box-shadow:var(--sh-card);
+  font-size:var(--tx-base); color:var(--ink); text-decoration:none;
+  transition:box-shadow .2s ease, transform .2s ease;
+}
+.site .ann:hover{box-shadow:var(--sh-lift); transform:translateY(-1px)}
+.site .ann b{
+  background:var(--ink); color:#fff; border-radius:var(--r-pill);
+  padding:var(--sp-1) var(--sp-3); font-size:var(--tx-2xs);
+  letter-spacing:.1em; text-transform:uppercase; font-weight:700;
+}
+
+/* ---------------------------------------------------------------------
+   Email capture — the shape that carries every call to action here
+   ---------------------------------------------------------------------
+   An input and a button inside one rounded container, with the trust
+   strip fused to its bottom edge rather than floating under it. */
+/* The input inside this has no border of its own — the container is the
+   control's visible boundary, so the container is what has to be seen.
+   Without this the field is white on white and 1.4.11 has nothing to
+   measure. */
+.site .capture{
+  max-width:520px; margin-inline:auto; border-radius:var(--r-md); overflow:hidden;
+  border:1px solid var(--control-line); box-shadow:var(--sh-card);
+}
+.site .capture form{display:flex; gap:var(--sp-2); padding:var(--sp-2); background:var(--paper)}
+.site .capture input{
+  flex:1 1 auto; min-width:0; font:inherit; font-size:var(--tx-lg);
+  padding:var(--sp-3) var(--sp-4); border:0; background:transparent; color:var(--ink);
+}
+.site .capture input::placeholder{color:var(--ink-faint)}
+.site .capture input:focus-visible{outline:3px solid var(--ink); outline-offset:-3px; border-radius:var(--r-sm)}
+.site .capture .trust-strip{
+  display:flex; align-items:center; justify-content:center; gap:var(--sp-4);
+  padding:var(--sp-3) var(--sp-4); background:var(--paper-3);
+  font-size:var(--tx-sm); color:var(--ink-soft); flex-wrap:wrap;
+}
+.site .capture .trust-strip .stars{color:var(--lime-ink); letter-spacing:.12em}
+.site .band.dark .capture{box-shadow:none; border-color:rgba(255,255,255,.28)}
+.site .band.dark .capture form{background:rgba(255,255,255,.07)}
+.site .band.dark .capture input{color:#fff}
+.site .band.dark .capture input::placeholder{color:var(--on-dark-faint)}
+.site .band.dark .capture .trust-strip{background:rgba(255,255,255,.045); color:var(--on-dark-soft)}
+
+/* ---------------------------------------------------------------------
+   Bento
+   ---------------------------------------------------------------------
+   NAMES. styles.css is the admin tool and its class names are short and
+   generic — `.tile`, `.chip`, `.fig`, `.rule` all already mean something
+   there, and none of them is scoped. Reusing one here does not override
+   it, it INHERITS it: every bento cell came out wearing the admin's lime
+   top border, and the marquee chips came out uppercase. So the public
+   components that would have collided carry a prefix.
+   ---------------------------------------------------------------------
+   Mixed-size tiles on a twelve-column grid. A figure tile carries one big
+   number; a quote tile carries a sentence and who said it. Both are the
+   same object with different contents, so they sit on the same grid. */
+.site .bento{display:grid; grid-template-columns:repeat(12,1fr); gap:var(--sp-4)}
+.site .bt{
+  border-radius:var(--r-lg); padding:clamp(20px,2.4vw,28px);
+  grid-column:span 4; display:flex; flex-direction:column; min-height:180px;
+  background:var(--tile-paper); color:var(--ink);
+}
+.site .bt.wide{grid-column:span 8}
+.site .bt.half{grid-column:span 6}
+.site .bt.lime{background:var(--tile-lime)}
+.site .bt.soft{background:var(--tile-lime-soft)}
+.site .bt.stone{background:var(--tile-stone)}
+.site .bt.ink{background:var(--tile-ink); color:#fff}
+.site .bt.ink .tile-note,.site .bt.ink .tile-by small{color:var(--on-dark-faint)}
+/* Every tile carries near-black at 15:1 or better — see tokens.css. */
+.site .bt .bt-fig{
+  font-size:clamp(34px,4.6vw,52px); font-weight:400; letter-spacing:-.03em; line-height:1;
+}
+.site .bt .tile-note{margin-top:var(--sp-2); color:var(--ink-soft); font-size:var(--tx-base)}
+.site .bt blockquote{margin:0; font-size:var(--tx-xl); line-height:1.45; font-weight:300}
+.site .bt .tile-foot{margin-top:auto; padding-top:var(--sp-5); display:flex; align-items:center; gap:var(--sp-3)}
+.site .bt .tile-by{display:flex; align-items:center; gap:var(--sp-3); min-width:0}
+.site .bt .tile-by img{width:40px; height:40px; border-radius:var(--r-sm); object-fit:cover; flex:none}
+.site .bt .tile-by b{display:block; font-size:var(--tx-base); font-weight:600}
+.site .bt .tile-by small{display:block; font-size:var(--tx-sm); color:var(--ink-soft)}
+.site .bt .tile-foot .spacer{flex:1}
+.site .bt .logo{font-weight:700; letter-spacing:-.02em; font-size:var(--tx-lg); opacity:.85}
+@media (max-width:900px){
+  .site .bento{grid-template-columns:repeat(6,1fr)}
+  .site .bt,.site .bt.wide,.site .bt.half{grid-column:span 6}
+}
+
+/* ---------------------------------------------------------------------
+   Masonry testimonials, with the columns fading at both ends
+   ---------------------------------------------------------------------
+   `mask-image` rather than a gradient overlay: an overlay has to match the
+   background behind it, and this section is the one that sits on the dark
+   band today and might not tomorrow. */
+.site .masonry{columns:3; column-gap:var(--sp-4); max-height:760px; overflow:hidden;
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 12%,#000 82%,transparent);
+  mask-image:linear-gradient(180deg,transparent,#000 12%,#000 82%,transparent)}
+@media (max-width:900px){ .site .masonry{columns:2; max-height:620px} }
+@media (max-width:600px){ .site .masonry{columns:1; max-height:520px} }
+.site .masonry .say{
+  break-inside:avoid; margin:0 0 var(--sp-4); padding:var(--sp-5);
+  border-radius:var(--r-md); background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.1);
+}
+.site .masonry .say .tile-by b{color:#fff}
+.site .masonry .say .tile-by small{color:var(--on-dark-faint)}
+.site .masonry .say p{margin-top:var(--sp-4); font-size:var(--tx-xl); line-height:1.45; color:var(--on-dark-soft); font-weight:300}
+/* Reduced motion gets the whole list rather than a cropped one: a mask is
+   not motion, but a clipped column with no way to scroll it is a trap. */
+@media (prefers-reduced-motion:reduce){
+  .site .masonry{max-height:none; -webkit-mask-image:none; mask-image:none}
+}
+
+/* ---------------------------------------------------------------------
+   Logo grid — hairlines, not cards
+   --------------------------------------------------------------------- */
+/* minmax(0,1fr), not 1fr: a `1fr` track refuses to go below its content's
+   min-width, so two cells holding a 25px name and a crest measured 348px
+   inside a 280px page and took the document sideways with them. */
+.site .logogrid{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); border-top:1px solid var(--hair)}
+@media (max-width:820px){ .site .logogrid{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:460px){ .site .logogrid{grid-template-columns:minmax(0,1fr)} }
+.site .logogrid .cell{
+  padding:clamp(28px,4vw,48px) var(--sp-5); text-align:center;
+  border-bottom:1px solid var(--hair); border-right:1px solid var(--hair);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:var(--sp-4);
+}
+.site .logogrid .cell:nth-child(4n){border-right:0}
+@media (max-width:820px){
+  .site .logogrid .cell:nth-child(4n){border-right:1px solid var(--hair)}
+  .site .logogrid .cell:nth-child(2n){border-right:0}
+}
+.site .logogrid .cell .name{font-size:var(--tx-2xl); font-weight:700; letter-spacing:-.03em; overflow-wrap:break-word; max-width:100%}
+.site .logogrid .cell small{font-size:var(--tx-base); color:var(--ink-faint)}
+.site .logogrid .cell.feature{background:var(--paper)}
+
+/* ---------------------------------------------------------------------
+   Marquee rows of chips
+   ---------------------------------------------------------------------
+   Three rows, alternate directions, duplicated once so the loop has
+   something to scroll into. Paused entirely under reduced motion — a
+   horizontally scrolling wall of text is the clearest possible case. */
+/* `minmax(0,1fr)`, not the default `auto`: a grid track sizes to its
+   content, and the rows inside are `max-content` — so the container grew
+   to the width of the longest row and took the page with it at 320px. */
+.site .marquee{display:grid; grid-template-columns:minmax(0,1fr); gap:var(--sp-3); overflow:hidden;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
+  mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.site .marquee .row{display:flex; gap:var(--sp-3); width:max-content; animation:slide 46s linear infinite}
+.site .marquee .row.back{animation-direction:reverse; animation-duration:58s}
+.site .marquee .row:nth-child(3){animation-duration:52s}
+@keyframes slide{ from{transform:translateX(0)} to{transform:translateX(-50%)} }
+.site .marquee .sig-chip{
+  display:inline-flex; align-items:center; gap:var(--sp-3); flex:none;
+  padding:var(--sp-3) var(--sp-4); border-radius:var(--r-sm);
+  background:rgba(255,255,255,.055); border:1px solid rgba(255,255,255,.1);
+  font-size:var(--tx-lg); color:var(--on-dark); white-space:nowrap;
+}
+.site .marquee .sig-chip i{width:14px; height:14px; border-radius:4px; flex:none; background:var(--lime)}
+@media (prefers-reduced-motion:reduce){
+  .site .marquee .row{animation:none}
+  /* Stays hidden rather than becoming scrollable. The strip is aria-hidden
+     decoration; losing its tail costs nothing, and a horizontal scroll
+     container the reader has to drag is not an improvement on a stopped
+     animation. */
+  .site .marquee{-webkit-mask-image:none; mask-image:none}
+}
+
+/* ---------------------------------------------------------------------
+   The pull quote, with a drawn underline
+   --------------------------------------------------------------------- */
+.site .pull{max-width:20ch}
+.site .pull q{quotes:none; font-size:var(--tx-display-md); font-weight:400; letter-spacing:-.02em; line-height:1.2}
+.site .pull .q-rule{display:block; width:100%; height:12px; margin:var(--sp-7) 0 var(--sp-5); color:var(--hair-2)}
+.site .pull .by{display:flex; align-items:center; gap:var(--sp-4); flex-wrap:wrap}
+.site .pull .by .spacer{flex:1}
+
+/* ---------------------------------------------------------------------
+   The closing panel
+   ---------------------------------------------------------------------
+   Inset with a radius rather than full-bleed, and the ONE place the type
+   goes to Anton: ultra-bold caps with a bloom behind one line. Lime, and
+   everything on it is ink — white on lime is 2.12:1. */
+.site .cta-panel{
+  position:relative; overflow:hidden; border-radius:var(--r-xl);
+  padding:clamp(56px,8vw,112px) var(--pad); text-align:center;
+  background:var(--lime); color:var(--ink);
+}
+.site .cta-panel::before{
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:radial-gradient(60% 40% at 50% 30%, rgba(255,255,255,.55), transparent 70%);
+}
+.site .cta-panel > *{position:relative}
+.site .cta-panel h2{
+  font-family:var(--display); font-weight:400; text-transform:uppercase;
+  font-size:clamp(38px,8vw,92px); line-height:.94; letter-spacing:.01em; color:var(--ink);
+}
+.site .cta-panel h2 .bloom{
+  color:var(--ink);
+  text-shadow:0 0 28px rgba(255,255,255,.9), 0 0 60px rgba(255,255,255,.55);
+}
+.site .cta-panel .capture{margin-top:clamp(28px,4vw,44px)}
+.site .cta-panel .capture form{background:var(--paper)}
+/* --ink-soft lands at 4.03:1 on a 6% wash over lime. The full ink is 14:1. */
+.site .cta-panel .capture .trust-strip{background:rgba(10,10,10,.07); color:var(--ink)}
+
+/* =====================================================================
+   The navigation
+   =====================================================================
+   Two states, and the second is the interesting one.
+
+   AT THE TOP it is an ordinary full-width bar: wordmark left, links,
+   buttons right. Nothing floats, nothing overlaps the hero.
+
+   ONCE SCROLLED it collapses into a pill that floats centred over the
+   page — the crest only, the links, both buttons, one rounded container
+   with a shadow. And it INVERTS: dark pill over a dark band, light pill
+   over a light one, because a floating object has to be legible against
+   whatever it happens to be over and this page alternates all the way
+   down. SiteHeader watches which band is under the pill and says which.
+
+   The whole thing is a single element changing shape, not two headers
+   swapped — so a screen reader's focus and the tab order survive the
+   transition, and there is one set of links rather than two.
+   ===================================================================== */
+
+.site .hdr{
+  position:sticky; top:0; z-index:100;
+  background:transparent; border-bottom:0;
+  transition:padding .32s cubic-bezier(.2,.7,.3,1);
+  padding-block:var(--sp-3);
+}
+.site .hdr .bar{
+  /* positioned, so the scroll rail measures against the PILL and not the
+     full-width header it sits inside */
+  position:relative;
+  display:flex; align-items:center; gap:var(--sp-5); height:60px;
+  padding-inline:var(--sp-4);
+  border-radius:var(--r-pill);
+  background:transparent; border:1px solid transparent;
+  transition:background .32s ease, border-color .32s ease, box-shadow .32s ease,
+             max-width .32s cubic-bezier(.2,.7,.3,1), padding .32s ease, color .25s ease;
+  max-width:100%;
+}
+
+/* The floating state. */
+.site .hdr.stuck{padding-block:var(--sp-2)}
+.site .hdr.stuck .bar{
+  max-width:840px; margin-inline:auto; padding-inline:var(--sp-2);
+  box-shadow:var(--sh-float);
+}
+.site .hdr.stuck.over-light .bar{background:var(--paper); border-color:var(--hair)}
+.site .hdr.stuck.over-dark .bar{background:#1C1C1C; border-color:rgba(255,255,255,.12); color:#fff}
+
+/* The wordmark gives way to the crest alone when it floats — the lockup
+   is too wide for a pill and the mark alone still says who it is. */
+.site .hdr .mark .txt{transition:max-width .32s cubic-bezier(.2,.7,.3,1), opacity .2s ease}
+.site .hdr.stuck .mark .txt{max-width:0; opacity:0; overflow:hidden}
+.site .hdr .mark img{height:32px}
+
+.site .hdr.over-dark .nav a{color:#fff}
+.site .hdr.over-dark .nav a:hover{background:rgba(255,255,255,.1)}
+.site .hdr.over-dark .nav a.on{color:var(--lime)}
+.site .hdr.over-dark .burger i,
+.site .hdr.over-dark .burger i::before,
+.site .hdr.over-dark .burger i::after{background:#fff}
+
+/* The two buttons: outlined, then filled. They swap polarity with the
+   band, which is the whole reason the tone is tracked at all. */
+.site .hdr .nav-acts{display:flex; align-items:center; gap:var(--sp-2)}
+.site .hdr .btn.sm{padding:var(--sp-3) var(--sp-5); font-size:var(--tx-base)}
+.site .hdr .btn.ghost{background:transparent; color:inherit; box-shadow:inset 0 0 0 1px var(--hair-2)}
+.site .hdr.over-dark .btn.ghost{box-shadow:inset 0 0 0 1px rgba(255,255,255,.25); color:#fff}
+.site .hdr.over-dark .btn.ghost:hover{background:#fff; color:var(--ink); box-shadow:none}
+.site .hdr .cta{background:var(--ink); color:#fff; box-shadow:none}
+.site .hdr .cta:hover{background:var(--ink-2); color:#fff; transform:translateY(-1px)}
+.site .hdr.over-dark .cta{background:var(--paper); color:var(--ink)}
+.site .hdr.over-dark .cta:hover{background:var(--lime); color:var(--ink)}
+
+/* The scroll rail belongs to the pill now, not to a full-width edge. */
+.site .scroll-rail{left:var(--sp-5); right:var(--sp-5); bottom:5px; border-radius:2px}
+.site .hdr:not(.stuck) .scroll-rail{opacity:0}
+
+@media (max-width:1080px){
+  .site .hdr.stuck .bar{max-width:100%; margin-inline:0}
+  .site .hdr .nav-acts .btn.ghost{display:none}
+}
+
+/* ---------------------------------------------------------------------
+   The hero
+   ---------------------------------------------------------------------
+   Centred, with the blooms behind it. The headline is REGULAR weight and
+   large with one italic word — the opposite of the old bold-condensed
+   treatment, and the thing that sets the tone for every heading below. */
+.site .band.hero{
+  background:var(--paper-2); overflow:hidden;
+  padding-block:clamp(56px,7vw,92px) clamp(72px,9vw,128px);
+}
+.site .band.hero::before{
+  content:''; position:absolute; inset:-10% -5% auto; height:120%; pointer-events:none;
+  background:
+    radial-gradient(52% 46% at 8% 64%, rgba(50,205,50,.30), transparent 68%),
+    radial-gradient(44% 40% at 92% 22%, rgba(10,10,10,.07), transparent 70%);
+}
+.site .band.hero .wrap{position:relative}
+.site .hero-mid{max-width:820px; margin-inline:auto; text-align:center}
+.site .display-lead{
+  font-family:var(--text); font-weight:400; letter-spacing:-.03em; line-height:1.06;
+  font-size:var(--tx-display-xl); margin-top:var(--sp-6);
+}
+.site .display-lead em{font-style:italic}
+.site .band.hero .lede{margin:var(--sp-5) auto 0; max-width:54ch; font-size:var(--tx-xl); color:var(--ink-soft)}
+.site .band.hero .capture{margin-top:clamp(28px,4vw,44px)}
+
+/* The feature strip keeps its shape but takes the band's spacing. */
+.site .fstrip a{border-radius:var(--r-md); border-color:var(--hair)}
+
+/* The step numbers lose the flag-era circle for a square with the radius
+   everything else uses. */
+.site .steps .step .num{border-radius:var(--r-sm); background:var(--ink); color:#fff}
+
+/* The links themselves. These went out with the old header block; they are
+   not part of the pill's behaviour, so they live on their own. */
+.site .nav{display:flex; align-items:center; gap:var(--sp-1); margin-inline:auto}
+.site .nav a{
+  padding:var(--sp-2) var(--sp-4); border-radius:var(--r-pill);
+  font-size:var(--tx-base); font-weight:500; color:inherit; text-decoration:none;
+  white-space:nowrap; transition:background .15s ease, color .15s ease;
+}
+.site .nav a:hover{background:var(--paper-3)}
+.site .nav a.on{color:var(--lime-ink); font-weight:600}
+.site .hdr .mark{display:flex; align-items:center; gap:var(--sp-3); text-decoration:none; flex:none}
+
+/* The hero runs to the top of the page and the bar sits on it — the bar is
+   transparent until it collapses, so there is nothing to sit "below". */
+.site main > .band.hero:first-child{margin-top:calc(-1 * (60px + var(--sp-3) * 2))}
+.site main > .band.hero:first-child{padding-top:calc(60px + var(--sp-3) * 2 + clamp(40px,5vw,72px))}
+
+/* ---------------------------------------------------------------------
+   The nav, collapsed
+   ---------------------------------------------------------------------
+   This has to come AFTER the `.nav` rules above it. The collapse already
+   existed earlier in the file and was silently losing to the new
+   declarations appended below it — same specificity, later wins, and the
+   links stayed on screen at 390px pushing the page 390px sideways.
+   --------------------------------------------------------------------- */
+@media (max-width:1080px){
+  .site .hdr .nav{display:none}
+  .site .hdr .nav-acts .btn.ghost{display:none}
+  .site .burger{display:flex; margin-left:auto}
+  .site .hdr .bar{gap:var(--sp-3)}
+  .site .hdr.stuck .bar{max-width:100%; margin-inline:0; padding-inline:var(--sp-3)}
+  /* The lockup comes back when there is no pill to fit it into. */
+  .site .hdr.stuck .mark .txt{max-width:none; opacity:1}
+}
+@media (max-width:560px){
+  .site .hdr .mark .txt{display:none}
+  .site .hdr.stuck .mark .txt{display:none}
+  .site .hdr .nav-acts .btn.cta{padding:var(--sp-2) var(--sp-4); font-size:var(--tx-sm)}
+}

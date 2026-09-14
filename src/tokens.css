@@ -57,6 +57,36 @@
   --tx-2xl: 25px;
   --tx-3xl: 38px;
 
+  /* ---- shape -------------------------------------------------------
+     Corners, and the two shadows. A page with eleven radii looks like
+     eleven people made it. */
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+
+  /* Cards sit almost flat; the floating nav is the one thing that is
+     genuinely above the page and says so. */
+  --sh-card: 0 1px 2px rgba(10,10,10,.04), 0 8px 24px rgba(10,10,10,.06);
+  --sh-lift: 0 2px 6px rgba(10,10,10,.06), 0 18px 44px rgba(10,10,10,.11);
+  --sh-float: 0 1px 2px rgba(10,10,10,.06), 0 10px 30px rgba(10,10,10,.13);
+
+  /* ---- the tile family --------------------------------------------
+     The bento needs tiles you can tell apart at a glance, and the brand
+     has ONE accent. Four unrelated pastels would have been the easy copy
+     and the wrong answer — so the family is lime at two strengths, two
+     neutrals and the ink, which is five distinguishable tiles that all
+     belong to the same brand. Every one carries near-black.
+
+     If companion hues are ever wanted, this block is where they go and
+     nothing else changes. */
+  --tile-lime: #C8F0A8;
+  --tile-lime-soft: #E6F7D6;
+  --tile-stone: #EDEAE3;
+  --tile-paper: #FFFFFF;
+  --tile-ink: #0A0A0A;
+
   /* Headings that have to survive a phone and a 27-inch screen. The
      clamp is the token: a page picking its own min and max is how six
      pages ended up with six different hero sizes. */

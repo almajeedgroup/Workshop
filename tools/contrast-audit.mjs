@@ -187,8 +187,21 @@ const NONTEXT_AUDIT = `(() => {
     const around = ground(el.parentElement || document.body);
     const bw = parseFloat(cs.borderTopWidth) || 0;
     if (bw < 1) {
+      // A control's visible boundary is not always its own border. The email
+      // capture draws one edge round the input AND its button, which is what
+      // a person sees and what 1.4.11 is actually about — so look up a
+      // couple of levels for a bounded edge before calling it unbounded.
+      let bounded = false;
+      let n = el.parentElement;
+      for (let up = 0; n && up < 3; up++, n = n.parentElement) {
+        const pcs = getComputedStyle(n);
+        const pw = parseFloat(pcs.borderTopWidth) || 0;
+        if (pw >= 1 && ratio(over(px(pcs.borderTopColor), around), around) >= 3) { bounded = true; break; }
+      }
       const own = px(cs.backgroundColor);
-      if (ratio(own.a > 0 ? own : around, around) < 3) out.push({ kind: 'field', issue: 'no border, and the fill does not separate it', sel: name(el) });
+      if (!bounded && ratio(own.a > 0 ? own : around, around) < 3) {
+        out.push({ kind: 'field', issue: 'no border, and nothing around it draws one', sel: name(el) });
+      }
       continue;
     }
     const rr = ratio(over(px(cs.borderTopColor), around), around);

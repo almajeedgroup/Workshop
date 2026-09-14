@@ -173,7 +173,10 @@ function counters(root) {
 
 /** A hairline under the sticky header showing how far down the page you are. */
 function rail(root) {
-  const header = root.querySelector('.hdr');
+  // On the BAR, not the header: the header is full width and the bar
+  // collapses to a centred pill, so a rail on the header runs out either
+  // side of it the moment it floats.
+  const header = root.querySelector('.hdr .bar');
   if (!header || header.querySelector('.scroll-rail')) return;
 
   const bar = document.createElement('i');
