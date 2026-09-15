@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getCertificate, getHolder } from '../lib/certdb.js';
 import { formatDate } from '../lib/tickets.js';
 import { ISSUER } from '../lib/schema.js';
+import { certificateIssuer } from '../lib/issuer.js';
 import {
   IconCheckCircle, IconAlert, IconShield, IconArrow, IconQr,
 } from '../components/site/Icons.jsx';
@@ -63,44 +64,47 @@ export default function VerifyPage() {
 
   return (
     <>
-      <section className="hero tight">
+      <section className="band hero quiet tight" data-tone="light">
         <div className="wrap">
-          <div style={{ maxWidth: 720 }} data-reveal>
-            <span className="eyebrow">Certificate verification</span>
-            <h1 className="display" style={{ fontSize: 'clamp(30px,4.4vw,48px)' }}>
-              Check a certificate
-            </h1>
-            <div className="tri" style={{ marginTop: 20 }}><i /><i /><i /></div>
-            <p className="lede" style={{ marginTop: 20 }}>
+          <div className="hero-mid" data-reveal>
+            <span className="ann flat"><b>Verification</b> Free, and no account needed</span>
+
+            <h1 className="display-lead sm">Check a <em>certificate</em></h1>
+
+            <p className="lede">
               Enter the ID printed at the bottom left of the certificate, or scan the QR code
               beside it.
             </p>
 
-            <form onSubmit={submit} style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 26 }}>
-              <input
-                value={entry}
-                onChange={(e) => setEntry(e.target.value)}
-                placeholder="e.g. AIHOW26-COM-001"
-                aria-label="Certificate ID"
-                style={{
-                  font: 'inherit', fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace',
-                  fontSize: 16, padding: '14px 18px', borderRadius: 12,
-                  border: '1.6px solid var(--hair-2)', background: '#fff',
-                  minWidth: 280, flex: '1 1 280px', textTransform: 'uppercase',
-                }}
-              />
-              <button className="btn" type="submit" disabled={!entry.trim() || checking}>
-                {checking ? 'Checking…' : 'Verify'} <IconArrow />
-              </button>
-            </form>
+            <div className="capture mono">
+              <form onSubmit={submit}>
+                <input
+                  value={entry}
+                  onChange={(e) => setEntry(e.target.value)}
+                  placeholder="e.g. AIHOW26-COM-001"
+                  aria-label="Certificate ID"
+                />
+                <button className="btn cta" type="submit" disabled={!entry.trim() || checking}>
+                  {checking ? 'Checking…' : 'Verify'} <IconArrow />
+                </button>
+              </form>
+              <div className="trust-strip">
+                <IconShield width="15" height="15" />
+                <span>No phone numbers or dates of birth are ever shown</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className={result || error ? '' : 'band-soft'} style={{ paddingTop: result || error ? 0 : undefined }}>
+      <section
+        className={`band ${result || error ? 'paper' : 'light'}`}
+        data-tone="light"
+        style={{ paddingTop: result || error ? 0 : undefined }}
+      >
         <div className="wrap">
           {error && (
-            <div className="verdict bad" style={{ marginBottom: 24 }}>
+            <div className="verdict bad mb-6">
               <span className="vico"><IconAlert /></span>
               <div><h3>Could not check right now</h3><p>{error}</p></div>
             </div>
@@ -133,7 +137,11 @@ export default function VerifyPage() {
                   <h3>{genuine ? 'Genuine certificate' : 'Withdrawn'}</h3>
                   <p>
                     {genuine
-                      ? `Issued by ${ISSUER.name} and valid.`
+                      // The body that issued THIS certificate. Telling somebody
+                      // checking a 2025 award that it came from whatever this
+                      // school is called in 2026 is the whole failure this
+                      // verification exists to prevent.
+                      ? `Issued by ${certificateIssuer(cert).name} and valid.`
                       : `This certificate was issued but has since been withdrawn${cert.revokedReason ? `: ${cert.revokedReason}` : '.'} It should not be relied upon.`}
                   </p>
                 </div>
@@ -141,7 +149,7 @@ export default function VerifyPage() {
 
               <div className="grid g2" style={{ marginTop: 'var(--gap)', alignItems: 'start' }}>
                 <div data-reveal>
-                  <h2 style={{ fontSize: 'clamp(20px,2.4vw,26px)', marginBottom: 18 }}>
+                  <h2 className="t-display-sm" style={{ marginBottom: 18 }}>
                     {cert.typeLabel || 'Certificate'}
                   </h2>
                   <dl className="dl">
@@ -154,7 +162,7 @@ export default function VerifyPage() {
                     {cert.presentedBy && <><dt>Presented by</dt><dd>{cert.presentedBy}</dd></>}
                     <dt>Issued on</dt><dd>{formatDate(cert.issuedOn) || cert.issuedOn}</dd>
                   </dl>
-                  <div style={{ marginTop: 22 }}>
+                  <div className="mt-6">
                     <Link className="btn ghost" to={`/c/${cert.certificateId}`}>
                       View the certificate <IconArrow />
                     </Link>
@@ -164,11 +172,11 @@ export default function VerifyPage() {
                 <div className="card" data-reveal>
                   <h3>Record with us</h3>
                   {history.length <= 1 ? (
-                    <p style={{ marginTop: 10 }}>
+                    <p className="mt-3">
                       This is the only certificate we have issued to this person.
                     </p>
                   ) : (
-                    <div className="scroll-x" style={{ marginTop: 14 }}>
+                    <div className="scroll-x mt-4">
                       <table className="htable">
                         <thead>
                           <tr><th>Certificate</th><th>Award</th><th>Programme</th><th>Issued</th></tr>
@@ -192,7 +200,7 @@ export default function VerifyPage() {
                   )}
                   <div style={{ display: 'flex', gap: 9, alignItems: 'flex-start', marginTop: 20, paddingTop: 18, borderTop: '1px solid var(--hair)' }}>
                     <IconShield width="16" height="16" style={{ color: 'var(--ink-faint)', flex: 'none', marginTop: 2 }} />
-                    <span style={{ fontSize: 13, color: 'var(--ink-faint)', lineHeight: 1.6 }}>
+                    <span className="t-sm" style={{ color: 'var(--ink-faint)', lineHeight: 1.6 }}>
                       Contact details are never shown here. To confirm anything further, call{' '}
                       {ISSUER.phones.join(' or ')}.
                     </span>

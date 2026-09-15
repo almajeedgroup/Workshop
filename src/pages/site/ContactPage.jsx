@@ -1,110 +1,126 @@
 import { Link } from 'react-router-dom';
 import { ISSUER } from '../../lib/schema.js';
+import { brandLockup } from '../../lib/brand.js';
 import { IconPhone, IconMail, IconPin, IconQr, IconArrow } from '../../components/site/Icons.jsx';
 
 export default function ContactPage() {
+  const tel = (p) => `tel:${p.replace(/\s/g, '')}`;
+
   return (
     <>
-      <section className="hero tight">
+      {/* ---------------- hero ---------------- */}
+      <section className="band hero quiet tight" data-tone="light">
         <div className="wrap">
-          <div style={{ maxWidth: 720 }} data-reveal>
-            <span className="eyebrow">Contact</span>
-            <h1 className="display" style={{ fontSize: 'clamp(32px,5vw,56px)' }}>Get in touch</h1>
-            <div className="tri" style={{ marginTop: 22 }}><i /><i /><i /></div>
-            <p className="lede" style={{ marginTop: 22 }}>
-              For programme dates, registration, or anything about a certificate — a phone call
-              is usually quickest.
+          <div className="hero-mid" data-reveal>
+            <span className="ann flat"><b>Contact</b> {ISSUER.city}</span>
+
+            <h1 className="display-lead">
+              Get in <em>touch</em>
+            </h1>
+
+            <p className="lede">
+              For programme dates, registration, or anything about a certificate — a phone
+              call is usually quickest.
             </p>
-          </div>
-        </div>
-      </section>
 
-      <section>
-        <div className="wrap">
-          <div className="grid g3">
-            <div className="card" data-reveal>
-              <div className="ico"><IconPhone /></div>
-              <h3>Call or WhatsApp</h3>
-              <p style={{ marginBottom: 14 }}>Enquiries and registration, during the day.</p>
-              {ISSUER.phones.map((p) => (
-                <a
-                  key={p}
-                  href={`tel:${p.replace(/\s/g, '')}`}
-                  style={{ display: 'block', fontSize: 16, fontWeight: 600, color: 'var(--ink)', textDecoration: 'none', padding: '5px 0' }}
-                >
-                  {p}
-                </a>
-              ))}
-            </div>
-
-            <div className="card" data-reveal style={{ transitionDelay: '70ms' }}>
-              <div className="ico"><IconMail /></div>
-              <h3>Email</h3>
-              <p style={{ marginBottom: 14 }}>For anything that needs a written record.</p>
-              <a
-                href={`mailto:${ISSUER.email}`}
-                style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)', textDecoration: 'none', wordBreak: 'break-all' }}
-              >
-                {ISSUER.email}
-              </a>
-            </div>
-
-            <div className="card" data-reveal style={{ transitionDelay: '140ms' }}>
-              <div className="ico"><IconPin /></div>
-              <h3>Where we are</h3>
-              <p style={{ marginBottom: 14 }}>Programmes run at partner campuses.</p>
-              <p style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)' }}>{ISSUER.city}</p>
-              <p style={{ marginTop: 8, fontSize: 14 }}>Kabir IND PU College for Women, and others.</p>
+            <div className="acts">
+              <a className="btn" href={tel(ISSUER.phones[0])}>Call {ISSUER.phones[0]} <IconArrow /></a>
+              <a className="btn ghost" href={`mailto:${ISSUER.email}`}>Email us</a>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="band-soft">
+      {/* ---------------- the three ways ---------------- */}
+      <section className="band paper" data-tone="light">
         <div className="wrap">
-          <div className="grid g2" style={{ alignItems: 'center' }}>
-            <div data-reveal>
-              <span className="eyebrow">Checking a certificate?</span>
-              <h2>You do not need us for that</h2>
-              <p className="lede" style={{ marginTop: 16 }}>
-                Verification is instant and public. Enter the ID from the certificate, or scan
-                its QR code — there is no need to write in and wait for a reply.
-              </p>
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 26 }}>
-                <Link className="btn" to="/verify">Verify a certificate <IconArrow /></Link>
-                <Link className="btn ghost" to="/certificates">How it works</Link>
+          <div className="head" data-reveal>
+            <h2>Three ways to <em>reach</em> us</h2>
+          </div>
+
+          <div className="bento mt-7">
+            <div className="bt lime" data-reveal>
+              <span className="kick" style={{ color: 'var(--ink)' }}>Call or WhatsApp</span>
+              <div className="bigline">
+                {ISSUER.phones.map((p) => (
+                  <a key={p} href={tel(p)}><IconPhone width="16" height="16" />{p}</a>
+                ))}
               </div>
+              <span className="tile-foot"><span className="tile-note">Enquiries and registration, during the day.</span></span>
             </div>
-            <div className="card" data-reveal style={{ textAlign: 'center' }}>
-              <div className="ico green" style={{ margin: '0 auto 16px' }}><IconQr /></div>
-              <h3>Every certificate carries a QR code</h3>
-              <p style={{ marginTop: 10 }}>
-                Point a phone camera at it and the verification page opens on that exact
-                certificate.
-              </p>
+
+            <div className="bt soft" data-reveal style={{ transitionDelay: '70ms' }}>
+              <span className="kick" style={{ color: 'var(--ink)' }}>Email</span>
+              <div className="bigline">
+                <a href={`mailto:${ISSUER.email}`}>
+                  <IconMail width="16" height="16" />{ISSUER.email}
+                </a>
+              </div>
+              <span className="tile-foot"><span className="tile-note">For anything that needs a written record.</span></span>
+            </div>
+
+            <div className="bt stone" data-reveal style={{ transitionDelay: '140ms' }}>
+              <span className="kick" style={{ color: 'var(--ink)' }}>Where we are</span>
+              <div className="bigline">
+                <span><IconPin width="16" height="16" />{ISSUER.city}</span>
+              </div>
+              <span className="tile-foot">
+                <span className="tile-note">
+                  Programmes run at partner campuses — Kabir IND PU College for Women, and others.
+                </span>
+              </span>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="tight">
+      {/* ---------------- you do not need us ---------------- */}
+      <section className="band dark" data-tone="dark">
         <div className="wrap">
-          <div className="cta-band" data-reveal>
-            <h2>{ISSUER.site}</h2>
+          <div className="head" data-reveal>
+            <h2>Checking a certificate? You do <em>not</em> need us</h2>
             <p>
-              {ISSUER.operator} · {ISSUER.unitLine}
+              Verification is instant and public. Enter the ID from the certificate, or scan
+              its QR code — there is no need to write in and wait for a reply.
             </p>
-            <div className="actions">
-              <a className="btn light" href={`tel:${ISSUER.phones[0].replace(/\s/g, '')}`}>
-                Call {ISSUER.phones[0]}
-              </a>
-              <a
-                className="btn ghost"
-                href={`mailto:${ISSUER.email}`}
-                style={{ color: '#fff', boxShadow: 'inset 0 0 0 1.6px rgba(255,255,255,.45)' }}
-              >
-                Email us
-              </a>
+          </div>
+
+          <div className="bento mt-7">
+            <div className="bt lime" data-reveal>
+              <span className="bt-fig"><IconQr width="40" height="40" /></span>
+              <span className="tile-note">
+                Every certificate carries a QR code. Point a phone camera at it and the
+                verification page opens on that exact certificate.
+              </span>
+              <span className="tile-foot">
+                <Link className="btn ghost sm" to="/verify">Verify a certificate <IconArrow /></Link>
+              </span>
+            </div>
+            <div className="bt wide" data-reveal>
+              <span className="bt-fig">Free</span>
+              <span className="tile-note">
+                No account, no fee, and nothing to install. The page says plainly whether a
+                certificate is genuine, withdrawn, or was never issued.
+              </span>
+              <span className="tile-foot">
+                <Link className="btn ghost sm" to="/certificates">How it works <IconArrow /></Link>
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------- closing ---------------- */}
+      <section className="band paper tight" data-tone="light">
+        <div className="wrap">
+          <div className="cta-panel one-line" data-reveal>
+            <h2><span className="bloom">{ISSUER.site}</span></h2>
+            <p className="t-lg" style={{ margin: 'var(--sp-5) auto 0', color: 'var(--ink)' }}>
+              {brandLockup()} · {ISSUER.association}
+            </p>
+            <div className="acts">
+              <a className="btn light" href={tel(ISSUER.phones[0])}>Call {ISSUER.phones[0]}</a>
+              <a className="btn ghost" href={`mailto:${ISSUER.email}`}>Email us</a>
             </div>
           </div>
         </div>

@@ -1,8 +1,12 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { groupSummary } from '../lib/overview.js';
 import { formatDateRange } from '../lib/tickets.js';
 import { CURRENCY } from '../lib/schema.js';
 import SeatBar from './SeatBar.jsx';
+import Overlay from './Overlay.jsx';
+import { classIsLive } from '../lib/meeting.js';
+import TicketDocument from './TicketDocument.jsx';
 
 /**
  * One workshop as a board group: a coloured rail, a header you can judge the
@@ -15,6 +19,10 @@ import SeatBar from './SeatBar.jsx';
 export default function BoardGroup({ group, open, onToggle }) {
   const { workshop, rows, reasons, tone, finished, seats } = group;
   const summary = groupSummary(group);
+  // Looked at from the board, a ticket is a glance rather than a journey.
+  // Navigating to it costs which groups were expanded and how far down the
+  // page you had scrolled, and getting back means rebuilding both.
+  const [showing, setShowing] = useState(null);
 
   return (
     <section className="grp" data-tone={tone} data-finished={finished || undefined}>
@@ -32,6 +40,10 @@ export default function BoardGroup({ group, open, onToggle }) {
 
         <div className="grp-name">
           <Link to={`/w/${workshop.id}`}>{workshop.title || '(untitled)'}</Link>
+          {finished && <span className="badge done">Completed</span>}
+          {classIsLive(workshop) && (
+            <Link className="badge on-air" to={`/w/${workshop.id}/class`}>Class open</Link>
+          )}
           <div className="count">
             {formatDateRange(workshop) || 'no dates'}
             {workshop.venue ? ` · ${workshop.venue}` : ''}
@@ -99,7 +111,9 @@ export default function BoardGroup({ group, open, onToggle }) {
                       </span>
                     </td>
                     <td className="no-print">
-                      <Link className="chip" to={`/w/${workshop.id}/t/${r.id}`}>Ticket</Link>
+                      <button type="button" className="chip" onClick={() => setShowing(r)}>
+                        Ticket
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -107,6 +121,24 @@ export default function BoardGroup({ group, open, onToggle }) {
             </table>
           </div>
         )
+      )}
+
+      {showing && (
+        <Overlay
+          title={`Ticket ${showing.ticketId || ''} — ${showing.name}`}
+          onClose={() => setShowing(null)}
+          wide
+          actions={(
+            <>
+              <button type="button" onClick={() => window.print()}>Print / PDF</button>
+              <Link className="btn" to={`/w/${workshop.id}/t/${showing.id}`}>
+                Open full page
+              </Link>
+            </>
+          )}
+        >
+          <TicketDocument workshop={workshop} reg={showing} />
+        </Overlay>
       )}
     </section>
   );

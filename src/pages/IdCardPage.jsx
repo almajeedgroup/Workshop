@@ -117,7 +117,7 @@ export default function IdCardPage() {
       <div className="page-head no-print">
         <div>
           <h1>ID card — {reg.name}</h1>
-          <div className="count" style={{ marginTop: 4 }}>
+          <div className="count mt-1">
             {reg.ticketId || 'no ticket number'} · {workshop.title}
           </div>
         </div>
@@ -141,7 +141,7 @@ export default function IdCardPage() {
 
       <div className="panel no-print">
         <h2>What this card says</h2>
-        <p className="hint" style={{ marginTop: 0, marginBottom: 14 }}>
+        <p className="hint mt-0 mb-4">
           The colour (<strong>{theme?.label}</strong>) and the crests belong to the whole
           course — change them on <Link to={`/w/${id}/edit`}>Edit</Link> and every card
           follows. Everything below is this person's card alone.
@@ -212,7 +212,7 @@ export default function IdCardPage() {
           </div>
         </div>
 
-        <div className="btn-row" style={{ marginTop: 8 }}>
+        <div className="btn-row mt-2">
           <button className="primary" disabled={saving} onClick={save}>
             {saving ? 'Saving…' : 'Save this card'}
           </button>

@@ -1,7 +1,8 @@
+import { useEffect } from 'react';
 import { Routes, Route, NavLink, Navigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext.jsx';
 import { isConfigured } from './firebase.js';
-import { ISSUER } from './lib/schema.js';
+import { brandTitle, brandLockup } from './lib/brand.js';
 
 import Sidebar from './components/Sidebar.jsx';
 import PublicShell from './components/site/PublicShell.jsx';
@@ -10,9 +11,14 @@ import AboutPage from './pages/site/AboutPage.jsx';
 import ProgrammesPage from './pages/site/ProgrammesPage.jsx';
 import CertificatesPage from './pages/site/CertificatesPage.jsx';
 import ContactPage from './pages/site/ContactPage.jsx';
+import FeaturesPage from './pages/site/FeaturesPage.jsx';
+import FeaturePage from './pages/site/FeaturePage.jsx';
 import RegisterPage from './pages/site/RegisterPage.jsx';
+import JoinClassPage from './pages/site/JoinClassPage.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import ConsolePage from './pages/ConsolePage.jsx';
+import PeoplePage from './pages/PeoplePage.jsx';
+import PersonPage from './pages/PersonPage.jsx';
 import ListPage from './pages/ListPage.jsx';
 import ImportPage from './pages/ImportPage.jsx';
 import WorkshopPage from './pages/WorkshopPage.jsx';
@@ -22,8 +28,56 @@ import CertificateAllotPage from './pages/CertificateAllotPage.jsx';
 import IdCardPage from './pages/IdCardPage.jsx';
 import IdCardsPage from './pages/IdCardsPage.jsx';
 import AttendancePage from './pages/AttendancePage.jsx';
+import ClassPage from './pages/ClassPage.jsx';
 import CertificatePage from './pages/CertificatePage.jsx';
 import VerifyPage from './pages/VerifyPage.jsx';
+
+/**
+ * What the browser tab says.
+ *
+ * The page first and the brand second — somebody with nine tabs open is
+ * looking for "Attendance", and nine tabs all starting WORKSHOP tell them
+ * nothing. Patterns, not exact paths, so a workshop's own screens are named
+ * without listing every ID.
+ */
+const TITLES = [
+  [/^\/$/, ''],
+  [/^\/login/, 'Sign in'],
+  [/^\/console/, 'Console'],
+  [/^\/records/, 'Records'],
+  [/^\/people\/[^/]+/, 'Student'],
+  [/^\/people/, 'Students'],
+  [/^\/import/, 'Import'],
+  [/^\/new/, 'New workshop'],
+  [/^\/w\/[^/]+\/edit/, 'Edit workshop'],
+  [/^\/w\/[^/]+\/t\//, 'Ticket'],
+  [/^\/w\/[^/]+\/certificates/, 'Certificates'],
+  [/^\/w\/[^/]+\/attendance/, 'Attendance'],
+  [/^\/w\/[^/]+\/cards/, 'ID cards'],
+  [/^\/w\/[^/]+\/card\//, 'ID card'],
+  [/^\/w\/[^/]+\/class/, 'Class'],
+  [/^\/w\/[^/]+/, 'Workshop'],
+  [/^\/programmes/, 'Programmes'],
+  [/^\/features\/[^/]+/, 'Feature'],
+  [/^\/features/, 'Features'],
+  [/^\/certificates/, 'Certificates'],
+  [/^\/about/, 'About'],
+  [/^\/contact/, 'Contact'],
+  [/^\/verify/, 'Verify a certificate'],
+  [/^\/c\//, 'Certificate'],
+  [/^\/register\//, 'Register'],
+  [/^\/class\//, 'Join the class'],
+];
+
+/** The label for a path, or the brand alone when nothing matches. */
+export function titleFor(pathname) {
+  const hit = TITLES.find(([pattern]) => pattern.test(pathname));
+  return brandTitle(hit ? hit[1] : '');
+}
+
+function useDocumentTitle(pathname) {
+  useEffect(() => { document.title = titleFor(pathname); }, [pathname]);
+}
 
 function SetupNotice() {
   return (
@@ -66,7 +120,7 @@ function Protected({ children }) {
             <code>firestore.rules</code>, that the rules are deployed, then sign out and
             in again.
           </p>
-          <div className="btn-row" style={{ marginTop: 14 }}>
+          <div className="btn-row mt-4">
             <button onClick={logout}>Sign out</button>
           </div>
         </div>
@@ -81,19 +135,23 @@ const PUBLIC = [
   ['/', <HomePage />],
   ['/programmes', <ProgrammesPage />],
   ['/certificates', <CertificatesPage />],
+  ['/features', <FeaturesPage />],
+  ['/features/:slug', <FeaturePage />],
   ['/about', <AboutPage />],
   ['/contact', <ContactPage />],
   ['/verify', <VerifyPage />],
   ['/verify/:certificateId', <VerifyPage />],
   ['/c/:certificateId', <CertificatePage />],
   ['/register/:workshopId', <RegisterPage />],
+  ['/class/:workshopId', <JoinClassPage />],
 ];
 
 export default function App() {
   const { pathname } = useLocation();
+  useDocumentTitle(pathname);
   // The public site has its own chrome and must not inherit the admin
   // sidebar. Admin routes all sit under these prefixes.
-  const isAdminArea = /^\/(login|console|records|import|new|w)(\/|$)/.test(pathname);
+  const isAdminArea = /^\/(login|console|records|people|import|new|w)(\/|$)/.test(pathname);
 
   if (!isConfigured) {
     return (
@@ -125,6 +183,8 @@ export default function App() {
         {/* Administrators only */}
         <Route path="/console" element={<Protected><ConsolePage /></Protected>} />
         <Route path="/records" element={<Protected><ListPage /></Protected>} />
+        <Route path="/people" element={<Protected><PeoplePage /></Protected>} />
+        <Route path="/people/:id" element={<Protected><PersonPage /></Protected>} />
         <Route path="/import" element={<Protected><ImportPage /></Protected>} />
         <Route path="/new" element={<Protected><EditPage mode="new" /></Protected>} />
         <Route path="/w/:id" element={<Protected><WorkshopPage /></Protected>} />
@@ -132,13 +192,14 @@ export default function App() {
         <Route path="/w/:id/t/:regId" element={<Protected><TicketPage /></Protected>} />
         <Route path="/w/:id/certificates" element={<Protected><CertificateAllotPage /></Protected>} />
         <Route path="/w/:id/attendance" element={<Protected><AttendancePage /></Protected>} />
+        <Route path="/w/:id/class" element={<Protected><ClassPage /></Protected>} />
         <Route path="/w/:id/cards" element={<Protected><IdCardsPage /></Protected>} />
         <Route path="/w/:id/card/:regId" element={<Protected><IdCardPage /></Protected>} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <footer className="foot no-print">
-        {ISSUER.name} · system by {ISSUER.operator}
+        {brandLockup()}
       </footer>
       </div>
     </div>

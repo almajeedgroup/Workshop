@@ -150,7 +150,7 @@ export default function EditPage({ mode }) {
         </div>
 
         {pasteOpen && (
-          <div style={{ marginBottom: 14 }}>
+          <div className="mb-4">
             <textarea
               rows={7}
               className="mono-area"
@@ -159,7 +159,7 @@ export default function EditPage({ mode }) {
               onChange={(e) => setPasteText(e.target.value)}
               placeholder={'*Name:* …\n*DoB:* …\n*Qualification:* …\n*WhatsApp #:* …\n*Area:* …\n*Email ID:* …\n\n…or a table copied from Excel.'}
             />
-            <div className="btn-row" style={{ marginTop: 8 }}>
+            <div className="btn-row mt-2">
               <button className="primary" onClick={appendPasted} disabled={!pasteText.trim()}>
                 Add to list
               </button>
@@ -177,7 +177,7 @@ export default function EditPage({ mode }) {
 
         <RegistrationEditor rows={regs} onChange={setRegs} />
         {!isNew && (
-          <div className="hint" style={{ marginTop: 10 }}>
+          <div className="hint mt-3">
             Saving makes the stored list match what is shown here — rows you delete here are
             deleted from the database. Registrations added by someone else since this page
             loaded are kept, not removed. Ticket IDs already issued never change.

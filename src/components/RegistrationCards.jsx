@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { attendMode, attendModeLabel, workshopAsksMode } from '../lib/attendmode.js';
 import { formatDate } from '../lib/tickets.js';
 
 /**
@@ -37,6 +38,10 @@ export default function RegistrationCards({ workshop, rows, photos }) {
                 {r.qualification && (<><dt>Qualification</dt><dd>{r.qualification}</dd></>)}
                 {r.area && (<><dt>Area</dt><dd>{r.area}</dd></>)}
                 {r.dob && (<><dt>Date of Birth</dt><dd>{formatDate(r.dob)}</dd></>)}
+                {workshopAsksMode(workshop) && (
+                  <><dt>Attending</dt>
+                    <dd>{attendModeLabel(attendMode(workshop, r)) || 'Not said'}</dd></>
+                )}
                 {r.bloodGroup && (<><dt>Blood Group</dt><dd>{r.bloodGroup}</dd></>)}
                 {r.whatsapp && (<><dt>WhatsApp</dt><dd>{r.whatsapp}</dd></>)}
               </dl>
