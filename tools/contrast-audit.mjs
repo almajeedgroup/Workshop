@@ -245,7 +245,13 @@ const NONTEXT_AUDIT = `(() => {
     const byBorder = bw >= 1 ? ratio(over(px(cs.borderTopColor), around), around) : 0;
 
     // An inset box-shadow is how the public site draws an outlined button.
-    const ring = /inset/.test(cs.boxShadow) ? 3 : 0;
+    // Its COLOUR is measured, not assumed: treating any inset shadow as a
+    // pass makes the commonest outlined button on the site unmeasurable.
+    let ring = 0;
+    if (/inset/.test(cs.boxShadow)) {
+      const c = cs.boxShadow.match(/rgba?\([^)]*\)|#[0-9a-f]{3,8}/i);
+      ring = c ? ratio(over(px(c[0]), around), around) : 0;
+    }
 
     // A control's visible boundary is not always its own: an accordion's
     // lip fills its panel, and the panel is what a person sees the edge
@@ -257,6 +263,17 @@ const NONTEXT_AUDIT = `(() => {
       const pw = parseFloat(pcs.borderTopWidth) || 0;
       if (pw >= 1) byContainer = Math.max(byContainer, ratio(over(px(pcs.borderTopColor), around), around));
     }
+
+    // A control that draws NOTHING — no fill, no border, no ring — is a
+    // text control, identified by its label. 1.4.11 is about the visual
+    // information needed to identify a component, and where the text IS
+    // that information, 1.4.3 governs it instead. The nav's menu buttons
+    // are this, exactly like the plain links beside them.
+    //
+    // This is not a loophole for the bug above: a button that draws
+    // something has to draw it at 3:1. It only excuses drawing nothing.
+    const drawsNothing = byFill === 0 && bw < 1 && !/inset/.test(cs.boxShadow);
+    if (drawsNothing) continue;
 
     const best = Math.max(byFill, byBorder, ring, byContainer);
     if (best < 3) {

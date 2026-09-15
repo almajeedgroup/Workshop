@@ -1,15 +1,29 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { brandLockup } from '../../lib/brand.js';
+import { FEATURE_GROUPS, featurePath, featuresInGroup } from '../../lib/features.js';
 import Wordmark from '../Wordmark.jsx';
+import NavMenu from './NavMenu.jsx';
+import FeatureIcon from './FeatureIcon.jsx';
 
 const LINKS = [
   { to: '/', label: 'Home', end: true },
   { to: '/programmes', label: 'Programmes' },
-  { to: '/features', label: 'Features' },
+  { to: '/features', label: 'Features', menu: true },
   { to: '/certificates', label: 'Certificates' },
   { to: '/about', label: 'About' },
   { to: '/contact', label: 'Contact' },
+];
+
+/* The three programmes, for the Programmes panel. Titles only — the page
+   itself carries what each one covers. */
+const PROGRAMMES = [
+  { to: '/programmes#ai', n: '01', name: 'Artificial Intelligence, hands on',
+    sub: 'Six days building working AI assistants.' },
+  { to: '/programmes#research', n: '02', name: 'Research methodology',
+    sub: 'Ask well, gather honestly, write clearly.' },
+  { to: '/programmes#innovation', n: '03', name: 'Innovation practice',
+    sub: 'The part where something actually gets finished.' },
 ];
 
 export default function SiteHeader() {
@@ -79,16 +93,72 @@ export default function SiteHeader() {
           </Link>
 
           <nav className="nav" aria-label="Main">
-            {LINKS.map((l) => (
-              <NavLink
-                key={l.to}
-                to={l.to}
-                end={l.end}
-                className={({ isActive }) => (isActive ? 'on' : undefined)}
-              >
-                {l.label}
-              </NavLink>
-            ))}
+            {LINKS.map((l) => {
+              if (l.label === 'Features') {
+                return (
+                  <NavMenu key={l.to} label={l.label} to={l.to}>
+                    {() => (
+                      <div className="mega">
+                        {FEATURE_GROUPS.map((g) => (
+                          <div className="col" key={g.key}>
+                            <h3>{g.label}</h3>
+                            {featuresInGroup(g.key).map((f) => (
+                              <Link key={f.slug} to={featurePath(f)}>
+                                <span className="fi"><FeatureIcon name={f.icon} width="17" height="17" /></span>
+                                <span>
+                                  <strong>{f.name}</strong>
+                                  <em>{f.tagline}</em>
+                                </span>
+                              </Link>
+                            ))}
+                          </div>
+                        ))}
+                        <div className="menu-foot">
+                          <Link to="/features">Every feature, on one page</Link>
+                          <Link to="/verify">Verify a certificate</Link>
+                        </div>
+                      </div>
+                    )}
+                  </NavMenu>
+                );
+              }
+              if (l.label === 'Programmes') {
+                return (
+                  <NavMenu key={l.to} label={l.label} to={l.to}>
+                    {() => (
+                      <div className="mega one">
+                        <div className="col">
+                          <h3>What we teach</h3>
+                          {PROGRAMMES.map((p) => (
+                            <Link key={p.to} to={p.to}>
+                              <span className="fi num">{p.n}</span>
+                              <span>
+                                <strong>{p.name}</strong>
+                                <em>{p.sub}</em>
+                              </span>
+                            </Link>
+                          ))}
+                        </div>
+                        <div className="menu-foot">
+                          <Link to="/programmes">All three, in detail</Link>
+                          <Link to="/contact">Ask about the next intake</Link>
+                        </div>
+                      </div>
+                    )}
+                  </NavMenu>
+                );
+              }
+              return (
+                <NavLink
+                  key={l.to}
+                  to={l.to}
+                  end={l.end}
+                  className={({ isActive }) => (isActive ? 'on' : undefined)}
+                >
+                  {l.label}
+                </NavLink>
+              );
+            })}
           </nav>
 
           <div className="nav-acts">

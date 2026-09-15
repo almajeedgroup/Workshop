@@ -200,7 +200,11 @@
   box-shadow:inset 0 0 0 1px var(--lime-ink), 0 10px 26px rgba(40,168,40,.34);
 }
 .site .btn:active{transform:translateY(0)}
-.site .btn.ghost{background:transparent; color:var(--ink); box-shadow:inset 0 0 0 1.6px var(--hair-2)}
+/* --control-line, not --hair-2. An outlined button's ring is the ONLY
+   thing that says a button is there, and --hair-2 is the decorative rule:
+   1.43:1 on paper, against the 3:1 that 1.4.11 asks. The same mistake as
+   the admin's button borders, made independently in the other sheet. */
+.site .btn.ghost{background:transparent; color:var(--ink); box-shadow:inset 0 0 0 1.5px var(--control-line)}
 .site .btn.ghost:hover{background:var(--ink); color:#fff; box-shadow:none}
 .site .btn.light{background:#fff; color:var(--ink); box-shadow:inset 0 0 0 1px var(--control-line)}
 .site .btn.light:hover{background:#fff; color:var(--lime-ink)}
@@ -211,8 +215,10 @@
    changed. */
 .site .band-dark .btn.ghost{color:#fff; box-shadow:inset 0 0 0 1.6px rgba(255,255,255,.34)}
 .site .band-dark .btn.ghost:hover{background:#fff; color:var(--ink); box-shadow:none}
+/* On lime everything is ink, the ring included: at .34 it composites to
+   2.07:1 against the panel and the button's outline stops being one. */
 .site .cta-band .btn.ghost,
-.site .cta-panel .btn.ghost{color:var(--ink); box-shadow:inset 0 0 0 1.6px rgba(10,10,10,.34)}
+.site .cta-panel .btn.ghost{color:var(--ink); box-shadow:inset 0 0 0 1.5px var(--ink)}
 .site .cta-band .btn.ghost:hover,
 .site .cta-panel .btn.ghost:hover{background:var(--ink); color:#fff; box-shadow:none}
 /* A white pill on lime has a 2.12:1 edge — legible text inside a shape whose
@@ -531,6 +537,7 @@
 }
 .site .fstrip a:hover{transform:translateY(-3px); box-shadow:var(--shadow-1); border-color:var(--hair-2)}
 .site .fstrip .fi{flex:none; width:36px; height:36px; border-radius:10px; display:grid; place-items:center; background:var(--lime-wash); color:var(--lime-ink)}
+.site .fstrip a > span:last-child{min-width:0}
 .site .fstrip strong{display:block; font-size:15px; color:var(--ink); font-weight:600; line-height:1.3}
 .site .fstrip em{display:block; font-style:normal; font-size:13px; color:var(--ink-soft); line-height:1.55; margin-top:4px}
 
@@ -707,10 +714,16 @@
 .site .bt .tile-note{margin-top:var(--sp-2); color:var(--ink-soft); font-size:var(--tx-base)}
 .site .bt blockquote{margin:0; font-size:var(--tx-xl); line-height:1.45; font-weight:300}
 .site .bt .tile-foot{margin-top:auto; padding-top:var(--sp-5); display:flex; align-items:center; gap:var(--sp-3)}
-.site .bt .tile-by{display:flex; align-items:center; gap:var(--sp-3); min-width:0}
-.site .bt .tile-by img{width:40px; height:40px; border-radius:var(--r-sm); object-fit:cover; flex:none}
-.site .bt .tile-by b{display:block; font-size:var(--tx-base); font-weight:600}
-.site .bt .tile-by small{display:block; font-size:var(--tx-sm); color:var(--ink-soft)}
+/* Who said it. Scoped to `.bt` at first, which is why it came out as
+   "Mr. SulaimaanTrainer" on one line under the pull quote — that quote is
+   not inside a tile, so none of this reached it and the name and the role
+   ran together. It is a component in its own right. */
+.site .tile-by{display:flex; align-items:center; gap:var(--sp-3); min-width:0}
+.site .tile-by img{width:40px; height:40px; border-radius:var(--r-sm); object-fit:cover; flex:none}
+.site .tile-by b{display:block; font-size:var(--tx-base); font-weight:600}
+.site .tile-by small{display:block; font-size:var(--tx-sm); color:var(--ink-soft)}
+.site .band.dark .pull .tile-by b{color:#fff}
+.site .band.dark .pull .tile-by small{color:var(--on-dark-faint)}
 .site .bt .tile-foot .spacer{flex:1}
 .site .bt .logo{font-weight:700; letter-spacing:-.02em; font-size:var(--tx-lg); opacity:.85}
 @media (max-width:900px){
@@ -901,8 +914,13 @@
    band, which is the whole reason the tone is tracked at all. */
 .site .hdr .nav-acts{display:flex; align-items:center; gap:var(--sp-2)}
 .site .hdr .btn.sm{padding:var(--sp-3) var(--sp-5); font-size:var(--tx-base)}
-.site .hdr .btn.ghost{background:transparent; color:inherit; box-shadow:inset 0 0 0 1px var(--hair-2)}
-.site .hdr.over-dark .btn.ghost{box-shadow:inset 0 0 0 1px rgba(255,255,255,.25); color:#fff}
+/* The header restates the ghost ring, so it needs the measured line too —
+   this rule is (0,3,0) and was quietly beating the one above it. Third
+   place the decorative hairline had been used as a control's boundary. */
+.site .hdr .btn.ghost{background:transparent; color:inherit; box-shadow:inset 0 0 0 1.5px var(--control-line)}
+/* On the dark pill the ring has to be light instead. .25 of white over
+   #1C1C1C is 2.28:1; this is the alpha that clears 3:1. */
+.site .hdr.over-dark .btn.ghost{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.45); color:#fff}
 .site .hdr.over-dark .btn.ghost:hover{background:#fff; color:var(--ink); box-shadow:none}
 .site .hdr .cta{background:var(--ink); color:#fff; box-shadow:none}
 .site .hdr .cta:hover{background:var(--ink-2); color:#fff; transform:translateY(-1px)}
@@ -1399,3 +1417,116 @@
 }
 .site .btn:disabled:hover{background:var(--paper-3); color:var(--ink-faint); transform:none}
 .site .band.dark .btn:disabled{background:rgba(255,255,255,.1); color:var(--on-dark-faint); box-shadow:none}
+
+/* =====================================================================
+   Navigation menus
+   =====================================================================
+   A nav item that opens a panel under the bar.
+
+   WHAT THE PANEL IS POSITIONED AGAINST. `.has-menu` is deliberately NOT
+   positioned, so the panel resolves against `.bar`, which is. Anchored to
+   the item instead, a four-column panel hanging off a word two-thirds of
+   the way across the bar runs off the right of the screen; anchored to the
+   bar it is centred under it, which is also where the eye expects it.
+   ===================================================================== */
+.site .nav .has-menu{display:flex; align-items:center}
+.site .nav .has-menu > button{
+  display:inline-flex; align-items:center; gap:5px;
+  padding:var(--sp-2) var(--sp-4); border-radius:var(--r-pill);
+  font-size:var(--tx-base); font-weight:500; color:inherit;
+  white-space:nowrap; cursor:pointer;
+  transition:background .15s ease, color .15s ease;
+}
+.site .nav .has-menu > button:hover,
+.site .nav .has-menu.open > button{background:var(--paper-3); color:var(--ink)}
+.site .hdr.over-dark .nav .has-menu > button{color:#fff}
+.site .hdr.over-dark .nav .has-menu > button:hover,
+.site .hdr.over-dark .nav .has-menu.open > button{background:rgba(255,255,255,.1); color:#fff}
+.site .nav .has-menu > button svg{
+  flex:none; opacity:.55; transition:transform .22s cubic-bezier(.2,.7,.3,1);
+}
+.site .nav .has-menu.open > button svg{transform:rotate(180deg); opacity:1}
+
+/* The panel. `[hidden]` is a UA rule at the weakest possible specificity,
+   so a `display` of our own would beat it and the menu would never close.
+   It is restated here, where it can win. */
+.site .nav .menu{
+  position:absolute; top:calc(100% + 10px); left:50%; transform:translateX(-50%);
+  z-index:60; width:max-content; max-width:min(940px, calc(100vw - 2 * var(--pad)));
+}
+.site .nav .menu[hidden]{display:none}
+
+.site .nav .menu-in{
+  background:var(--paper); color:var(--ink);
+  border:1px solid var(--hair-2); border-radius:var(--r-xl);
+  box-shadow:var(--sh-float);
+  padding:var(--sp-5);
+  animation:menu-in .18s cubic-bezier(.2,.7,.3,1);
+}
+@keyframes menu-in{ from{opacity:0; transform:translateY(-6px)} to{opacity:1; transform:none} }
+@media (prefers-reduced-motion:reduce){
+  .site .nav .menu-in{animation:none}
+  .site .nav .has-menu > button svg{transition:none}
+}
+
+.site .mega{display:grid; grid-template-columns:repeat(4,minmax(0,210px)); gap:var(--sp-5)}
+.site .mega.one{grid-template-columns:minmax(0,420px)}
+.site .mega .col{min-width:0}
+.site .mega h3{
+  font-size:var(--tx-2xs); letter-spacing:.14em; text-transform:uppercase;
+  font-weight:700; color:var(--ink-faint); margin-bottom:var(--sp-3);
+}
+.site .mega a{
+  display:flex; gap:var(--sp-3); align-items:flex-start; text-decoration:none;
+  padding:var(--sp-2); margin-inline:calc(-1 * var(--sp-2));
+  border-radius:var(--r-md); transition:background .14s ease;
+}
+.site .mega a:hover{background:var(--paper-2)}
+/* Everything in this panel sits inside `.nav`, so `.site .nav a` reaches
+   it — and that rule ends in `white-space: nowrap`, which is correct for
+   a row of one-word links and wrong for a column of sentences. The
+   taglines ran straight across the next column. The panel opts out. */
+.site .nav .menu a{white-space:normal}
+/* …and the bar's own link colours stop at the panel's edge. `.site
+   .hdr.over-dark .nav a` is (0,4,1); over a dark band it painted the
+   panel's foot links white, on white. */
+.site .hdr .nav .menu a,
+.site .hdr.over-dark .nav .menu a{color:var(--ink)}
+.site .hdr .nav .menu a:hover,
+.site .hdr.over-dark .nav .menu a:hover{color:var(--ink); background:var(--paper-2)}
+.site .hdr .nav .menu .menu-foot a:hover,
+.site .hdr.over-dark .nav .menu .menu-foot a:hover{color:var(--lime-ink); background:none}
+/* A flex item will not go below its content's min-content width unless it
+   is told it may, so the tagline ignored its 210px track and ran clean
+   across the next column. The icon is `flex:none`; this is the half that
+   has to give. */
+.site .mega a > span:last-child{min-width:0; flex:1 1 auto}
+.site .mega .fi{
+  flex:none; width:30px; height:30px; border-radius:var(--r-sm);
+  display:grid; place-items:center;
+  background:var(--lime-wash); color:var(--lime-ink);
+}
+.site .mega .fi.num{font-family:var(--display); font-size:var(--tx-sm); letter-spacing:.02em}
+.site .mega strong{display:block; font-size:var(--tx-base); font-weight:600; color:var(--ink); line-height:1.3}
+.site .mega em{
+  display:block; font-style:normal; font-size:var(--tx-sm); color:var(--ink-soft);
+  line-height:1.5; margin-top:2px;
+}
+
+/* The foot spans every column, so it is stated in terms of the grid
+   rather than pinned to a count that changes with the catalogue. */
+.site .mega .menu-foot{
+  grid-column:1 / -1; margin-top:var(--sp-4); padding-top:var(--sp-4);
+  border-top:1px solid var(--hair); display:flex; gap:var(--sp-5); flex-wrap:wrap;
+}
+.site .mega .menu-foot a{
+  padding:0; margin:0; font-size:var(--tx-base); font-weight:600; color:var(--ink);
+  border-bottom:1px solid var(--hair-2); border-radius:0;
+}
+.site .mega .menu-foot a:hover{background:none; color:var(--lime-ink); border-bottom-color:currentColor}
+
+/* Below the collapse the whole bar is a burger, so there is no menu to
+   position and nothing should be left hanging. */
+@media (max-width:1080px){
+  .site .nav .menu{display:none}
+}
