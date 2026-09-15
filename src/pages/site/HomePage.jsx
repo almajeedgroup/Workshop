@@ -37,7 +37,7 @@ const SAYINGS = [
     text: 'The register, the ID cards and the attendance sheet all come out of the same place. We used to keep three lists and reconcile them.' },
   { name: 'Mohammed Khan', role: 'Coordinator',
     text: 'Bringing last term’s students onto the next course used to be an afternoon of typing. It is one press now, and nobody arrives marked paid for a fee we never collected.' },
-  { name: 'Mr. Sulaimaan', role: 'Trainer',
+  { name: 'Mr. Sulaimaan', role: 'Founder',
     text: 'I can see who is in the room and who is waiting to ask something, on one bar, while I am talking. That is the whole job.' },
   { name: 'Aisha Siddiqua', role: 'Office',
     text: 'Someone rings and says they registered. I type the name and they are on the screen — whichever of the four courses it was.' },
@@ -229,7 +229,7 @@ export default function HomePage() {
               <span className="tile-by">
                 <span>
                   <b>Mr. Sulaimaan</b>
-                  <small>Trainer</small>
+                  <small>Founder</small>
                 </span>
               </span>
             </span>

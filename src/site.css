@@ -723,7 +723,7 @@
 .site .bt blockquote{margin:0; font-size:var(--tx-xl); line-height:1.45; font-weight:300}
 .site .bt .tile-foot{margin-top:auto; padding-top:var(--sp-5); display:flex; align-items:center; gap:var(--sp-3)}
 /* Who said it. Scoped to `.bt` at first, which is why it came out as
-   "Mr. SulaimaanTrainer" on one line under the pull quote — that quote is
+   "Mr. SulaimaanFounder" on one line under the pull quote — that quote is
    not inside a tile, so none of this reached it and the name and the role
    ran together. It is a component in its own right. */
 .site .tile-by{display:flex; align-items:center; gap:var(--sp-3); min-width:0}

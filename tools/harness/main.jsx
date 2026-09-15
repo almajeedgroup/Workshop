@@ -24,6 +24,7 @@ import ImportPage from '../../src/pages/ImportPage.jsx';
 import EditPage from '../../src/pages/EditPage.jsx';
 import TicketPage from '../../src/pages/TicketPage.jsx';
 import IdCardsPage from '../../src/pages/IdCardsPage.jsx';
+import CertificatePage from '../../src/pages/CertificatePage.jsx';
 import '../../src/idcard.css';
 
 const at = new URLSearchParams(location.search).get('at') || '/';
@@ -62,6 +63,7 @@ createRoot(document.getElementById('root')).render(
             <Route path="/w/:id/edit" element={<EditPage />} />
             <Route path="/w/:id/t/:regId" element={<TicketPage />} />
             <Route path="/w/:id/cards" element={<IdCardsPage />} />
+          <Route path="/c/:certificateId" element={<CertificatePage />} />
           </Routes>
         </Shell>
       </MemoryRouter>
