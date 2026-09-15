@@ -46,7 +46,10 @@ export const ISSUER = {
    * 2025 and one from 2026 can be recognised as coming from the same place.
    */
   association: 'Islamic Information Centre · Beyond Guidance',
-  phones: ['+91 98452 89298', '+91 63646 30740'],
+  /* The first is the PRIMARY number: it is the one the Call button dials,
+     the one printed on a ticket, and the one a page names when it names
+     only one. Order is the whole of that meaning. */
+  phones: ['+91 63646 30740', '+91 98452 89298'],
   /** Shown in the app masthead — who built/operates the system. */
   /**
    * The school that built and runs this system, and is named as an associate

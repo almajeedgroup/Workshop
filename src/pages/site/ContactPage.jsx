@@ -43,7 +43,7 @@ export default function ContactPage() {
               <span className="kick" style={{ color: 'var(--ink)' }}>Call or WhatsApp</span>
               <div className="bigline">
                 {ISSUER.phones.map((p) => (
-                  <a key={p} href={tel(p)}><IconPhone width="17" height="17" />{p}</a>
+                  <a key={p} href={tel(p)}><IconPhone width="16" height="16" />{p}</a>
                 ))}
               </div>
               <span className="tile-foot"><span className="tile-note">Enquiries and registration, during the day.</span></span>
@@ -52,8 +52,8 @@ export default function ContactPage() {
             <div className="bt soft" data-reveal style={{ transitionDelay: '70ms' }}>
               <span className="kick" style={{ color: 'var(--ink)' }}>Email</span>
               <div className="bigline">
-                <a href={`mailto:${ISSUER.email}`} style={{ wordBreak: 'break-all' }}>
-                  <IconMail width="17" height="17" />{ISSUER.email}
+                <a href={`mailto:${ISSUER.email}`}>
+                  <IconMail width="16" height="16" />{ISSUER.email}
                 </a>
               </div>
               <span className="tile-foot"><span className="tile-note">For anything that needs a written record.</span></span>
@@ -62,7 +62,7 @@ export default function ContactPage() {
             <div className="bt stone" data-reveal style={{ transitionDelay: '140ms' }}>
               <span className="kick" style={{ color: 'var(--ink)' }}>Where we are</span>
               <div className="bigline">
-                <span><IconPin width="17" height="17" />{ISSUER.city}</span>
+                <span><IconPin width="16" height="16" />{ISSUER.city}</span>
               </div>
               <span className="tile-foot">
                 <span className="tile-note">
@@ -113,7 +113,7 @@ export default function ContactPage() {
       {/* ---------------- closing ---------------- */}
       <section className="band paper tight" data-tone="light">
         <div className="wrap">
-          <div className="cta-panel" data-reveal>
+          <div className="cta-panel one-line" data-reveal>
             <h2><span className="bloom">{ISSUER.site}</span></h2>
             <p className="t-lg" style={{ margin: 'var(--sp-5) auto 0', color: 'var(--ink)' }}>
               {brandLockup()} · {ISSUER.association}

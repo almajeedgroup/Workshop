@@ -28,38 +28,13 @@ const PROGRAMMES = [
 
 export default function SiteHeader() {
   const [open, setOpen] = useState(false);
-  const [stuck, setStuck] = useState(false);
   const { pathname } = useLocation();
 
   useEffect(() => setOpen(false), [pathname]);
 
-  /**
-   * One scroll handler, one question: has the bar collapsed into its
-   * floating capsule yet?
-   *
-   * It used to ask a second one — which tone of band is under the capsule
-   * — so the capsule could invert against it. That is gone. The capsule is
-   * dark on everything, which is what the reference does and the better
-   * behaviour besides: a bar that changes colour under you as you scroll
-   * draws the eye at exactly the moments it should be furniture.
-   */
-  useEffect(() => {
-    const read = () => setStuck(window.scrollY > 12);
-
-    let queued = false;
-    const onScroll = () => {
-      if (queued) return;
-      queued = true;
-      requestAnimationFrame(() => { queued = false; read(); });
-    };
-
-    read();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [pathname]);
 
   return (
-    <header className={`hdr${stuck ? ' stuck' : ''}`}>
+    <header className="hdr">
       <div className="wrap">
         <div className="bar">
           {/* WORKSHOP is the brand here, and the wordmark is the whole of
@@ -67,9 +42,7 @@ export default function SiteHeader() {
               is named in the footer, where a lockup has room to introduce
               itself; a navigation bar is not an introduction. */}
           <Link to="/" className="mark" aria-label={`${brandLockup()} — home`}>
-            {/* Invert inside the capsule: the capsule is dark, and the
-                mark's WORK is ink — it disappeared into it. */}
-            <Wordmark className="txt" tone={stuck ? 'invert' : 'brand'} />
+            <Wordmark className="txt" />
           </Link>
 
           <nav className="nav" aria-label="Main">
