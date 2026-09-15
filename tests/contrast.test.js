@@ -117,7 +117,7 @@ const LIME_GROUNDS = [
   { pattern: '\\.band\\.dark', token: '--ink' },  // the dark band
   { pattern: 'ftr', token: '--ink' },            // the footer
   { pattern: 'on-dark', token: '--ink' },        // text tones on that band
-  { pattern: 'over-dark', token: null },         // the nav pill, #1C1C1C
+  { pattern: '\\.hdr\\.stuck', token: null },      // the floating capsule
   { pattern: '\\.bt\\.ink', token: '--tile-ink' }, // an ink bento tile
 ];
 
@@ -136,7 +136,11 @@ test('lime is only ever text on a dark ground', () => {
 test('every ground the lime exemption names is still dark enough for it', () => {
   const lime = of('--lime');
   for (const { pattern, token } of LIME_GROUNDS) {
-    if (!token) continue;                       // #1C1C1C, checked by the audit
+    // The capsule is translucent: its ground is whatever is behind it,
+    // composited, so no flat token can stand for it. The rendered audit
+    // measures it — and now measures it SCROLLED, which is the only state
+    // it exists in.
+    if (!token) continue;
     const r = contrast(lime, of(token));
     assert.ok(r >= 4.5, `lime on ${token} (${pattern}) is ${r}:1 — it is on the `
       + 'allow-list for lime text, so lightening it takes that text with it');

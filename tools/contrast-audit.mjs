@@ -301,10 +301,23 @@ for (const width of WIDTHS) {
     page.on('pageerror', (e) => errors.push(String(e).slice(0, 120)));
     await page.goto(BASE + path, { waitUntil: 'networkidle' });
     await page.waitForTimeout(200);
-    for (const f of await page.evaluate(TEXT_AUDIT)) {
-      const key = `${f.sel}|${f.fg}|${f.bg}|${f.size}`;
-      if (!seen.has(key)) seen.set(key, { ...f, where: [] });
-      seen.get(key).where.push(path);
+    /* TWICE: at the top, and scrolled.
+       The header is a floating capsule once the page moves, and that is
+       the header for most of a visit — white links on a translucent dark
+       ground, over whatever band happens to be behind it. Measuring only
+       at scroll 0 never looked at it. */
+    for (const at of [0, 900]) {
+      if (at) {
+        await page.evaluate((y) => window.scrollTo(0, y), at);
+        await page.waitForTimeout(450);
+      }
+      for (const f of await page.evaluate(TEXT_AUDIT)) {
+        const key = `${f.sel}|${f.fg}|${f.bg}|${f.size}`;
+        if (!seen.has(key)) seen.set(key, { ...f, where: [] });
+        const w = seen.get(key).where;
+        const tag = at ? `${path}(scrolled)` : path;
+        if (!w.includes(tag)) w.push(tag);
+      }
     }
     if (errors.length) console.log(`   !! ${path} — ${errors[0]}`);
     await page.close();
@@ -321,7 +334,15 @@ for (const width of WIDTHS) {
 for (const path of PATHS) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 1000 }, reducedMotion: 'reduce' });
   await page.goto(BASE + path, { waitUntil: 'networkidle' });
-  const rows = [...new Map((await page.evaluate(NONTEXT_AUDIT)).map((r) => [r.kind + r.sel + r.issue, r])).values()];
+  const found = [];
+  for (const at of [0, 900]) {
+    if (at) {
+      await page.evaluate((y) => window.scrollTo(0, y), at);
+      await page.waitForTimeout(450);
+    }
+    found.push(...await page.evaluate(NONTEXT_AUDIT));
+  }
+  const rows = [...new Map(found.map((r) => [r.kind + r.sel + r.issue, r])).values()];
   if (rows.length) {
     console.log(`non-text ${path}`);
     for (const r of rows) { console.log('  ', r.kind, r.issue, r.sel, r.fg || '', r.bg || ''); findings++; }

@@ -277,7 +277,8 @@ button, .btn {
      rgba(10,10,10,.16) is 1.35:1 on paper. Container borders below stay
      soft — a panel's edge is not a UI component. */
   border: 1px solid var(--control-line);
-  border-radius: var(--r-pill);
+  /* Rounded rectangle, the same as the site's buttons. */
+  border-radius: var(--r-md);
   background: var(--paper);
   color: var(--ink);
   cursor: pointer;

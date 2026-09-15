@@ -29,40 +29,22 @@ const PROGRAMMES = [
 export default function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [stuck, setStuck] = useState(false);
-  const [tone, setTone] = useState('light');
   const { pathname } = useLocation();
 
   useEffect(() => setOpen(false), [pathname]);
 
   /**
-   * Two things, both driven by one scroll handler: whether the bar has
-   * collapsed into its floating pill, and which tone of band is underneath
-   * it.
+   * One scroll handler, one question: has the bar collapsed into its
+   * floating capsule yet?
    *
-   * WHY ELEMENT-UNDER-A-POINT AND NOT AN OBSERVER. A floating pill has to
-   * know what is behind it AT ITS OWN POSITION, not which section happens
-   * to be most visible. An IntersectionObserver answers the second
-   * question, and on a page of full-height bands the answer is right for
-   * most of the scroll and wrong at exactly the moment the edge passes
-   * under the pill — which is the moment it matters.
-   *
-   * So each band declares `data-tone` and this reads the one whose box
-   * spans the pill's centre line. It is a loop over a handful of elements
-   * on a rAF, not a hit test on every node.
+   * It used to ask a second one — which tone of band is under the capsule
+   * — so the capsule could invert against it. That is gone. The capsule is
+   * dark on everything, which is what the reference does and the better
+   * behaviour besides: a bar that changes colour under you as you scroll
+   * draws the eye at exactly the moments it should be furniture.
    */
   useEffect(() => {
-    const read = () => {
-      setStuck(window.scrollY > 12);
-
-      const mid = 46;                       // roughly the pill's centre
-      const bands = document.querySelectorAll('.site [data-tone]');
-      let found = 'light';
-      for (const band of bands) {
-        const r = band.getBoundingClientRect();
-        if (r.top <= mid && r.bottom > mid) found = band.dataset.tone;
-      }
-      setTone(found);
-    };
+    const read = () => setStuck(window.scrollY > 12);
 
     let queued = false;
     const onScroll = () => {
@@ -73,23 +55,21 @@ export default function SiteHeader() {
 
     read();
     window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-    };
+    return () => window.removeEventListener('scroll', onScroll);
   }, [pathname]);
 
   return (
-    <header className={`hdr${stuck ? ' stuck' : ''} over-${tone}`}>
+    <header className={`hdr${stuck ? ' stuck' : ''}`}>
       <div className="wrap">
         <div className="bar">
-          {/* The mark alone, not the lockup: the by-line is 42 characters
-              and put the bar 208px over its own width. It introduces the
-              school in the footer, where there is room for it. */}
+          {/* WORKSHOP is the brand here, and the wordmark is the whole of
+              it — no crest beside it and no by-line under it. The school
+              is named in the footer, where a lockup has room to introduce
+              itself; a navigation bar is not an introduction. */}
           <Link to="/" className="mark" aria-label={`${brandLockup()} — home`}>
-            <img src="/crests/al-majeed.png" alt="" />
-            <Wordmark className="txt t-2xl" />
+            {/* Invert inside the capsule: the capsule is dark, and the
+                mark's WORK is ink — it disappeared into it. */}
+            <Wordmark className="txt" tone={stuck ? 'invert' : 'brand'} />
           </Link>
 
           <nav className="nav" aria-label="Main">

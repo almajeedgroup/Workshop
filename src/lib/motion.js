@@ -171,7 +171,14 @@ function counters(root) {
   });
 }
 
-/** A hairline under the sticky header showing how far down the page you are. */
+/**
+ * A hairline under the sticky header showing how far down the page you are.
+ *
+ * NOT STARTED. The header is a floating capsule now, and a progress bar
+ * pinned inside it reads as a stray green underline beside the wordmark
+ * rather than as a measure of the page. Kept, because the function is
+ * sound and the decision is about where it is drawn, not whether it works.
+ */
 function rail(root) {
   // On the BAR, not the header: the header is full width and the bar
   // collapses to a centred pill, so a rail on the header runs out either
@@ -294,7 +301,6 @@ export function startMotion(rootEl) {
     headline(root);
     depth(root);
     counters(root);
-    rail(root);
     steps(root);
     magnetic(root);
     tilt(root);

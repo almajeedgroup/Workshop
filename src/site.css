@@ -92,6 +92,10 @@
    ring to paper; the lime band keeps ink, which is 9.35:1 on it. */
 .site .band-dark :focus-visible,
 .site .ftr :focus-visible{outline-color:#FFFFFF}
+/* Same reason inside the capsule: the default ring is ink, and ink on the
+   capsule is 2.29:1 — a keyboard user tabbing the navigation could not
+   see where they were. */
+.site .hdr.stuck :focus-visible{outline-color:#FFFFFF}
 .site .cta-band :focus-visible,
 .site .cta-panel :focus-visible{outline-color:var(--ink)}
 
@@ -180,7 +184,11 @@
 .site .btn{
   display:inline-flex; align-items:center; justify-content:center; gap:9px;
   font:inherit; font-size:15px; font-weight:600; letter-spacing:0;
-  padding:14px 28px; border-radius:999px; border:0; cursor:pointer;
+  /* A rounded RECTANGLE, not a capsule. The reference's buttons are ~14px
+     on a ~50px control, and a 999px pill beside them reads as a different
+     product. Pills are kept for the things that are labels rather than
+     controls — the announcement, the marquee chips, the status tags. */
+  padding:14px 28px; border-radius:var(--r-md); border:0; cursor:pointer;
   text-decoration:none; text-transform:none; white-space:nowrap; max-width:100%;
   /* Lime is a LIGHT colour: white on it is 2.12:1 and ink on it is 9.35:1.
      So the primary button is lime with near-black on it, which is also
@@ -876,60 +884,84 @@
   padding-block:var(--sp-3);
 }
 .site .hdr .bar{
-  /* positioned, so the scroll rail measures against the PILL and not the
-     full-width header it sits inside */
+  /* positioned, so the scroll rail measures against the CAPSULE and not
+     the full-width header it sits inside */
   position:relative;
-  display:flex; align-items:center; gap:var(--sp-5); height:60px;
+  display:flex; align-items:center; gap:var(--sp-6); height:60px;
   padding-inline:var(--sp-4);
-  border-radius:var(--r-pill);
+  border-radius:20px;
   background:transparent; border:1px solid transparent;
   transition:background .32s ease, border-color .32s ease, box-shadow .32s ease,
              max-width .32s cubic-bezier(.2,.7,.3,1), padding .32s ease, color .25s ease;
   max-width:100%;
 }
 
-/* The floating state. */
+/* The floating state: ONE capsule, dark whatever is behind it.
+
+   It does not invert. That was the old behaviour and it is not what the
+   reference does — a capsule that changes colour under you as you scroll
+   draws attention to itself at exactly the moments it should be furniture.
+   Dark on everything, translucent, with the page blurred behind it, so it
+   reads as a layer above the page rather than a hole in it. */
 .site .hdr.stuck{padding-block:var(--sp-2)}
 .site .hdr.stuck .bar{
-  max-width:840px; margin-inline:auto; padding-inline:var(--sp-2);
+  max-width:max-content; margin-inline:auto; padding-inline:var(--sp-2) var(--sp-2);
+  /* Dark enough for the active link to be read on it. At .86 over paper
+     this composited to #4D4B4A and lime came out at 4.09:1 — under the
+     floor, and only ever visible once the page had scrolled, which is the
+     state nothing was measuring. */
+  background:rgba(38,36,34,.94);
+  -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px);
+  border-color:rgba(255,255,255,.1);
+  color:#fff;
   box-shadow:var(--sh-float);
 }
-.site .hdr.stuck.over-light .bar{background:var(--paper); border-color:var(--hair)}
-.site .hdr.stuck.over-dark .bar{background:#1C1C1C; border-color:rgba(255,255,255,.12); color:#fff}
 
 /* The wordmark gives way to the crest alone when it floats — the lockup
    is too wide for a pill and the mark alone still says who it is. */
-.site .hdr .mark .txt{transition:max-width .32s cubic-bezier(.2,.7,.3,1), opacity .2s ease}
-.site .hdr.stuck .mark .txt{max-width:0; opacity:0; overflow:hidden}
-.site .hdr .mark img{height:32px}
+/* The wordmark stays put in every state. It used to collapse away when
+   the bar became a pill, because the crest beside it carried the identity
+   at that size — there is no crest now, so hiding it would leave the bar
+   with no brand on it at all. */
+.site .hdr .mark .txt{font-size:22px}
 
-.site .hdr.over-dark .nav a{color:#fff}
-.site .hdr.over-dark .nav a:hover{background:rgba(255,255,255,.1)}
-.site .hdr.over-dark .nav a.on{color:var(--lime)}
-.site .hdr.over-dark .burger i,
-.site .hdr.over-dark .burger i::before,
-.site .hdr.over-dark .burger i::after{background:#fff}
+/* Inside the capsule everything is light; outside it, everything is ink. */
+.site .hdr.stuck .nav a,
+.site .hdr.stuck .nav .has-menu > button{color:#fff}
+.site .hdr.stuck .nav a:hover,
+.site .hdr.stuck .nav .has-menu > button:hover,
+.site .hdr.stuck .nav .has-menu.open > button{background:rgba(255,255,255,.12); color:#fff}
+.site .hdr.stuck .nav a.on{color:var(--lime)}
+.site .hdr.stuck .mark{color:#fff}
+.site .hdr.stuck .burger i,
+.site .hdr.stuck .burger i::before,
+.site .hdr.stuck .burger i::after{background:#fff}
 
-/* The two buttons: outlined, then filled. They swap polarity with the
-   band, which is the whole reason the tone is tracked at all. */
-.site .hdr .nav-acts{display:flex; align-items:center; gap:var(--sp-2)}
+/* The two buttons: outlined, then filled, at both ends of the bar.
+   Outside the capsule they are ink on paper; inside it they invert. */
+.site .hdr .nav-acts{display:flex; align-items:center; gap:var(--sp-2); flex:none}
 .site .hdr .btn.sm{padding:var(--sp-3) var(--sp-5); font-size:var(--tx-base)}
 /* The header restates the ghost ring, so it needs the measured line too —
-   this rule is (0,3,0) and was quietly beating the one above it. Third
-   place the decorative hairline had been used as a control's boundary. */
+   this rule is (0,3,0) and was quietly beating the one above it. */
 .site .hdr .btn.ghost{background:transparent; color:inherit; box-shadow:inset 0 0 0 1.5px var(--control-line)}
-/* On the dark pill the ring has to be light instead. .25 of white over
-   #1C1C1C is 2.28:1; this is the alpha that clears 3:1. */
-.site .hdr.over-dark .btn.ghost{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.45); color:#fff}
-.site .hdr.over-dark .btn.ghost:hover{background:#fff; color:var(--ink); box-shadow:none}
 .site .hdr .cta{background:var(--ink); color:#fff; box-shadow:none}
 .site .hdr .cta:hover{background:var(--ink-2); color:#fff; transform:translateY(-1px)}
-.site .hdr.over-dark .cta{background:var(--paper); color:var(--ink)}
-.site .hdr.over-dark .cta:hover{background:var(--lime); color:var(--ink)}
+
+/* In the capsule: the outlined one is dark on dark with a lighter edge,
+   the filled one is paper with ink on it. .25 of white over the capsule
+   is 2.28:1, so the edge is set at the alpha that clears 3:1. */
+.site .hdr.stuck .btn.ghost{
+  background:rgba(255,255,255,.08); color:#fff;
+  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.45);
+}
+.site .hdr.stuck .btn.ghost:hover{background:rgba(255,255,255,.18); color:#fff}
+.site .hdr.stuck .cta{background:var(--paper); color:var(--ink)}
+.site .hdr.stuck .cta:hover{background:var(--lime); color:var(--ink)}
 
 /* The scroll rail belongs to the pill now, not to a full-width edge. */
-.site .scroll-rail{left:var(--sp-5); right:var(--sp-5); bottom:5px; border-radius:2px}
-.site .hdr:not(.stuck) .scroll-rail{opacity:0}
+/* The rail is no longer started — see motion.js. This stays so that a
+   page still holding one from a cached chunk does not paint it. */
+.site .scroll-rail{display:none}
 
 @media (max-width:1080px){
   .site .hdr.stuck .bar{max-width:100%; margin-inline:0}
@@ -971,9 +1003,12 @@
 
 /* The links themselves. These went out with the old header block; they are
    not part of the pill's behaviour, so they live on their own. */
-.site .nav{display:flex; align-items:center; gap:var(--sp-1); margin-inline:auto}
+/* Left-grouped beside the wordmark, with the buttons pushed to the far
+   right by a spacer — not centred in the bar. */
+.site .nav{display:flex; align-items:center; gap:var(--sp-1); margin-right:auto; margin-left:var(--sp-7)}
+.site .hdr.stuck .nav{margin-left:var(--sp-2)}
 .site .nav a{
-  padding:var(--sp-2) var(--sp-4); border-radius:var(--r-pill);
+  padding:var(--sp-2) var(--sp-4); border-radius:var(--r-md);
   font-size:var(--tx-base); font-weight:500; color:inherit; text-decoration:none;
   white-space:nowrap; transition:background .15s ease, color .15s ease;
 }
@@ -1000,12 +1035,12 @@
   .site .burger{display:flex; margin-left:auto}
   .site .hdr .bar{gap:var(--sp-3)}
   .site .hdr.stuck .bar{max-width:100%; margin-inline:0; padding-inline:var(--sp-3)}
-  /* The lockup comes back when there is no pill to fit it into. */
-  .site .hdr.stuck .mark .txt{max-width:none; opacity:1}
+
 }
 @media (max-width:560px){
-  .site .hdr .mark .txt{display:none}
-  .site .hdr.stuck .mark .txt{display:none}
+  /* Smaller, never gone: on a phone the wordmark is the only thing in the
+     bar that says whose site this is. */
+  .site .hdr .mark .txt{font-size:19px}
   .site .hdr .nav-acts .btn.cta{padding:var(--sp-2) var(--sp-4); font-size:var(--tx-sm)}
 }
 
@@ -1432,16 +1467,16 @@
 .site .nav .has-menu{display:flex; align-items:center}
 .site .nav .has-menu > button{
   display:inline-flex; align-items:center; gap:5px;
-  padding:var(--sp-2) var(--sp-4); border-radius:var(--r-pill);
+  padding:var(--sp-2) var(--sp-4); border-radius:var(--r-md);
   font-size:var(--tx-base); font-weight:500; color:inherit;
   white-space:nowrap; cursor:pointer;
   transition:background .15s ease, color .15s ease;
 }
 .site .nav .has-menu > button:hover,
 .site .nav .has-menu.open > button{background:var(--paper-3); color:var(--ink)}
-.site .hdr.over-dark .nav .has-menu > button{color:#fff}
-.site .hdr.over-dark .nav .has-menu > button:hover,
-.site .hdr.over-dark .nav .has-menu.open > button{background:rgba(255,255,255,.1); color:#fff}
+/* The menu button follows the bar's state, not the band's tone — see the
+   capsule rules above, which colour `.hdr.stuck .nav .has-menu > button`
+   along with the plain links. */
 .site .nav .has-menu > button svg{
   flex:none; opacity:.55; transition:transform .22s cubic-bezier(.2,.7,.3,1);
 }
@@ -1487,15 +1522,15 @@
    a row of one-word links and wrong for a column of sentences. The
    taglines ran straight across the next column. The panel opts out. */
 .site .nav .menu a{white-space:normal}
-/* …and the bar's own link colours stop at the panel's edge. `.site
-   .hdr.over-dark .nav a` is (0,4,1); over a dark band it painted the
-   panel's foot links white, on white. */
+/* …and the bar's own link colours stop at the panel's edge. Inside the
+   capsule `.site .hdr.stuck .nav a` is white, and it painted the panel's
+   foot links white on a white panel. */
 .site .hdr .nav .menu a,
-.site .hdr.over-dark .nav .menu a{color:var(--ink)}
+.site .hdr.stuck .nav .menu a{color:var(--ink)}
 .site .hdr .nav .menu a:hover,
-.site .hdr.over-dark .nav .menu a:hover{color:var(--ink); background:var(--paper-2)}
+.site .hdr.stuck .nav .menu a:hover{color:var(--ink); background:var(--paper-2)}
 .site .hdr .nav .menu .menu-foot a:hover,
-.site .hdr.over-dark .nav .menu .menu-foot a:hover{color:var(--lime-ink); background:none}
+.site .hdr.stuck .nav .menu .menu-foot a:hover{color:var(--lime-ink); background:none}
 /* A flex item will not go below its content's min-content width unless it
    is told it may, so the tagline ignored its 210px track and ran clean
    across the next column. The icon is `flex:none`; this is the half that
