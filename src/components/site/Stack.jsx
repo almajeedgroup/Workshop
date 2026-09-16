@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 /**
  * A column of panels where one is open at a time.
@@ -17,10 +17,31 @@ import { useId, useRef, useState } from 'react';
  * Passing `start={-1}` opens nothing, for a FAQ where every question is
  * equal.
  */
-export default function Stack({ items, start = 0 }) {
-  const [open, setOpen] = useState(start);
+export default function Stack({ items, start = 0, openKey = '' }) {
+  // A link that names a panel opens it. Landing on /programmes#innovation
+  // and finding that panel shut is the link half-working.
+  const named = openKey ? items.findIndex((it) => it.key === openKey) : -1;
+  const [open, setOpen] = useState(named >= 0 ? named : start);
+
+  useEffect(() => {
+    if (named < 0) return;
+    setOpen(named);
+    /* …and put it back under the bar.
+       The shell scrolls to the hash as soon as the route changes, then
+       THIS opens the panel — which grows it and pushes everything below
+       it down, so the scroll that was correct a frame ago now leaves the
+       panel above the top of the screen. Opening it is what moved the
+       page, so opening it is what corrects the position. */
+    const el = pans.current[named];
+    if (!el) return undefined;
+    const id = requestAnimationFrame(() => {
+      el.scrollIntoView({ block: 'start', behavior: 'auto' });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [named]);
   const uid = useId();
   const lips = useRef([]);
+  const pans = useRef([]);
 
   /* Up and down walk the lips. Not required for a disclosure set, but the
      panels here are long enough that finding the next lip means scrolling
@@ -40,7 +61,14 @@ export default function Stack({ items, start = 0 }) {
         const pid = `${uid}-p${i}`;
         const bid = `${uid}-b${i}`;
         return (
-          <section className={`pan${on ? ' on' : ''}`} key={it.key ?? i}>
+          /* `id` so a link can land on a panel — the Programmes menu points
+             at /programmes#ai and the like. */
+          <section
+            className={`pan${on ? ' on' : ''}`}
+            key={it.key ?? i}
+            id={it.key}
+            ref={(el) => { pans.current[i] = el; }}
+          >
             <h3 style={{ margin: 0 }}>
               <button
                 type="button"

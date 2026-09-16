@@ -877,9 +877,25 @@
    ===================================================================== */
 
 .site .hdr{
-  position:relative; z-index:100;
-  background:transparent; border-bottom:0;
+  position:sticky; top:0; z-index:100;
+  background:transparent; border-bottom:1px solid transparent;
   padding-block:var(--sp-3);
+  transition:background .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+/* Once the page has moved, the bar needs to be opaque — otherwise the
+   content passing beneath it shows through its own words. That is the
+   ONLY thing that changes: same width, same place, same two buttons. */
+/* A sticky bar hides whatever an anchor scrolls to. The Programmes menu
+   links to /programmes#ai, and without this the heading it lands on sits
+   underneath the bar. 84px is the bar: 60px tall with --sp-3 above and
+   below. */
+.site{scroll-padding-top:calc(60px + var(--sp-3) * 2 + 12px)}
+.site .band[id],.site [id]{scroll-margin-top:calc(60px + var(--sp-3) * 2 + 12px)}
+
+.site .hdr.grounded{
+  background:var(--paper-2);
+  border-bottom-color:var(--hair);
+  box-shadow:0 1px 12px rgba(10,10,10,.05);
 }
 .site .hdr .bar{
   position:relative;

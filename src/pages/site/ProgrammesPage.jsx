@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ISSUER } from '../../lib/schema.js';
 import { BRAND_NAME } from '../../lib/brand.js';
 import Stack from '../../components/site/Stack.jsx';
@@ -55,6 +55,7 @@ const PROGRAMMES = [
  * at once, one of them open.
  */
 export default function ProgrammesPage() {
+  const { hash } = useLocation();
   const items = PROGRAMMES.map((p) => ({
     key: p.id,
     n: p.n,
@@ -113,7 +114,7 @@ export default function ProgrammesPage() {
             <h2>What we <em>teach</em></h2>
             <p>Open one to see what its days are made of.</p>
           </div>
-          <div className="mt-7" data-reveal><Stack items={items} /></div>
+          <div className="mt-7" data-reveal><Stack items={items} openKey={hash.replace('#', '')} /></div>
         </div>
       </section>
 

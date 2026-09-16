@@ -32,9 +32,34 @@ export default function SiteHeader() {
 
   useEffect(() => setOpen(false), [pathname]);
 
+  /**
+   * One question: has the page moved?
+   *
+   * The bar stays put and stays itself — same width, same place, same two
+   * buttons. All this decides is whether it has a GROUND under it. At the
+   * top of a page it sits on the hero and needs none; once content is
+   * passing beneath it, it needs to be opaque or the words run together.
+   *
+   * It is not the old capsule. That was a second, differently-shaped bar
+   * that floated over the page and covered things up, which is what was
+   * wrong with it. There is one bar, and it gains a background.
+   */
+  const [grounded, setGrounded] = useState(false);
+  useEffect(() => {
+    const read = () => setGrounded(window.scrollY > 8);
+    let queued = false;
+    const onScroll = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => { queued = false; read(); });
+    };
+    read();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [pathname]);
 
   return (
-    <header className="hdr">
+    <header className={`hdr${grounded ? ' grounded' : ''}`}>
       <div className="wrap">
         <div className="bar">
           {/* WORKSHOP is the brand here, and the wordmark is the whole of
