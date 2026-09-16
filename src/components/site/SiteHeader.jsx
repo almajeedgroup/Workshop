@@ -33,33 +33,54 @@ export default function SiteHeader() {
   useEffect(() => setOpen(false), [pathname]);
 
   /**
-   * One question: has the page moved?
+   * Two things, from one scroll handler: whether the bar has collapsed
+   * into its floating capsule, and which tone of band is under it.
    *
-   * The bar stays put and stays itself — same width, same place, same two
-   * buttons. All this decides is whether it has a GROUND under it. At the
-   * top of a page it sits on the hero and needs none; once content is
-   * passing beneath it, it needs to be opaque or the words run together.
+   * WHY ELEMENT-UNDER-A-POINT AND NOT AN OBSERVER. A floating capsule has
+   * to know what is behind it AT ITS OWN POSITION, not which section is
+   * most visible. An IntersectionObserver answers the second question,
+   * and on a page of full-height bands the answer is right for most of a
+   * scroll and wrong at exactly the moment an edge passes under the
+   * capsule — which is the moment it matters.
    *
-   * It is not the old capsule. That was a second, differently-shaped bar
-   * that floated over the page and covered things up, which is what was
-   * wrong with it. There is one bar, and it gains a background.
+   * So each band declares `data-tone` and this reads the one whose box
+   * spans the capsule's centre line. A loop over a handful of elements on
+   * a rAF, not a hit test on every node.
    */
-  const [grounded, setGrounded] = useState(false);
+  const [stuck, setStuck] = useState(false);
+  const [tone, setTone] = useState('light');
+
   useEffect(() => {
-    const read = () => setGrounded(window.scrollY > 8);
+    const read = () => {
+      setStuck(window.scrollY > 12);
+
+      const mid = 46;                       // roughly the capsule's centre
+      let found = 'light';
+      for (const band of document.querySelectorAll('.site [data-tone]')) {
+        const r = band.getBoundingClientRect();
+        if (r.top <= mid && r.bottom > mid) found = band.dataset.tone;
+      }
+      setTone(found);
+    };
+
     let queued = false;
     const onScroll = () => {
       if (queued) return;
       queued = true;
       requestAnimationFrame(() => { queued = false; read(); });
     };
+
     read();
     window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    window.addEventListener('resize', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
   }, [pathname]);
 
   return (
-    <header className={`hdr${grounded ? ' grounded' : ''}`}>
+    <header className={`hdr${stuck ? ' stuck' : ''} over-${tone}`}>
       <div className="wrap">
         <div className="bar">
           {/* WORKSHOP is the brand here, and the wordmark is the whole of
@@ -67,7 +88,9 @@ export default function SiteHeader() {
               is named in the footer, where a lockup has room to introduce
               itself; a navigation bar is not an introduction. */}
           <Link to="/" className="mark" aria-label={`${brandLockup()} — home`}>
-            <Wordmark className="txt" />
+            {/* Inverted inside a dark capsule: the mark's WORK is ink and
+                would disappear into it. */}
+            <Wordmark className="txt" tone={stuck && tone === 'dark' ? 'invert' : 'brand'} />
           </Link>
 
           <nav className="nav" aria-label="Main">

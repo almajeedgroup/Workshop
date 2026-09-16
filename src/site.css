@@ -870,45 +870,75 @@
 /* =====================================================================
    The navigation
    =====================================================================
-   ONE state, and one place. The bar sits at the top of the page and
-   scrolls away with it. It does not follow you down and there is no
-   second, floating version of it: the buttons are where somebody goes to
-   look for them, and nothing of the page is ever underneath them.
+   AT THE TOP it is an ordinary full-width bar: wordmark left, links,
+   buttons right. Nothing floats, nothing overlaps.
+
+   ONCE SCROLLED it collapses into a rounded capsule, sized to its own
+   content and centred — and it INVERTS: dark over a dark band, light over
+   a light one. A floating object has to be legible against whatever it
+   happens to be over, and this page alternates all the way down.
+
+   I built this, then removed it twice: once after reading three of the
+   reference's thirteen screenshots, all of which happened to be over dark
+   sections, and concluding the capsule was always dark; and once after
+   reading "one place only" as "do not float at all". Four of the thirteen
+   show a LIGHT capsule with a black button on it. It inverts.
+
+   It is one element changing shape, not two headers swapped — so a screen
+   reader's focus and the tab order survive the transition, and there is
+   one set of links rather than two.
    ===================================================================== */
 
 .site .hdr{
   position:sticky; top:0; z-index:100;
-  background:transparent; border-bottom:1px solid transparent;
+  background:transparent; border-bottom:0;
   padding-block:var(--sp-3);
-  transition:background .2s ease, border-color .2s ease, box-shadow .2s ease;
-}
-/* Once the page has moved, the bar needs to be opaque — otherwise the
-   content passing beneath it shows through its own words. That is the
-   ONLY thing that changes: same width, same place, same two buttons. */
-/* A sticky bar hides whatever an anchor scrolls to. The Programmes menu
-   links to /programmes#ai, and without this the heading it lands on sits
-   underneath the bar. 84px is the bar: 60px tall with --sp-3 above and
-   below. */
-.site{scroll-padding-top:calc(60px + var(--sp-3) * 2 + 12px)}
-.site .band[id],.site [id]{scroll-margin-top:calc(60px + var(--sp-3) * 2 + 12px)}
-
-.site .hdr.grounded{
-  background:var(--paper-2);
-  border-bottom-color:var(--hair);
-  box-shadow:0 1px 12px rgba(10,10,10,.05);
+  transition:padding .32s cubic-bezier(.2,.7,.3,1);
 }
 .site .hdr .bar{
   position:relative;
   display:flex; align-items:center; gap:var(--sp-6); height:60px;
   padding-inline:var(--sp-4);
-  background:transparent; border:0;
+  border-radius:20px;
+  background:transparent; border:1px solid transparent;
+  transition:background .3s ease, border-color .3s ease, box-shadow .3s ease,
+             max-width .32s cubic-bezier(.2,.7,.3,1), padding .3s ease, color .25s ease;
   max-width:100%;
 }
 
-/* The wordmark stays put in every state. It used to collapse away when
-   the bar became a pill, because the crest beside it carried the identity
-   at that size — there is no crest now, so hiding it would leave the bar
-   with no brand on it at all. */
+/* The floating state. */
+.site .hdr.stuck{padding-block:var(--sp-2)}
+.site .hdr.stuck .bar{
+  max-width:max-content; margin-inline:auto; padding-inline:var(--sp-2);
+  box-shadow:var(--sh-float);
+  -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px);
+}
+.site .hdr.stuck.over-light .bar{
+  background:rgba(255,255,255,.9); border-color:var(--hair); color:var(--ink);
+}
+.site .hdr.stuck.over-dark .bar{
+  background:rgba(38,36,34,.94); border-color:rgba(255,255,255,.1); color:#fff;
+}
+
+/* A sticky bar hides whatever an anchor scrolls to. The Programmes menu
+   links to /programmes#ai, and without this the panel it lands on sits
+   underneath the bar. */
+.site{scroll-padding-top:calc(60px + var(--sp-3) * 2 + 12px)}
+.site [id]{scroll-margin-top:calc(60px + var(--sp-3) * 2 + 12px)}
+
+/* ---- inside a DARK capsule, everything is light ---- */
+.site .hdr.stuck.over-dark .nav a,
+.site .hdr.stuck.over-dark .nav .has-menu > button{color:#fff}
+.site .hdr.stuck.over-dark .nav a:hover,
+.site .hdr.stuck.over-dark .nav .has-menu > button:hover,
+.site .hdr.stuck.over-dark .nav .has-menu.open > button{background:rgba(255,255,255,.12); color:#fff}
+.site .hdr.stuck.over-dark .nav a.on{color:var(--lime)}
+.site .hdr.stuck.over-dark .burger i,
+.site .hdr.stuck.over-dark .burger i::before,
+.site .hdr.stuck.over-dark .burger i::after{background:#fff}
+/* The default focus ring is ink, and ink on the dark capsule is 2.29:1. */
+.site .hdr.stuck.over-dark :focus-visible{outline-color:#FFFFFF}
+
 .site .hdr .mark .txt{font-size:22px}
 
 
@@ -921,6 +951,20 @@
 .site .hdr .btn.ghost{background:transparent; color:inherit; box-shadow:inset 0 0 0 1.5px var(--control-line)}
 .site .hdr .cta{background:var(--ink); color:#fff; box-shadow:none}
 .site .hdr .cta:hover{background:var(--ink-2); color:#fff; transform:translateY(-1px)}
+
+/* The two buttons swap polarity with the capsule, which is the whole
+   reason the tone is tracked. Over a light band they are what they are at
+   the top of the page — an outlined one and an ink-filled one. Over a
+   dark one the fill becomes paper and the outline becomes a light edge on
+   a dark ground. .25 of white over the capsule is 2.28:1, so the edge is
+   set at the alpha that clears 3:1. */
+.site .hdr.stuck.over-dark .btn.ghost{
+  background:rgba(255,255,255,.08); color:#fff;
+  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.45);
+}
+.site .hdr.stuck.over-dark .btn.ghost:hover{background:rgba(255,255,255,.18); color:#fff}
+.site .hdr.stuck.over-dark .cta{background:var(--paper); color:var(--ink)}
+.site .hdr.stuck.over-dark .cta:hover{background:var(--lime); color:var(--ink)}
 
 /* The scroll rail belongs to the pill now, not to a full-width edge. */
 /* The rail is no longer started — see motion.js. This stays so that a
@@ -1502,10 +1546,15 @@
    a row of one-word links and wrong for a column of sentences. The
    taglines ran straight across the next column. The panel opts out. */
 .site .nav .menu a{white-space:normal}
-/* …and the bar's own link colours stop at the panel's edge. */
-.site .hdr .nav .menu a{color:var(--ink)}
-.site .hdr .nav .menu a:hover{color:var(--ink); background:var(--paper-2)}
-.site .hdr .nav .menu .menu-foot a:hover{color:var(--lime-ink); background:none}
+/* …and the bar's own link colours stop at the panel's edge. Inside a dark
+   capsule `.hdr.stuck.over-dark .nav a` is white, and it painted the
+   panel's foot links white on a white panel. */
+.site .hdr .nav .menu a,
+.site .hdr.stuck.over-dark .nav .menu a{color:var(--ink)}
+.site .hdr .nav .menu a:hover,
+.site .hdr.stuck.over-dark .nav .menu a:hover{color:var(--ink); background:var(--paper-2)}
+.site .hdr .nav .menu .menu-foot a:hover,
+.site .hdr.stuck.over-dark .nav .menu .menu-foot a:hover{color:var(--lime-ink); background:none}
 /* A flex item will not go below its content's min-content width unless it
    is told it may, so the tagline ignored its 210px track and ran clean
    across the next column. The icon is `flex:none`; this is the half that

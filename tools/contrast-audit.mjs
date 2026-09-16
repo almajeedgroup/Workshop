@@ -329,6 +329,31 @@ const NONTEXT_AUDIT = `(() => {
 })()`;
 
 const browser = await chromium.launch({ executablePath: CHROME });
+
+/* Where to measure a page from.
+ *
+ * The header collapses into a capsule that INVERTS with the band beneath
+ * it, so a page has as many header states as it has tones. Scrolling to
+ * one fixed offset measured whichever tone happened to be there — on the
+ * home page, 900px is a light band, so the dark capsule was never looked
+ * at once. This returns the top, plus the middle of the first band of
+ * each distinct tone. */
+async function stops(page) {
+  const bands = await page.evaluate(() => [...document.querySelectorAll('.site [data-tone]')]
+    .map((b) => {
+      const r = b.getBoundingClientRect();
+      return { tone: b.dataset.tone, mid: Math.round(r.top + window.scrollY + Math.min(r.height / 2, 300)) };
+    }));
+  const seen = new Set();
+  const out = [0];
+  for (const b of bands) {
+    if (seen.has(b.tone) || b.mid < 200) continue;
+    seen.add(b.tone);
+    out.push(b.mid);
+  }
+  return out.length > 1 ? out : [0, 900];
+}
+
 let findings = 0;
 
 for (const width of WIDTHS) {
@@ -348,7 +373,7 @@ for (const width of WIDTHS) {
        the header for most of a visit — white links on a translucent dark
        ground, over whatever band happens to be behind it. Measuring only
        at scroll 0 never looked at it. */
-    for (const at of [0, 900]) {
+    for (const at of await stops(page)) {
       if (at) {
         await page.evaluate((y) => window.scrollTo(0, y), at);
         await page.waitForTimeout(450);
@@ -377,7 +402,7 @@ for (const path of PATHS) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 1000 }, reducedMotion: 'reduce' });
   await page.goto(BASE + path, { waitUntil: 'networkidle' });
   const found = [];
-  for (const at of [0, 900]) {
+  for (const at of await stops(page)) {
     if (at) {
       await page.evaluate((y) => window.scrollTo(0, y), at);
       await page.waitForTimeout(450);
