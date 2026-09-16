@@ -29,7 +29,7 @@
 
 import { chromium } from 'playwright-core';
 
-const BASE = process.env.BASE || `http://localhost:${process.env.PORT || 4177}`;
+const BASE = process.env.ADMIN || process.env.BASE || `http://localhost:${process.env.PORT || 4177}`;
 
 /* Prove the origin answers before measuring it. A sweep pointed at a port
    nobody was serving reported every page clean once, and a stale preview
@@ -44,12 +44,32 @@ if (!probe || !probe.ok) {
 const WIDTHS = (process.env.WIDTHS || '1440,1280,1079,768,390').split(',').map(Number);
 const CHROME = process.env.CHROME_PATH || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 
-const PATHS = [
+const SITE_PATHS = [
   '/', '/programmes', '/features', '/certificates', '/about', '/contact', '/verify', '/login',
   '/features/registration', '/features/tickets', '/features/online-classes',
   '/features/class-record', '/features/attendance', '/features/id-cards',
   '/features/certificates', '/features/verification', '/features/records', '/features/printing',
 ];
+
+/* The admin, through the harness.
+ *
+ * Every admin screen needs a live Firestore, so this checker had never
+ * seen one — it audited the public site and called the app clean. The
+ * harness mounts the real components against fabricated records at
+ * `?at=<route>`, which is an origin this can measure like any other:
+ *
+ *   npm run harness                       (serves :4180)
+ *   ADMIN=http://localhost:4180 node tools/contrast-audit.mjs
+ */
+const ADMIN_ROUTES = [
+  '/', '/console', '/w/AIHOW26', '/w/AIHOW26/edit', '/w/AIHOW26/attendance',
+  '/import', '/people', '/w/AIHOW26/t/r0',
+];
+
+const ADMIN = process.env.ADMIN || '';
+const PATHS = ADMIN
+  ? ADMIN_ROUTES.map((r) => `/?at=${encodeURIComponent(r)}`)
+  : SITE_PATHS;
 
 /* The page-side pass. A template literal, so every backslash in a regex here
    has to be doubled — a lone \s arrives as a plain "s" and quietly matches
@@ -176,9 +196,21 @@ const NONTEXT_AUDIT = `(() => {
     const width = parseFloat(cs.outlineWidth) || 0;
     const bg = ground(el.parentElement || document.body);
     if (cs.outlineStyle === 'none' || width < 1) {
-      // Not necessarily wrong — a control may indicate focus by changing its
-      // own fill instead. Reported so a person can look.
-      out.push({ kind: 'focus', issue: 'no outline; check for another indicator', sel: name(el) });
+      /* An outline is not the only way to indicate focus. A ring drawn with
+         an inset box-shadow is the other common one — it is how the
+         sidebar's drag handle does it, a 1px ink ring inside a 9px grip —
+         and reporting that as "no indicator" left a standing finding on
+         every admin page that was in fact correct all along. So the ring
+         is measured, and only a control with NEITHER is reported. */
+      const ring = /inset/.test(cs.boxShadow)
+        ? (() => { const c = cs.boxShadow.match(/rgba?\([^)]*\)|#[0-9a-f]{3,8}/i);
+                   return c ? ratio(over(px(c[0]), bg), bg) : 0; })()
+        : 0;
+      if (ring < 3) {
+        out.push({ kind: 'focus',
+          issue: ring ? 'ring ' + ring.toFixed(2) + ':1' : 'no outline and no ring',
+          sel: name(el) });
+      }
     } else {
       const rr = ratio(over(px(cs.outlineColor), bg), bg);
       if (rr < 3) out.push({ kind: 'focus', issue: 'outline ' + rr.toFixed(2) + ':1', sel: name(el), fg: hex(px(cs.outlineColor)), bg: hex(bg) });
@@ -196,7 +228,18 @@ const NONTEXT_AUDIT = `(() => {
     if (Number(cs.opacity) < 0.1 || r.width <= 2 || r.height <= 2
         || r.right < 0 || r.left > innerWidth) continue;
     const around = ground(el.parentElement || document.body);
-    const bw = parseFloat(cs.borderTopWidth) || 0;
+    /* The strongest of the four sides, not the top.
+       A field bounded by an underline alone is an ordinary pattern — it is
+       how every editable cell in the admin's tables is drawn — and reading
+       border-top-width alone reported all of them as having no boundary at
+       all. (No backticks in here: this whole block is a template literal,
+       and one would end it. The same trap as the doubled backslashes.) */
+    const sides = ['Top', 'Right', 'Bottom', 'Left'];
+    const edge = sides
+      .map((k) => ({ w: parseFloat(cs['border' + k + 'Width']) || 0, c: px(cs['border' + k + 'Color']) }))
+      .filter((e) => e.w >= 1)
+      .reduce((best, e) => Math.max(best, ratio(over(e.c, around), around)), 0);
+    const bw = sides.reduce((m, k) => Math.max(m, parseFloat(cs['border' + k + 'Width']) || 0), 0);
     if (bw < 1) {
       // A control's visible boundary is not always its own border. The email
       // capture draws one edge round the input AND its button, which is what
@@ -215,8 +258,7 @@ const NONTEXT_AUDIT = `(() => {
       }
       continue;
     }
-    const rr = ratio(over(px(cs.borderTopColor), around), around);
-    if (rr < 3) out.push({ kind: 'field', issue: 'border ' + rr.toFixed(2) + ':1', sel: name(el), fg: hex(px(cs.borderTopColor)), bg: hex(around) });
+    if (edge < 3) out.push({ kind: 'field', issue: 'border ' + edge.toFixed(2) + ':1', sel: name(el), bg: hex(around) });
   }
 
   /* BUTTONS TOO. This used to check only input, textarea and select, which

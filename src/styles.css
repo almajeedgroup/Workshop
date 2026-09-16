@@ -1,69 +1,72 @@
-/* Al-Majeed Workshops.
+/* WORKSHOP — the admin.
 
-   Black text on a white page, and the five colours on everything else.
+   The same palette as the landing site, because it is the same product.
+   Black text on a white page, and the brand's green on everything else.
 
-   THE RULE: the colours are never text. Measured against white they come out
-   at 2.17, 1.51, 3.78 and 3.24 to one, and 4.5 is the floor for readable
-   text — tangerine is nowhere near it. So they are FILLS, BORDERS and BARS
-   with the readable colour written on top.
+   THE RULE IS UNCHANGED: a colour is never the text. Lime is 2.12:1 on
+   white and cannot be read; what it can do is carry near-black at 9.35:1,
+   which is how the mark itself is drawn. So the colours are FILLS, RAILS
+   and BARS with the readable colour written on top.
 
-   Four of them are LIGHT and carry black: 9.69, 13.89, 5.55 and 6.49 to one.
-   Crystal violet is DARK and carries white: 14.34 to one, the strongest
-   pairing here. Black on it is 1.46 to one, which is no pairing at all — so
-   `--on-violet` exists and everything filled violet uses it.
+   ── WHAT THE FIVE MEANINGS BECAME ────────────────────────────────────
+   This used to be a five-hue flag: lime, tangerine, red, blue, violet.
+   Each carried a meaning, and collapsing them into a two-hue brand needed
+   the meanings kept rather than the hues. They are now told apart by
+   VALUE as much as by hue — bright green, dark green, near-black, red,
+   pale grey are five distinguishable rails:
 
-   That does not loosen anything. The PAGE is white and the TEXT on it is
-   black; this is a label inside a coloured chip, and the chip is dark. What
-   the rule forbids is a palette colour BEING the text, and nothing here does
-   that.
+     lime       #32CD32  the action that moves work forward, and "fine"
+     lime-ink   #186E18  a standing caveat: a fee owing, seats filling
+     ink        #0A0A0A  a decision is waiting on you, and where you are
+     alert      #C2261A  something is wrong
+     faint      #E5E5E5  settled; present, asking for nothing
 
-   Each colour means something, so the interface stays readable at a glance:
+   Colour is still never the only signal. The destructive button is dashed
+   as well as red, a warning notice is dashed as well as red, an
+   unanswered attendance mode is dashed as well as pale, and every rail on
+   the board sits beside a sentence saying what it is for.
 
-     lime       the action that moves work forward — the brand colour
-     red        the one that destroys, and anything wrong
-     blue       where you are, where you are going, what has focus
-     tangerine  headings and labels over data
-     violet     the class that is happening now
-
-   Colour is never the only signal — the destructive button is dashed as well
-   as red, and a warning notice is dashed as well as red. */
+   Ink on lime is 9.35:1. White on alert is 6.4:1 — alert is DARK, unlike
+   every colour this replaced, so anything filled with it carries white
+   and not black. */
 
 :root {
   --ink: #0A0A0A;
   --paper: #FFFFFF;
+  --paper-2: #F7F5F2;        /* a quiet ground */
+  --paper-3: #EFEDE8;        /* a label over data, and a neutral fill */
+  --stone: #EDEAE3;
   --line: #0A0A0A;
-  --muted: #666666;          /* 5.74:1 — grey, deliberately not a colour */
+  --muted: #616161;          /* 6.19:1 — grey, deliberately not a colour */
   --faint: #E5E5E5;
 
-  /* The brand lime, and the same value brand.js holds. It replaced a
-     near-identical jade (#00CA72) so that the action which moves work
-     forward is painted in the colour on the door. Black on it is 9.35:1;
-     lime was 9.14:1, so nothing about the rule changed. */
-  --lime: #32CD32;
-  --tangerine: #FFCC00;
-  --red: #FB275D;
-  --blue: #1E90FF;
-  --violet: #4A0E4E;         /* crystal violet — dark, so it carries white */
-  --on-violet: #FFFFFF;      /* 14.34:1 on it; black would be 1.46:1 */
+  /* The brand green, and the same values site.css and brand.js hold. */
+  --lime: #32CD32;           /* black on it is 9.35:1 */
+  --lime-deep: #28A828;      /* the same fill, pressed */
+  --lime-ink: #186E18;       /* green taken down until it can be read */
+  --lime-wash: rgba(50, 205, 50, 0.13);
 
-  /* One segment of each, in palette order. It divides the sidebar from the
-     work, rules off a page heading, and crosses the login panel — the three
-     places the screen is divided. */
-  --flag: linear-gradient(90deg,
-    var(--lime) 0 20%, var(--tangerine) 20% 40%,
-    var(--red) 40% 60%, var(--blue) 60% 80%, var(--violet) 80% 100%);
-  /* The same five running downwards, for the sidebar's edge. The horizontal
-     one squeezed into a 3px-wide strip puts all five stops inside three
-     pixels, which paints as a single colour. */
-  --flag-down: linear-gradient(180deg,
-    var(--lime) 0 20%, var(--tangerine) 20% 40%,
-    var(--red) 40% 60%, var(--blue) 60% 80%, var(--violet) 80% 100%);
+  /* The one non-brand colour, and it says "wrong". Dark, so it carries
+     white: black on it is 3.3:1, which is no pairing at all. */
+  --alert: #C2261A;
+  --alert-wash: rgba(194, 38, 26, 0.08);
+
+  /* The mark's own two colours, in order. It divides the sidebar from the
+     work, rules off a page heading, and crosses the login panel — the
+     three places the screen is divided.
+
+     TWO, not three. It replaced a five-colour flag, and the first attempt
+     at a brand version ran lime into lime-ink into ink — but in a strip
+     three pixels wide #186E18 and #0A0A0A are the same colour, so it
+     painted as two segments with a seam in the middle of one of them.
+     Lime and ink is what the mark is, and at 3px it is unmistakable. */
+  --flag: linear-gradient(90deg, var(--lime) 0 50%, var(--ink) 50% 100%);
+  --flag-down: linear-gradient(180deg, var(--lime) 0 50%, var(--ink) 50% 100%);
 
   --hair: 1px solid var(--line);
   --hairline: 1px solid var(--faint);
+  --control-line: #616161;
   --gap: 20px;
-  /* The admin used Helvetica while the site used Poppins, which made two
-     products out of one. --text is declared at :root in tokens.css. */
   --font: var(--text);
   --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 }
@@ -91,7 +94,7 @@ body {
 }
 
 a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
-a:hover { background: var(--blue); color: var(--ink); text-decoration: none; }
+a:hover { background: var(--paper-3); color: var(--ink); text-decoration: none; }
 
 /* The page's own title takes the voice the site uses — large, regular
    weight, tight tracking. h3 does NOT: over a table it is a LABEL, and a
@@ -156,7 +159,7 @@ h3 { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spac
   cursor: col-resize; background: none; border: 0; padding: 0;
   touch-action: none;
 }
-.side-grip:hover, .side-grip:focus-visible { background: var(--blue); outline: none; }
+.side-grip:hover, .side-grip:focus-visible { background: var(--lime); outline: none; }
 .side-grip:focus-visible { box-shadow: inset 0 0 0 1px var(--ink); }
 /* Without this the drag turns into a text selection two columns wide. */
 body.side-resizing { user-select: none; cursor: col-resize; }
@@ -181,12 +184,12 @@ body.side-resizing { user-select: none; cursor: col-resize; }
 .side-link:hover { background: rgba(10,10,10,.06); color: var(--ink); }
 /* Blue is still where you are. It is a filled pill now rather than a
    bordered rectangle, which is the same statement in the new shapes. */
-.side-link[aria-current='page'] { background: var(--blue); color: var(--ink); font-weight: 600; }
+.side-link[aria-current='page'] { background: var(--ink); color: var(--paper); font-weight: 600; }
 .side-link span { flex: 1; }
 
 .side-badge {
   flex: none; min-width: 21px; padding: 1px 7px; text-align: center;
-  background: var(--tangerine); color: var(--ink); font-size: 11px; font-weight: 700;
+  background: var(--ink); color: var(--paper); font-size: 11px; font-weight: 700;
   border: 1px solid rgba(10,10,10,.2); border-radius: var(--r-pill);
   font-variant-numeric: tabular-nums;
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
@@ -237,8 +240,8 @@ body.side-resizing { user-select: none; cursor: col-resize; }
   transition: background .15s ease, color .15s ease;
 }
 /* Blue is where you are and where you are going. */
-.navlink:hover { background: var(--blue); color: var(--ink); }
-.navlink[aria-current='page'] { background: var(--blue); color: var(--ink); font-weight: 700; }
+.navlink:hover { background: var(--paper-3); color: var(--ink); }
+.navlink[aria-current='page'] { background: var(--ink); color: var(--paper); font-weight: 700; }
 
 main { flex: 1; padding: var(--gap); max-width: 1500px; width: 100%; margin: 0 auto; }
 
@@ -289,7 +292,7 @@ button, .btn {
 }
 /* An ordinary button turns blue under the pointer — the same blue that marks
    where you are elsewhere. Black stays on top throughout. */
-button:hover:not(:disabled), .btn:hover { background: var(--blue); color: var(--ink); border-color: var(--blue); }
+button:hover:not(:disabled), .btn:hover { background: var(--paper-3); color: var(--ink); border-color: var(--ink); }
 button:disabled { color: var(--muted); border-color: var(--faint); background: var(--paper); cursor: not-allowed; }
 /* `button.primary` is (0,2,0) and `button:disabled` is (0,1,1), so without
    this a disabled primary or danger button keeps its full colour and still
@@ -306,9 +309,9 @@ button.primary:hover:not(:disabled), .btn.primary:hover { background: var(--lime
 /* Red for the one that destroys something. Dashed as well as red, so it is
    still marked out for anyone who does not see the colour. Black is 5.23:1. */
 button.danger {
-  background: var(--red); color: var(--ink); border-style: dashed; font-weight: 700;
+  background: var(--alert); color: var(--paper); border-style: dashed; font-weight: 700;
 }
-button.danger:hover:not(:disabled) { background: var(--red); box-shadow: inset 0 0 0 2px var(--ink); }
+button.danger:hover:not(:disabled) { background: var(--alert); color: var(--paper); box-shadow: inset 0 0 0 2px var(--ink); }
 button.small { padding: 3px 8px; font-size: 11px; }
 
 .btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
@@ -328,7 +331,7 @@ input, textarea, select {
 textarea { resize: vertical; line-height: 1.55; }
 input:focus, textarea:focus, select:focus,
 button:focus-visible, .btn:focus-visible, a:focus-visible {
-  outline: 3px solid var(--blue); outline-offset: 1px;
+  outline: 3px solid var(--ink); outline-offset: 1px;
 }
 input:focus, textarea:focus, select:focus { outline-offset: -1px; }
 input::placeholder, textarea::placeholder { color: var(--muted); }
@@ -372,10 +375,8 @@ label { display: block; }
 }
 /* Position 1 to 4 take the palette in its own order, so the badges match the
    flag and the order of the logos they number. */
-.pick-row:nth-child(2) .pick-n { background: var(--tangerine); }
-.pick-row:nth-child(3) .pick-n { background: var(--red); }
-.pick-row:nth-child(4) .pick-n { background: var(--blue); }
-.pick-row:nth-child(5) .pick-n { background: var(--violet); color: var(--on-violet); }
+/* They were five different hues; the numeral inside each already tells
+   them apart, so they are one fill now. */
 .pick-img { flex: none; width: 26px; height: 26px; object-fit: contain; background: #fff; }
 .pick-label { font-size: 13px; }
 /* .spacer is scoped per container throughout this file, so it needs saying
@@ -402,7 +403,7 @@ th, td { text-align: left; padding: 7px 10px; border-bottom: var(--hairline); ve
 thead th {
   border-bottom: 2px solid var(--line);
   font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
-  white-space: nowrap; background: var(--tangerine); color: var(--ink);
+  white-space: nowrap; background: var(--paper-3); color: var(--ink);
   position: sticky; top: 0;
 }
 tbody tr:hover { background: #f4f4f4; }
@@ -415,8 +416,13 @@ td.mono { font-family: var(--mono); font-size: 12px; }
    greyed, so which of the two columns is the old one does not depend on
    reading the headings. */
 td.was { color: var(--muted); text-decoration: line-through; }
-table input { border: 0; padding: 3px 4px; }
-table input:focus { outline: 3px solid var(--blue); outline-offset: -2px; }
+/* An editable cell keeps its density and gains an edge. Borderless, the
+   only thing marking it was the row's own hairline at 1.2:1 — so a grid
+   you are meant to type into did not look like one. An underline is the
+   least furniture that still reads as a field, and --control-line is the
+   measured one at 6.19:1. */
+table input { border: 0; border-bottom: 1px solid var(--control-line); padding: 3px 4px; border-radius: 0; }
+table input:focus { outline: 3px solid var(--ink); outline-offset: -2px; }
 
 /* ---------------- blocks ---------------- */
 
@@ -436,7 +442,7 @@ table input:focus { outline: 3px solid var(--blue); outline-offset: -2px; }
 /* Blue says "read this", red says "something is wrong". The left edge is the
    fill, so the bright colours are used rather than the darkened ones. */
 .notice {
-  border: 1px solid rgba(10,10,10,.10); border-left: 5px solid var(--blue);
+  border: 1px solid rgba(10,10,10,.10); border-left: 5px solid var(--ink);
   border-radius: var(--r-md); padding: 12px 15px;
   margin-bottom: 14px; font-size: 13px; background: var(--paper);
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
@@ -445,7 +451,7 @@ table input:focus { outline: 3px solid var(--blue); outline-offset: -2px; }
    to the outline: a 5px dashed border on a rounded corner spends most of
    its run inside the curve and paints as three stray marks. The rail stays
    solid and the dash goes round the whole card, where it reads. */
-.notice.warn { border: 1px dashed var(--red); border-left: 5px solid var(--red); }
+.notice.warn { border: 1px dashed var(--alert); border-left: 5px solid var(--alert); }
 .notice ul { margin: 6px 0 0; padding-left: 18px; }
 .notice li { margin: 2px 0; }
 
@@ -459,7 +465,7 @@ table input:focus { outline: 3px solid var(--blue); outline-offset: -2px; }
   padding: 2px 9px;
   font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; margin-right: 4px;
 }
-.tag.solid { background: var(--tangerine); color: var(--ink); font-weight: 700; }
+.tag.solid { background: var(--paper-3); color: var(--ink); font-weight: 700; }
 
 .kv { display: grid; grid-template-columns: minmax(150px, 210px) 1fr; gap: 0; }
 .kv > dt {
@@ -501,11 +507,11 @@ table input:focus { outline: 3px solid var(--blue); outline-offset: -2px; }
 }
 .record-card > header {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  padding: 9px 13px; border-bottom: var(--hair); background: var(--tangerine); color: var(--ink);
+  padding: 9px 13px; border-bottom: var(--hair); background: var(--paper-3); color: var(--ink);
 }
 .record-card > header .spacer { flex: 1; }
 .record-card > header button { background: var(--paper); color: var(--ink); }
-.record-card > header button:hover:not(:disabled) { background: var(--blue); color: var(--ink); }
+.record-card > header button:hover:not(:disabled) { background: var(--paper-3); color: var(--ink); }
 .record-card > .body { padding: 14px; }
 
 .split { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
@@ -528,9 +534,9 @@ table input:focus { outline: 3px solid var(--blue); outline-offset: -2px; }
   display: flex; flex-direction: column; gap: 2px;
   border-top: 5px solid var(--lime);
 }
-.stat:nth-child(2) { border-top-color: var(--tangerine); }
-.stat:nth-child(3) { border-top-color: var(--red); }
-.stat:nth-child(4) { border-top-color: var(--blue); }
+.stat:nth-child(2) { border-top-color: var(--lime-ink); }
+.stat:nth-child(3) { border-top-color: var(--ink); }
+.stat:nth-child(4) { border-top-color: var(--faint); }
 .stat:nth-child(4n+5) { border-top-color: var(--lime); }
 .stat:last-child { border-right: 0; }
 .stat .n { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
@@ -549,9 +555,9 @@ select.status {
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 select.status[data-status='Paid']     { background: var(--lime); }
-select.status[data-status='Pending']  { background: var(--tangerine); }
-select.status[data-status='Waived']   { background: var(--blue); }
-select.status[data-status='Refunded'] { background: var(--red); }
+select.status[data-status='Pending']  { background: var(--paper-3); }
+select.status[data-status='Waived']   { background: var(--stone); }
+select.status[data-status='Refunded'] { background: var(--alert-wash); border-color: var(--alert); }
 
 /* How a student attends is not a status: neither answer is good or bad, and
    painting them two palette colours would borrow meanings that belong to
@@ -559,7 +565,10 @@ select.status[data-status='Refunded'] { background: var(--red); }
    for is coloured — tangerine, which is this app's caveat. */
 select.status[data-mode='Offline'],
 select.status[data-mode='Online']   { background: var(--paper); }
-select.status[data-mode='unset']    { background: var(--tangerine); }
+/* Dashed as well as pale: an unanswered row is not a status, it is a
+   gap, and the dash says so without borrowing a colour that means
+   something else. */
+select.status[data-mode='unset']    { background: var(--paper-3); border-style: dashed; }
 
 /* ---------------- seat pressure ---------------- */
 
@@ -575,9 +584,9 @@ select.status[data-mode='unset']    { background: var(--tangerine); }
   display: block; height: 100%; background: var(--lime);
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
-.seat-bar[data-level='nearly'] span { background: var(--tangerine); }
-.seat-bar[data-level='full'] span   { background: var(--blue); }
-.seat-bar[data-level='over'] span   { background: var(--red); }
+.seat-bar[data-level='nearly'] span { background: var(--lime-ink); }
+.seat-bar[data-level='full'] span   { background: var(--ink); }
+.seat-bar[data-level='over'] span   { background: var(--alert); }
 .seats .n { font-size: 11px; color: var(--muted); white-space: nowrap; }
 
 /* ---------------- the console ---------------- */
@@ -588,9 +597,9 @@ select.status[data-mode='unset']    { background: var(--tangerine); }
   border-radius: var(--r-lg); background: var(--paper); box-shadow: var(--sh-card);
   padding: 16px 18px;
 }
-.tile[data-tone='tangerine'] { border-top-color: var(--tangerine); }
-.tile[data-tone='red']       { border-top-color: var(--red); }
-.tile[data-tone='blue']      { border-top-color: var(--blue); }
+.tile[data-tone='tangerine'] { border-top-color: var(--lime-ink); }
+.tile[data-tone='red']       { border-top-color: var(--alert); }
+.tile[data-tone='blue']      { border-top-color: var(--ink); }
 .tile .n { display: block; font-size: 26px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .tile .l { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-top: 3px; }
 .tile a { text-decoration: none; }
@@ -598,14 +607,14 @@ select.status[data-mode='unset']    { background: var(--tangerine); }
 /* One card per workshop that needs something, with why. */
 .todo { display: grid; gap: 10px; }
 .todo-row {
-  border: 1px solid rgba(10,10,10,.10); border-left: 6px solid var(--tangerine);
+  border: 1px solid rgba(10,10,10,.10); border-left: 6px solid var(--lime-ink);
   border-radius: var(--r-md); background: var(--paper); box-shadow: var(--sh-card);
   padding: 13px 16px;
 }
 .todo-row[data-tone='lime']      { border-left-color: var(--lime); }
-.todo-row[data-tone='tangerine'] { border-left-color: var(--tangerine); }
-.todo-row[data-tone='red']       { border-left-color: var(--red); }
-.todo-row[data-tone='blue']      { border-left-color: var(--blue); }
+.todo-row[data-tone='tangerine'] { border-left-color: var(--lime-ink); }
+.todo-row[data-tone='red']       { border-left-color: var(--alert); }
+.todo-row[data-tone='blue']      { border-left-color: var(--ink); }
 .todo-row .why { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .why .r {
   font-size: 11px; padding: 3px 10px; border: 1px solid rgba(10,10,10,.16);
@@ -613,9 +622,9 @@ select.status[data-mode='unset']    { background: var(--tangerine); }
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 .why .r[data-tone='lime']      { background: var(--lime); }
-.why .r[data-tone='tangerine'] { background: var(--tangerine); }
-.why .r[data-tone='red']       { background: var(--red); }
-.why .r[data-tone='blue']      { background: var(--blue); }
+.why .r[data-tone='tangerine'] { background: var(--lime-ink); color: var(--paper); }
+.why .r[data-tone='red']       { background: var(--alert); color: var(--paper); }
+.why .r[data-tone='blue']      { background: var(--ink); color: var(--paper); }
 
 /* ---------------- the board ---------------- */
 
@@ -629,12 +638,21 @@ select.status[data-mode='unset']    { background: var(--tangerine); }
   border-radius: var(--r-lg); overflow: hidden;
   background: var(--paper); box-shadow: var(--sh-card);
 }
-.grp[data-tone='tangerine'] { border-left-color: var(--tangerine); }
-.grp[data-tone='red']       { border-left-color: var(--red); }
-.grp[data-tone='blue']      { border-left-color: var(--blue); }
+.grp[data-tone='tangerine'] { border-left-color: var(--lime-ink); }
+.grp[data-tone='red']       { border-left-color: var(--alert); }
+.grp[data-tone='blue']      { border-left-color: var(--ink); }
 /* Settled and finished: present, but not asking for anything. */
 .grp[data-tone='quiet']     { border-left-color: var(--faint); }
-.grp[data-finished] .grp-name > a { color: var(--muted); }
+/* The TITLE greys out on a finished course — not everything in the row
+   that happens to be a link. `.grp-name` also holds the "Class open"
+   badge, which is a Link to the class, so this matched it too at (0,3,1)
+   and repainted its label muted grey: 3.2:1 on the badge's own ink fill.
+   The badge's own rule is (0,2,0) and could not win.
+
+   This is the second time a container has repainted a badge — the first
+   was a `.count` — and the first admin screen the contrast checker was
+   ever pointed at is what found it. */
+.grp[data-finished] .grp-name > a:not(.badge) { color: var(--muted); }
 
 .grp-head { display: flex; align-items: center; gap: 12px; padding: 13px 16px; flex-wrap: wrap; }
 .grp-head .spacer { flex: 1; }
@@ -676,7 +694,7 @@ select.status[data-mode='unset']    { background: var(--tangerine); }
 /* Somebody who matched an existing registration. Unticked and marked, never
    removed: the office decides whether a shared phone means one person or
    four, and it cannot decide about somebody it was not shown. */
-.carry-list .is-flagged { border-left: 3px solid var(--tangerine); }
+.carry-list .is-flagged { border-left: 3px solid var(--lime-ink); }
 .carry-why {
   display: block; font-style: normal; font-size: 10.5px; color: var(--muted);
   font-weight: 400; white-space: normal;
@@ -732,8 +750,8 @@ select.status[data-mode='unset']    { background: var(--tangerine); }
 
 /* The kinds are told apart by a word AND a colour, never colour alone. */
 .f-person { border-left-color: var(--lime); }
-.f-request { border-left-color: var(--blue); }
-.f-workshop { border-left-color: var(--tangerine); }
+.f-request { border-left-color: var(--ink); }
+.f-workshop { border-left-color: var(--lime-ink); }
 
 /* Highlight, not selection: the same row is "active" whether it was reached
    by arrow key or by hovering, so the two never disagree. */
@@ -786,7 +804,7 @@ select.status[data-mode='unset']    { background: var(--tangerine); }
   color: var(--ink);
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
-.badge.done { background: var(--blue); }
+.badge.done { background: var(--paper-3); }
 
 /* A class happening right now. Violet: the class is the one thing in this
    app that is live, and it had been borrowing lime — the colour of the
@@ -795,11 +813,11 @@ select.status[data-mode='unset']    { background: var(--tangerine); }
    seeing it is to go there. */
 /* Violet is dark, so the hairline that reads on a light fill disappears
    on it — it gets its own. */
-.badge.on-air { background: var(--violet); color: var(--on-violet); border-color: var(--violet); }
+.badge.on-air { background: var(--ink); color: var(--lime); border-color: var(--ink); }
 .badge.off-air { background: var(--faint); }
 a.badge { text-decoration: none; }
 a.badge:hover {
-  background: var(--violet); color: var(--on-violet);
+  background: var(--ink); color: var(--lime);
   box-shadow: inset 0 0 0 2px var(--paper);
 }
 
@@ -819,13 +837,13 @@ a.badge:hover {
   display: inline-block; padding: 3px 10px;
   border: 1px solid rgba(10,10,10,.22); border-radius: var(--r-pill);
   font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em;
-  background: var(--tangerine);
+  background: var(--paper-3);
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 .pill[data-status='Paid']     { background: var(--lime); }
-.pill[data-status='Pending']  { background: var(--tangerine); }
-.pill[data-status='Waived']   { background: var(--blue); }
-.pill[data-status='Refunded'] { background: var(--red); }
+.pill[data-status='Pending']  { background: var(--paper-3); }
+.pill[data-status='Waived']   { background: var(--stone); }
+.pill[data-status='Refunded'] { background: var(--alert-wash); border-color: var(--alert); }
 
 /* Visible to a screen reader, not on screen. */
 .vh {
@@ -887,8 +905,8 @@ a.badge:hover {
 }
 .reg-row:hover:not(:disabled) { background: var(--paper); }
 .reg-row[data-tone='lime']      { border-left-color: var(--lime); }
-.reg-row[data-tone='tangerine'] { border-left-color: var(--tangerine); }
-.reg-row[data-tone='red']       { border-left-color: var(--red); }
+.reg-row[data-tone='tangerine'] { border-left-color: var(--lime-ink); }
+.reg-row[data-tone='red']       { border-left-color: var(--alert); }
 .reg-row[data-tone='none']      { border-left-color: var(--faint); }
 .reg-n { flex: none; width: 26px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
 .reg-who { flex: 1; min-width: 0; }
@@ -902,8 +920,8 @@ a.badge:hover {
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 .reg-row[data-tone='lime'] .reg-mark      { background: var(--lime); }
-.reg-row[data-tone='tangerine'] .reg-mark { background: var(--tangerine); }
-.reg-row[data-tone='red'] .reg-mark       { background: var(--red); }
+.reg-row[data-tone='tangerine'] .reg-mark { background: var(--lime-ink); color: var(--paper); }
+.reg-row[data-tone='red'] .reg-mark       { background: var(--alert); color: var(--paper); }
 .reg-row[data-tone='none'] .reg-mark      { background: var(--paper); color: var(--muted); }
 
 /* ---------------- the cards view ---------------- */

@@ -473,13 +473,21 @@
 
 /* `will-change` only on what is about to move: promoting every card on the
    page to its own layer costs more than it saves. */
-.site.motion .card,
 .site.motion .fstrip a,
+.site.motion .bt,
+.site.motion .posters .pc,
+.site.motion .card,
 .site.motion .vcard{will-change:transform}
 
 /* One line of the display heading, masked so it can rise into view. */
-.site .hero .display .ln{display:block; overflow:hidden}
-.site .hero .display .ln-i{display:block}
+/* The headline is split into lines that rise into place. `overflow:hidden`
+   is what they rise out of — and at the display heading's 1.06 line-height
+   it also clips the descender of a "g", so the box is grown a little and
+   the growth taken back off the flow. */
+.site .hero .display .ln,
+.site .display-lead .ln{display:block; overflow:hidden; padding-bottom:.14em; margin-bottom:-.14em}
+.site .hero .display .ln-i,
+.site .display-lead .ln-i{display:block}
 
 /* How far down the page you are, drawn on the header's bottom edge. */
 .site .scroll-rail{
@@ -917,11 +925,19 @@
   background:var(--paper-2); overflow:hidden;
   padding-block:clamp(56px,7vw,92px) clamp(72px,9vw,128px);
 }
+/* The two washes drift as the hero leaves. They are painted by a
+   pseudo-element, which cannot be tweened, so their POSITIONS are custom
+   properties and those are what motion.js moves.
+
+   This rule is `.band.hero` (0,2,0) and the older `.hero` one below it is
+   (0,1,0), so when the hero became a band this quietly replaced it with
+   fixed positions — the tween went on setting --glow-a and --glow-b on an
+   element whose background had stopped reading them. */
 .site .band.hero::before{
   content:''; position:absolute; inset:-10% -5% auto; height:120%; pointer-events:none;
   background:
-    radial-gradient(52% 46% at 8% 64%, rgba(50,205,50,.30), transparent 68%),
-    radial-gradient(44% 40% at 92% 22%, rgba(10,10,10,.07), transparent 70%);
+    radial-gradient(52% 46% at 8% var(--glow-a,64%), rgba(50,205,50,.30), transparent 68%),
+    radial-gradient(44% 40% at 92% var(--glow-b,22%), rgba(10,10,10,.07), transparent 70%);
 }
 .site .band.hero .wrap{position:relative}
 .site .hero-mid{max-width:820px; margin-inline:auto; text-align:center}

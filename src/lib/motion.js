@@ -90,7 +90,11 @@ function reveal(root) {
  * intent and they are stable.
  */
 function headline(root) {
-  const h1 = root.querySelector('.hero .display');
+  // `.display-lead` is the heading the redesign introduced; `.display` is
+  // the older one. Naming only the old one meant this ran against nothing
+  // on every page — the effect was not broken, it was aimed at markup that
+  // had stopped existing.
+  const h1 = root.querySelector('.display-lead, .hero .display');
   if (!h1 || h1.dataset.split === 'done') return;
 
   const html = h1.innerHTML;
@@ -134,8 +138,9 @@ function depth(root) {
     scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom top', scrub: 0.6 },
   });
 
-  // The card in the hero sits a little in front of everything else.
-  const card = hero.querySelector('.vcard');
+  // The card in the hero sits a little in front of everything else. That
+  // is the capture box now; `.vcard` was the old hero's panel.
+  const card = hero.querySelector('.capture, .vcard');
   if (card) {
     gsap.to(card, {
       yPercent: -8,
@@ -153,7 +158,10 @@ function depth(root) {
  * text has to parse as an integer before anything animates.
  */
 function counters(root) {
-  gsap.utils.toArray('.stats .n', root).forEach((el) => {
+  // A bento tile's figure is where the numbers live now. The guard below
+  // still does the real work: "QR", "54mm" and "In the room" all sit in
+  // the same slot and none of them counts up.
+  gsap.utils.toArray('.bt-fig, .stats .n', root).forEach((el) => {
     const text = el.textContent.trim();
     if (!/^\d+$/.test(text)) return;
     const target = Number(text);
@@ -253,7 +261,7 @@ function magnetic(root) {
 function tilt(root) {
   if (!hasPointer()) return;
 
-  gsap.utils.toArray('.card, .fstrip a, .vcard', root).forEach((card) => {
+  gsap.utils.toArray('.fstrip a, .bt, .posters .pc, .card, .vcard', root).forEach((card) => {
     const move = (e) => {
       const r = card.getBoundingClientRect();
       const px = (e.clientX - r.left) / r.width - 0.5;
