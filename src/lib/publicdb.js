@@ -18,12 +18,15 @@
  * register clean and keeps ticket issuing manual, which is how it was asked for.
  */
 
+import { normalizeAttendMode } from './attendmode.js';
 import {
   collection, doc, addDoc, setDoc, getDoc, getDocs, deleteDoc,
   query, where, serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase.js';
 import { ISSUER, isFreeWorkshop, workshopFee, associationLine } from './schema.js';
+import { classIsLive } from './meeting.js';
+import { formatPhone } from './parser.js';
 
 const PUBLIC_WORKSHOPS = 'publicWorkshops';
 const REQUESTS = 'registrationRequests';
@@ -58,6 +61,13 @@ export function publicWorkshopRecord(workshop) {
     paymentUpi: str(workshop.paymentUpi) || ISSUER.upiId || '',
     paymentQrUrl: str(workshop.paymentQrUrl) || ISSUER.paymentQrImage || '',
     registrationOpen: str(workshop.registrationOpen) === 'Open',
+    // The online class. THE ROOM NAME ONLY EXISTS HERE WHILE THE CLASS IS
+    // OPEN — that is what makes closing one close it. A room left published
+    // after a class ends is a room strangers can wander into for as long as
+    // the workshop record lives, and no button on our page prevents that.
+    classOpen: classIsLive(workshop),
+    meetingRoom: classIsLive(workshop) ? str(workshop.meetingRoom) : '',
+    meetingHost: ISSUER.meetingHost || '',
   };
 }
 
@@ -118,6 +128,9 @@ export function newRequestRef() {
 
 const REQUEST_FIELDS = [
   'name', 'dob', 'qualification', 'courseName', 'whatsapp', 'area', 'email',
+  // How they will attend. Only a hybrid course asks; on the other two the
+  // course settles it and the form sends nothing, so this arrives empty.
+  'attendMode',
   'paymentMode', 'paymentRef', 'notes',
 ];
 
@@ -131,6 +144,13 @@ export async function submitRegistrationRequest(workshopId, form) {
   const str = (v) => String(v ?? '').trim().slice(0, 200);
   const data = { workshopId: String(workshopId) };
   for (const key of REQUEST_FIELDS) data[key] = str(form[key]);
+  // Stored in the same +91 form as everything else, so a request and the
+  // registration it becomes are the same number — which is what duplicate
+  // detection compares, and what the office dials.
+  data.whatsapp = str(formatPhone(data.whatsapp));
+  // The rules refuse anything but these two or empty; normalise here so a
+  // stale form value cannot cost somebody their registration.
+  data.attendMode = normalizeAttendMode(data.attendMode);
 
   data.ref = newRequestRef();
   data.status = 'new';

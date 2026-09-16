@@ -25,6 +25,7 @@ import {
   serverTimestamp, writeBatch, runTransaction, arrayUnion,
 } from 'firebase/firestore';
 import { db } from '../firebase.js';
+import { issuerStamp, hasIssuerStamp, LEGACY_ISSUER } from './issuer.js';
 import { matchKeys } from './dedupe.js';
 import { ticketPrefixFor } from './tickets.js';
 import {
@@ -70,7 +71,7 @@ export function durationLine(workshop, dates = '') {
 export function certificateRecord({
   certificateId, type, design, recipientName, workshopId, workshopTitle,
   workshopDates, venue, presentedBy, workshopCode, duration, time, topics,
-  ticketId, holderKey, issuedOn,
+  ticketId, holderKey, issuedOn, issuer = issuerStamp(),
 }) {
   return {
     certificateId: str(certificateId),
@@ -97,6 +98,11 @@ export function certificateRecord({
     ticketId: str(ticketId),
     holderKey: str(holderKey),
     issuedOn: str(issuedOn),
+    // WHO AWARDED THIS, recorded rather than looked up later. Read live from
+    // a constant, every certificate ever issued would silently take on the
+    // next name this school trades under — an employer checking a 2025
+    // certificate would be shown a 2026 organisation.
+    issuer: issuerStamp(issuer),
     revoked: false,
   };
 }
@@ -305,4 +311,51 @@ export async function setCertificateRevoked(certificateId, revoked, reason = '')
     { revoked: Boolean(revoked), revokedReason: str(reason), updatedAt: serverTimestamp() },
     { merge: true }
   );
+}
+
+/* ------------------------------------------------------------------ *
+ * Backfilling the issuer onto certificates issued before it was stamped
+ * ------------------------------------------------------------------ */
+
+/**
+ * Every certificate, for the one screen that has to look at all of them.
+ *
+ * Admin-only by the rules, and read nowhere else: the public verifies one
+ * certificate at a time by its exact ID, which is what keeps the set of them
+ * from being walked.
+ */
+export async function listAllCertificates() {
+  const snap = await getDocs(collection(db, CERTIFICATES));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+/**
+ * Which certificates do not yet say who issued them.
+ *
+ * Reads nothing and writes nothing — the caller shows this before anything
+ * is changed, the same way the phone-number migration does.
+ */
+export function scanIssuerStamps(certificates = []) {
+  const missing = certificates.filter((c) => !hasIssuerStamp(c));
+  return { missing, total: certificates.length, stamped: certificates.length - missing.length };
+}
+
+/**
+ * Write the legacy issuer onto every certificate that lacks one.
+ *
+ * LEGACY_ISSUER, not the current constant. Reading the live one would be
+ * correct only if this were run before the rebrand and would quietly destroy
+ * what it exists to protect if it were run after — so the ordering trap is
+ * removed rather than documented.
+ */
+export async function applyIssuerStamps(missing = []) {
+  const stamp = issuerStamp(LEGACY_ISSUER);
+  for (let i = 0; i < missing.length; i += 400) {
+    const batch = writeBatch(db);
+    for (const cert of missing.slice(i, i + 400)) {
+      batch.set(doc(db, CERTIFICATES, cert.id ?? cert.certificateId), { issuer: stamp }, { merge: true });
+    }
+    await batch.commit();
+  }
+  return missing.length;
 }

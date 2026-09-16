@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext.jsx';
-import { ISSUER, BOOTSTRAP_ADMIN_EMAIL } from '../lib/schema.js';
+import { BOOTSTRAP_ADMIN_EMAIL } from '../lib/schema.js';
+import { BRAND_NAME } from '../lib/brand.js';
+import Wordmark from '../components/Wordmark.jsx';
 
 const MESSAGES = {
   'auth/invalid-credential': 'Incorrect email or password.',
@@ -98,8 +100,8 @@ export default function LoginPage() {
     <main>
       <div className="login-wrap">
         <div className="brand-block">
-          <h1>WORKSHOPS</h1>
-          <div className="org">{ISSUER.unitLine}</div>
+          <h1 className="vh">{BRAND_NAME}</h1>
+          <Wordmark lockup className="t-3xl"  />
         </div>
         <div className="rule" />
 
@@ -119,8 +121,8 @@ export default function LoginPage() {
         </button>
 
         <div
-          className="hint"
-          style={{ textAlign: 'center', margin: '14px 0', letterSpacing: '.14em', textTransform: 'uppercase', fontSize: 10 }}
+          className="hint t-3xs"
+          style={{ textAlign: 'center', margin: '14px 0', letterSpacing: '.14em', textTransform: 'uppercase' }}
         >
           or with a password
         </div>

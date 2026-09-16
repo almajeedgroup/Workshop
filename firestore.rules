@@ -121,6 +121,86 @@ service cloud.firestore {
           && request.resource.data.photo is string
           && request.resource.data.photo.size() <= 400000;
       }
+
+      // ---- What an online class leaves behind ------------------------
+      //
+      // Notes, a transcript and handouts, all written by the presenter and
+      // READ BY STUDENTS WHO HAVE NO ACCOUNT. That is the only reason these
+      // are not simply administrator-only like everything else under a
+      // workshop, and it is why the read is conditional rather than open:
+      // `classIsOpen` asks the public mirror, which is the same switch that
+      // publishes the meeting room. Closing a class closes its notes with
+      // it, and a course that never met online exposes nothing at all.
+      //
+      // None of these hold anything personal. They are what was said and
+      // shown in a class the reader was invited to.
+      match /classNotes/{day} {
+        allow read: if isAdmin() || classIsOpen(workshopId);
+        allow delete: if isAdmin();
+        allow create, update: if isAdmin()
+          && request.resource.data.keys().hasOnly(['text', 'updatedAt'])
+          && request.resource.data.text is string
+          && request.resource.data.text.size() <= 100000;
+      }
+
+      // One document per day rather than one per line: a class produces a
+      // line every few seconds, and a document each would be thousands of
+      // writes and thousands of reads for anybody following along.
+      match /classTranscript/{day} {
+        allow read: if isAdmin() || classIsOpen(workshopId);
+        allow delete: if isAdmin();
+        allow create, update: if isAdmin()
+          && request.resource.data.keys().hasOnly(['lines', 'updatedAt'])
+          && request.resource.data.lines is list
+          && request.resource.data.lines.size() <= 5000;
+      }
+
+      // A link, or a PDF small enough to live in the record. There is no
+      // file store behind this app, so `data` is capped well under the 1 MiB
+      // document ceiling and anything bigger is shared as a link.
+      // ---- Questions, the one thing a STUDENT writes -----------------
+      //
+      // Everything else under a class is written by the presenter and read by
+      // the room. This goes the other way, so it is shaped like the
+      // registration form — the only other place a stranger can write here.
+      //
+      // The class has to be OPEN. That is the same switch that publishes the
+      // room, so a closed class takes the queue with it and a course that
+      // never met online can never be posted to at all.
+      //
+      // `hasOnly` freezes the shape because there is no schema to grow here,
+      // and an unexpected key is a good reason to refuse. The state is
+      // checked by value, not measured: a stranger writes it, and only the
+      // presenter may say something has been answered.
+      match /classQuestions/{questionId} {
+        allow read: if isAdmin() || classIsOpen(workshopId);
+        allow delete: if isAdmin();
+        // Marking one answered is the presenter's job, and theirs alone.
+        allow update: if isAdmin();
+        allow create: if classIsOpen(workshopId)
+          && request.resource.data.keys().hasOnly(['name', 'text', 'state', 'hp', 'askedAt', 'at'])
+          && request.resource.data.keys().hasAll(['name', 'text', 'state', 'hp'])
+          && request.resource.data.state == 'open'
+          && request.resource.data.hp == ''
+          && sized(request.resource.data.name, 80)
+          && request.resource.data.name.size() > 0
+          && sized(request.resource.data.text, 300)
+          && request.resource.data.text.size() > 0
+          && sized(request.resource.data.get('askedAt', ''), 40);
+      }
+
+      match /classHandouts/{handoutId} {
+        allow read: if isAdmin() || classIsOpen(workshopId);
+        allow delete: if isAdmin();
+        allow create, update: if isAdmin()
+          && request.resource.data.keys().hasOnly(['title', 'kind', 'url', 'data', 'bytes', 'addedAt'])
+          && request.resource.data.title is string
+          && request.resource.data.title.size() <= 200
+          && request.resource.data.url is string
+          && request.resource.data.url.size() <= 2000
+          && request.resource.data.data is string
+          && request.resource.data.data.size() <= 900000;
+      }
     }
 
     // ---- Certificates -------------------------------------------------
@@ -189,8 +269,8 @@ service cloud.firestore {
     // on the workshop and the writes stop at the door.
     function requestFields() {
       return ['workshopId', 'name', 'dob', 'qualification', 'courseName',
-              'whatsapp', 'area', 'email', 'paymentMode', 'paymentRef',
-              'notes', 'ref', 'status', 'hp', 'createdAt'];
+              'whatsapp', 'area', 'email', 'attendMode', 'paymentMode',
+              'paymentRef', 'notes', 'ref', 'status', 'hp', 'createdAt'];
     }
 
     // `get` on a path that does not exist raises an evaluation error rather
@@ -201,6 +281,16 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/publicWorkshops/$(workshopId))
         && get(/databases/$(database)/documents/publicWorkshops/$(workshopId))
              .data.get('registrationOpen', false) == true;
+    }
+
+    // The same switch that publishes the meeting room. Written like
+    // `openForRegistration` above and for the same reason: `get` on a path
+    // that does not exist raises rather than returning nothing, and a mirror
+    // written before this field existed has no `classOpen` at all.
+    function classIsOpen(workshopId) {
+      return exists(/databases/$(database)/documents/publicWorkshops/$(workshopId))
+        && get(/databases/$(database)/documents/publicWorkshops/$(workshopId))
+             .data.get('classOpen', false) == true;
     }
 
     function validRequest(d) {
@@ -219,6 +309,10 @@ service cloud.firestore {
         && sized(d.get('paymentRef', ''), 200)
         && sized(d.get('paymentMode', ''), 200)
         && sized(d.get('dob', ''), 40)
+        // An enum, not free text: a stranger writes this, so the value is
+        // checked rather than merely measured. Empty is allowed — an Offline
+        // or Online course never asks, and the course settles it.
+        && d.get('attendMode', '') in ['', 'Offline', 'Online']
         && sized(d.get('ref', ''), 40);
     }
 

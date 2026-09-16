@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ISSUER } from '../../lib/schema.js';
+import { brandLockup } from '../../lib/brand.js';
+import Wordmark from '../Wordmark.jsx';
 
 export default function SiteFooter() {
   const year = new Date().getFullYear();
@@ -10,19 +12,20 @@ export default function SiteFooter() {
           <div>
             <div className="brand">
               <img src="/crests/al-majeed.png" alt="" />
-              <span className="t1">Al-Majeed School</span>
+              <Wordmark lockup tone="invert" className="t-2xl"  />
             </div>
             <p className="about">
               Research methodology, artificial intelligence and innovation practice —
               taught hands-on in {ISSUER.city}, and certified with a record anyone can check.
             </p>
-            <div className="tri" style={{ marginTop: 20 }}><i /><i /><i /></div>
+            <div className="tri mt-5"><i /><i /><i /></div>
           </div>
 
           <div>
             <h4>Explore</h4>
             <Link to="/">Home</Link>
             <Link to="/programmes">Programmes</Link>
+            <Link to="/features">Features</Link>
             <Link to="/certificates">Certificates</Link>
             <Link to="/about">About</Link>
             <Link to="/contact">Contact</Link>
@@ -42,12 +45,14 @@ export default function SiteFooter() {
             ))}
             <a href={`mailto:${ISSUER.email}`}>{ISSUER.email}</a>
             <a href={ISSUER.siteUrl}>{ISSUER.site}</a>
-            <p className="about" style={{ marginTop: 12, fontSize: 13.5 }}>{ISSUER.city}</p>
+            <p className="about t-sm" style={{ marginTop: 12 }}>{ISSUER.city}</p>
           </div>
         </div>
 
         <div className="base">
-          <span>© {year} {ISSUER.operator}. {ISSUER.unitLine}.</span>
+          {/* `unitLine` already begins "by Al-Majeed…", so pairing it with
+              `operator` printed the school's name twice in one sentence. */}
+          <span>© {year} {brandLockup()}. In association with {ISSUER.association}.</span>
           <span>
             <Link to="/verify">Verify</Link>
             {' · '}

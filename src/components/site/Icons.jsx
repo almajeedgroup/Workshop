@@ -44,3 +44,21 @@ export const IconUsers = (p) => (
 export const IconAward = (p) => (
   <svg {...base} {...p}><circle cx="12" cy="9" r="5.5" /><path d="m8.5 13.8-1.3 7 4.8-2.6 4.8 2.6-1.3-7" /></svg>
 );
+export const IconVideo = (p) => (
+  <svg {...base} {...p}><rect x="2.8" y="6" width="13" height="12" rx="2.4" /><path d="m15.8 11 5.4-3.2v8.4L15.8 13z" /></svg>
+);
+export const IconMic = (p) => (
+  <svg {...base} {...p}><rect x="9" y="3" width="6" height="10.5" rx="3" /><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M9 21h6" /></svg>
+);
+export const IconClipboard = (p) => (
+  <svg {...base} {...p}><path d="M9 4.5H7a2 2 0 0 0-2 2V19a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6.5a2 2 0 0 0-2-2h-2" /><rect x="9" y="2.6" width="6" height="3.8" rx="1.2" /><path d="m8.8 12.6 1.8 1.8 3.6-3.6M8.8 17.4h6.4" /></svg>
+);
+export const IconCard = (p) => (
+  <svg {...base} {...p}><rect x="5" y="2.8" width="14" height="18.4" rx="2.2" /><circle cx="12" cy="9.2" r="2.4" /><path d="M8.2 15.6a4 4 0 0 1 7.6 0M10 18.6h4" /></svg>
+);
+export const IconPrinter = (p) => (
+  <svg {...base} {...p}><path d="M7 8.5V3.5h10v5" /><path d="M7 18H5.2A2.2 2.2 0 0 1 3 15.8v-5.1A2.2 2.2 0 0 1 5.2 8.5h13.6A2.2 2.2 0 0 1 21 10.7v5.1A2.2 2.2 0 0 1 18.8 18H17" /><rect x="7" y="14" width="10" height="7" rx="1.4" /></svg>
+);
+export const IconSearch = (p) => (
+  <svg {...base} {...p}><circle cx="10.8" cy="10.8" r="6.8" /><path d="m15.8 15.8 4.4 4.4" /></svg>
+);
