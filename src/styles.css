@@ -1021,7 +1021,23 @@ button.chip { font: inherit; font-size: 10px; }
      Anything needing a different page declares a NAMED one beside itself and
      opts in with the `page` property. Names cannot collide the way a second
      bare `@page` does. */
-  @page { size: A4 portrait; margin: 16mm; }
+  /* NAMED, not bare — and this is the whole reason the certificate used
+     to print on portrait paper.
+
+     A bare `@page` applies to every page in the document, and in this
+     bundle it beat the certificate's own `@page cert-sheet`: measured,
+     an A4 LANDSCAPE sheet came out on portrait paper with its sides cut
+     off. Deleting just this rule from the live page and printing again
+     produced landscape, which is how it was found.
+
+     So the app's ordinary portrait page has a name like every other, and
+     the two roots opt into it. A document that wants different paper —
+     the certificate, and nothing else today — names its own and wins for
+     its own box, because the innermost name on a box is the one that
+     counts. */
+  @page doc { size: A4 portrait; margin: 16mm; }
+  .shell, .site { page: doc; }
+  html, body, #root { height: auto; min-height: 0; }
   body { font-size: 11pt; }
   .side, .side-open, .side-scrim, .foot, .no-print, .toolbar, .btn-row, button { display: none !important; }
   .shell { display: block; }

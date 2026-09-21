@@ -10,7 +10,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "vite build && firebase deploy",
-    "harness": "vite --config tools/harness/vite.config.js"
+    "harness": "vite --config tools/harness/vite.config.js",
+    "print-audit": "node tools/print-audit.mjs"
   },
   "dependencies": {
     "fflate": "^0.8.3",

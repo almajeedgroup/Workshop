@@ -4,6 +4,9 @@ import { getCertificate, getHolder } from '../lib/certdb.js';
 import { formatDate } from '../lib/tickets.js';
 import { ISSUER } from '../lib/schema.js';
 import { certificateIssuer } from '../lib/issuer.js';
+import { verifyUrlFor } from '../lib/certlinks.js';
+import CertificateDocument from '../components/CertificateDocument.jsx';
+import CertificateStage from '../components/CertificateStage.jsx';
 import {
   IconCheckCircle, IconAlert, IconShield, IconArrow, IconQr,
 } from '../components/site/Icons.jsx';
@@ -147,6 +150,26 @@ export default function VerifyPage() {
                 </div>
               </div>
 
+              {/* THE CERTIFICATE ITSELF.
+                  Somebody who has just checked an ID wants to see what they
+                  checked. This page used to answer with a verdict, a list of
+                  facts about the document, and a link to the document — so
+                  the one thing being verified was the one thing not on the
+                  screen. It is the same sheet the holder was given, scaled
+                  to the width there is.
+
+                  A withdrawn one is shown too, and marked: a copy already in
+                  circulation should check as withdrawn rather than vanish. */}
+              {/* Screen only. A verification is a portrait page and the
+                  certificate is a landscape sheet; printing them together
+                  puts one sideways. The certificate has its own page, with
+                  its own Print button, and this links to it. */}
+              <div className="cert-shown no-print" data-reveal>
+                <CertificateStage>
+                  <CertificateDocument cert={cert} verifyUrl={verifyUrlFor(cert.certificateId)} />
+                </CertificateStage>
+              </div>
+
               <div className="grid g2" style={{ marginTop: 'var(--gap)', alignItems: 'start' }}>
                 <div data-reveal>
                   <h2 className="t-display-sm" style={{ marginBottom: 18 }}>
@@ -164,7 +187,7 @@ export default function VerifyPage() {
                   </dl>
                   <div className="mt-6">
                     <Link className="btn ghost" to={`/c/${cert.certificateId}`}>
-                      View the certificate <IconArrow />
+                      Open it on its own page <IconArrow />
                     </Link>
                   </div>
                 </div>

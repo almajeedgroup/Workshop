@@ -1589,3 +1589,20 @@
 @media (max-width:1080px){
   .site .nav .menu{display:none}
 }
+
+/* The certificate, shown on the page that verified it. The sheet is a
+   landscape A4 and brings its own scaling; this is the frame around it. */
+.site .cert-shown{
+  margin-top:var(--gap);
+  border:1px solid var(--hair); border-radius:var(--r-lg);
+  background:var(--paper-2); overflow:hidden;
+  box-shadow:var(--sh-card);
+}
+
+/* The certificate's own page: who it is for, then what to do with it. */
+.site .cert-head{display:flex; gap:var(--sp-5); align-items:flex-end; flex-wrap:wrap}
+.site .cert-head .display-lead{margin-top:var(--sp-4)}
+.site .mono-id{
+  margin-top:var(--sp-2); font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  letter-spacing:.04em; color:var(--ink-soft);
+}

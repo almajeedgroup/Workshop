@@ -25,10 +25,11 @@ import EditPage from '../../src/pages/EditPage.jsx';
 import TicketPage from '../../src/pages/TicketPage.jsx';
 import IdCardsPage from '../../src/pages/IdCardsPage.jsx';
 import CertificatePage from '../../src/pages/CertificatePage.jsx';
+import VerifyPage from '../../src/pages/VerifyPage.jsx';
 import '../../src/idcard.css';
 
 const at = new URLSearchParams(location.search).get('at') || '/';
-const isPublic = /^\/(register|class)\//.test(at);
+const isPublic = /^\/(register|class|c|verify)\//.test(at);
 
 /* The admin shell, copied from App.jsx: sidebar, main, footer. */
 function AdminShell({ children }) {
@@ -64,6 +65,7 @@ createRoot(document.getElementById('root')).render(
             <Route path="/w/:id/t/:regId" element={<TicketPage />} />
             <Route path="/w/:id/cards" element={<IdCardsPage />} />
           <Route path="/c/:certificateId" element={<CertificatePage />} />
+          <Route path="/verify/:certificateId" element={<VerifyPage />} />
           </Routes>
         </Shell>
       </MemoryRouter>

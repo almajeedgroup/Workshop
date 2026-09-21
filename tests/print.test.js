@@ -7,11 +7,24 @@ import { join } from 'node:path';
  * Guards the one CSS mistake in this app that cannot be seen on screen.
  *
  * `@page` is DOCUMENT-LEVEL. It cannot be scoped to a component, and every
- * stylesheet here ends up in one bundle, so a second bare `@page { size: … }`
- * anywhere silently decides the orientation of every printed page in the
- * app — whichever stylesheet happens to land last wins. That is how the
- * certificate's landscape started printing attendance sheets sideways, and
- * nothing on screen showed it.
+ * stylesheet here ends up in one bundle, so a bare `@page { size: … }`
+ * anywhere decides the orientation of printed pages across the whole app.
+ *
+ * ── THE RULE CHANGED, BECAUSE THE OLD ONE WAS WRONG ────────────────────
+ * This used to require exactly ONE bare `@page`, on the theory that a
+ * single one was safe and only a second was dangerous. It is not safe. A
+ * bare rule beat the certificate's own `@page cert-sheet`, and an A4
+ * LANDSCAPE certificate printed on portrait paper with its sides cut off
+ * — on screen it looked perfect. It was found by measuring the PDF, not
+ * by reading the CSS, and confirmed by deleting that one rule from the
+ * live page and printing again.
+ *
+ * So: no bare `@page` at all. Every printed document names its page, the
+ * app's two roots opt into the ordinary portrait one, and a document that
+ * wants different paper names its own and wins for its own box.
+ *
+ * tools/print-audit.mjs measures what actually comes out; this keeps the
+ * shape of the CSS honest without needing a browser.
  */
 
 const SRC = new URL('../src/', import.meta.url).pathname;
@@ -27,16 +40,22 @@ const bare = (text) => [...text.matchAll(/@page\s*\{[^}]*\}/g)].map((m) => m[0])
 /** `@page name { … }` — applies only where something opts in. */
 const named = (text) => [...text.matchAll(/@page\s+([\w-]+)\s*\{([^}]*)\}/g)];
 
-test('there is exactly ONE unnamed @page in the whole app', () => {
+test('there is NO unnamed @page anywhere', () => {
   const found = Object.entries(css).flatMap(([file, text]) =>
     bare(text).map((rule) => `${file}: ${rule}`));
-  assert.deepEqual(found.length, 1,
-    `A second unnamed @page decides the orientation of every printed page in the app.\n${found.join('\n')}`);
+  assert.deepEqual(found, [],
+    'A bare @page applies to every page in the document and beats the named '
+    + 'ones. That is what printed the certificate — an A4 landscape sheet — '
+    + 'on portrait paper. Give it a name and have the roots opt in.');
 });
 
-test('and it is portrait, because nearly everything printed here is', () => {
-  const [only] = bare(all);
-  assert.match(only, /size:\s*A4 portrait/);
+test('the ordinary page is named, portrait, and opted into by both roots', () => {
+  const [[, name, body]] = named(css['styles.css']);
+  assert.equal(name, 'doc');
+  assert.match(body, /size:\s*A4 portrait/);
+  // Both halves of the app: the admin shell, and the public site.
+  assert.match(css['styles.css'], /\.shell[^{]*\.site[^{]*\{[^}]*page:\s*doc/,
+    'both roots must claim it, or whatever they print falls back to the UA default');
 });
 
 test('the certificate — the one landscape document — uses a NAMED page', () => {

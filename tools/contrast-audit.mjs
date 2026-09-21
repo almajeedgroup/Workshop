@@ -64,6 +64,9 @@ const SITE_PATHS = [
 const ADMIN_ROUTES = [
   '/', '/console', '/w/AIHOW26', '/w/AIHOW26/edit', '/w/AIHOW26/attendance',
   '/import', '/people', '/w/AIHOW26/t/r0',
+  /* Public, but unreachable without a certificate in the database — so
+     they are audited here rather than not at all. */
+  '/verify/AIHOW26-COM-001', '/c/AIHOW26-COM-001',
 ];
 
 const ADMIN = process.env.ADMIN || '';
