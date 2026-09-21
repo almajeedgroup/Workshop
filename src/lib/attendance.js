@@ -63,6 +63,52 @@ export function nextMark(current) {
 }
 
 /**
+ * Which of the register let themselves in, as a set of registration IDs.
+ *
+ * The student's entry is keyed by the ticket they typed; the register is
+ * keyed by registration ID. This is the join between them, and the office
+ * is the only side that holds both.
+ *
+ * Matched case-insensitively and without spaces, because the ticket is
+ * copied off a printed slip by somebody on a phone — `aihow26 001` and
+ * `AIHOW26-001` are the same person, and refusing the first would mean a
+ * student sitting in the class recorded as absent.
+ */
+const ticketKey = (v) => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+export function joinedRegistrationIds(joins = {}, rows = []) {
+  const byTicket = new Map();
+  for (const t of Object.keys(joins)) byTicket.set(ticketKey(t), true);
+
+  const out = new Set();
+  for (const r of rows) {
+    if (r?.ticketId && byTicket.has(ticketKey(r.ticketId))) out.add(r.id);
+  }
+  return out;
+}
+
+/**
+ * The day's marks with self-joins folded in.
+ *
+ * THE OFFICE ALWAYS WINS. A join fills an UNMARKED row only; it never
+ * overwrites a mark somebody made. If the register says absent, absent is
+ * what it stays — the student having opened the link is not an argument
+ * against the person who was in the room.
+ *
+ * Returning a plain marks map means every reader downstream — the totals,
+ * the rate, the printed sheet — keeps working without knowing any of this
+ * happened.
+ */
+export function withSelfJoins(marks = {}, joins = {}, rows = []) {
+  const joined = joinedRegistrationIds(joins, rows);
+  if (joined.size === 0) return marks;
+
+  const out = { ...marks };
+  for (const id of joined) if (!out[id]) out[id] = 'present';
+  return out;
+}
+
+/**
  * The day's totals.
  *
  * `rows` is who is expected — the register — so somebody nobody has reached

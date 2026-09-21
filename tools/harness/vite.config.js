@@ -17,6 +17,7 @@ export default defineConfig({
       { find: /^(?:\.\.\/)+lib\/publicdb\.js$/, replacement: here('./publicdb.js') },
       { find: /^(?:\.\.\/)+lib\/db\.js$/, replacement: here('./db.js') },
       { find: /^(?:\.\.\/)+lib\/attendancedb\.js$/, replacement: here('./attendancedb.js') },
+      { find: /^(?:\.\.\/)+lib\/classroomdb\.js$/, replacement: here('./classroomdb.js') },
       { find: /^(?:\.\.\/)+lib\/photodb\.js$/, replacement: here('./photodb.js') },
       { find: /^(?:\.\.\/)+lib\/certdb\.js$/, replacement: here('./certdb.js') },
       { find: /^(?:\.{1,2}\/)+AuthContext\.jsx$/, replacement: here('./AuthContext.jsx') },

@@ -903,6 +903,55 @@ start date is one day. Dates typed into the wrong boxes are read as the range
 between them rather than refused — somebody transposed them, and an empty
 sheet helps nobody.
 
+### Signing in from the class link
+
+A student joining an online class must type their **ticket ID**, and doing so
+records today's attendance for them. Nobody has to go down a list of forty
+names while also teaching.
+
+The awkward fact underneath it is that a student cannot name themselves in
+the register. The office's marks are keyed by registration ID — a Firestore
+auto-ID — and registrations are administrator-only and must stay that way:
+they carry every student's phone number. What a student has is the ticket
+number printed on their ticket.
+
+So a sign-in is written somewhere of its own, keyed by ticket:
+
+```
+workshops/{id}/attendance/{YYYY-MM-DD}/joins/{ticketId}   { at: <server time> }
+```
+
+That is not a workaround, it is what makes the write safe to allow. A document
+whose ID *is* the ticket can be pinned down by path: **create only**, one field,
+timestamped by the server. A student cannot change their own entry, cannot
+remove anybody else's, and cannot reach the `marks` map, which stays the
+office's alone. A shared map could not have been constrained like that.
+
+The register folds the two together when it reads, because the office holds
+both halves. One rule governs it:
+
+> **The office always wins.** A sign-in fills an *unmarked* row and never
+> overwrites a mark somebody made. If the register says absent, absent is what
+> it stays — a browser opening a link is not an argument against the person
+> who was in the room.
+
+For that rule to mean anything the register has to show which is which, so
+each row says where its mark came from: nothing on a row the office marked
+alone, *Signed in with their ticket* where the sign-in is the mark, *Also
+signed in with their ticket* where both agree, and, in red, *Opened the class
+link — marked absent here* where they do not. **Clear the day** clears only
+the office's marks; a sign-in happened and cannot be un-happened, so those
+rows fill themselves in again, and the button greys out once there is nothing
+of the office's left to clear.
+
+**What this does not prove.** It does not prove the person holding the link is
+the ticket-holder. Ticket numbers run in sequence, so somebody with the class
+link who knows one could enter another. Without a server there is no way to do
+better — the browser cannot be trusted and the roster, correctly, cannot be
+read by it. What the shape does buy is provenance: a sign-in is never mistaken
+for a mark the office made, so it can be seen and corrected. Every one of
+those refusals is tested against the real rules engine; see §26.
+
 ---
 
 ## 13. Project layout
@@ -920,7 +969,8 @@ src/
   lib/imagefile.js         shrinking a picked image to fit in a document
   lib/idcards.js           card colourways, crests, and what each face says
   lib/attendance.js        course days, signature columns, marks and totals
-  lib/attendancedb.js      the register: one document per day
+  lib/attendancedb.js      the register: one document per day, and the
+                           sign-ins students write from the class link
   lib/photodb.js           participant photographs, kept off the registration
   lib/search.js            finding one person across every course at once
   lib/people.js            recognising one student across courses
@@ -963,8 +1013,13 @@ src/
 public/fonts, public/crests  certificate typefaces and crests
 tests/                     parser, tickets, dedupe, stats, xlsx,
                            certificates, imagefile, idcards, attendance,
-                           exporters, association, requests, overview,
-                           navigation
+                           selfjoin, exporters, association, requests,
+                           overview, navigation
+tools/harness/             the admin and the public task pages, mounted
+                           against fabricated records (npm run harness)
+tools/contrast-audit.mjs   colour and focus, measured in a browser
+tools/print-audit.mjs      what paper each document actually prints on
+tools/rules-audit.mjs      firestore.rules, run against the rules engine
 firestore.rules            access control
 firebase.json              hosting, caching and security headers
 ```
@@ -1958,9 +2013,16 @@ It needs a browser and a built site, so it is not part of `npm test`:
 
 ```bash
 npm run build && npx vite preview --port 4177 &
-npm i --no-save playwright-core
 node tools/contrast-audit.mjs
+
+npm run harness &                                   # the admin, on fabricated records
+ADMIN=http://localhost:4180 node tools/contrast-audit.mjs
 ```
+
+Point it somewhere that is not serving and it says so and stops, rather than
+reporting every page clean. It did report every page clean once, against a
+port nobody was answering, and then again against a preview left running from
+a build days old — which is the worse of the two, because it answers.
 
 It reports one thing it cannot judge: the sidebar's resize grip shows focus by
 changing its own fill (3.24:1) and an inset keyline rather than an outline,
@@ -2138,17 +2200,32 @@ every student's phone number, so it is worth testing rather than trusting.
 The Firestore emulator runs the real rules engine locally:
 
 ```bash
-mkdir -p /tmp/rules && cd /tmp/rules
-npm init -y && npm pkg set type=module
-npm install firebase-tools @firebase/rules-unit-testing@^4 firebase@^11
-# write a test with initializeTestEnvironment({ rules: <this repo's firestore.rules> })
-npx firebase emulators:exec --only firestore --project demo-workshops "node verify.mjs"
+npm run emulator        # one terminal — needs Java; fetches firebase-tools on demand
+npm run rules-audit     # another
 ```
 
-This is kept out of `package.json` on purpose: it needs firebase-tools and a
-Java runtime, and `npm test` is deliberately dependency-free.
+`tools/rules-audit.mjs` points the app's **own** Firebase SDK at the emulator,
+signed out — the same client a student has — and tries the writes that matter,
+including the ones that must be refused. Sixteen assertions cover the class
+sign-in: an open class takes one and a closed class does not, the same ticket
+cannot be written twice, updated or deleted, the client can neither choose the
+timestamp nor add a field, a day that is not a date and a ticket too short to
+be one are refused, and a stranger can read back neither the sign-ins, nor the
+office's marks, nor the register.
 
-The current rules were checked this way — 58 assertions covering: signed-out
+It **pushes `firestore.rules` into the emulator on every run**, because the
+emulator holds whatever it started with and does not reload the file. Without
+that, editing a rule and re-running grades the old one and reports a clean
+sheet for rules nobody has tested. Both sabotage checks confirm it reaches:
+loosening `classIsOpen` fails seven assertions, and dropping the
+`at == request.time` clause fails two.
+
+firebase-tools is kept out of `package.json` on purpose — it needs a Java
+runtime and brings six hundred packages, and `npm test` is deliberately
+dependency-free. `npm run emulator` fetches it on demand instead.
+
+Earlier rules were checked the same way from a throwaway project — 58
+assertions covering: signed-out
 and not-on-the-list accounts are refused everything; a listed administrator
 can read and write workshops and registrations but cannot add, read or delete
 another administrator; the owner address has **no** data access until it adds

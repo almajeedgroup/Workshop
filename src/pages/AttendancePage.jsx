@@ -5,8 +5,8 @@ import { courseDays, needsPerDaySheets, MAX_DAY_COLUMNS } from '../lib/attendanc
 import { formatDate } from '../lib/tickets.js';
 import AttendanceSheet from '../components/AttendanceSheet.jsx';
 import AttendanceRegister from '../components/AttendanceRegister.jsx';
-import { getAllMarks, setMark, setMarks } from '../lib/attendancedb.js';
-import { attendanceRows } from '../lib/attendance.js';
+import { getAllMarks, getAllJoins, setMark, setMarks } from '../lib/attendancedb.js';
+import { attendanceRows, withSelfJoins, joinedRegistrationIds } from '../lib/attendance.js';
 import '../attendance.css';
 
 /**
@@ -29,6 +29,7 @@ export default function AttendancePage() {
   const [day, setDay] = useState('');
   const [mode, setMode] = useState('take');
   const [byDay, setByDay] = useState({});
+  const [joinsByDay, setJoinsByDay] = useState({});
   const [busyId, setBusyId] = useState('');
   const [saving, setSaving] = useState(false);
   const [withMarks, setWithMarks] = useState(true);
@@ -40,12 +41,18 @@ export default function AttendancePage() {
   useEffect(() => {
     let live = true;
     Promise.all([getWorkshop(id), getRegistrations(id), getAllMarks(id)])
-      .then(([w, r, m]) => {
+      .then(async ([w, r, m]) => {
         if (!live) return;
         if (!w) { setLoadError('That workshop does not exist.'); return; }
         setWorkshop(w);
         setRegs(r);
         setByDay(m);
+        /* Who let themselves into the class, per day. Fetched after the
+           marks rather than beside them because the days to ask for come
+           from the workshop, which has only just arrived. */
+        const joinDays = new Set([...courseDays(w), ...Object.keys(m)]);
+        const j = await getAllJoins(id, [...joinDays]);
+        if (live) setJoinsByDay(j);
         // Taking a register is always for ONE day, so it opens on today when
         // the course is running and on its first day otherwise. A sheet may
         // still cover the whole course.
@@ -73,7 +80,19 @@ export default function AttendancePage() {
   // Taking a register needs a specific day. A course with no dates recorded
   // still gets one, filed under the day it was actually taken.
   const takingDay = day || days[0] || new Date().toISOString().slice(0, 10);
-  const marks = byDay[takingDay] || {};
+  /* What the register shows: the office's marks, with anybody who let
+     themselves in filled into the rows nobody has reached. An explicit
+     mark is never overwritten — see withSelfJoins. */
+  const joinedToday = joinedRegistrationIds(joinsByDay[takingDay] || {}, regs);
+  const marks = withSelfJoins(byDay[takingDay] || {}, joinsByDay[takingDay] || {}, regs);
+
+  /* The same fold across every day, for the record that gets filed. A sheet
+     printed as "the register that was taken" has to show who attended,
+     whether the office marked them or they let themselves in. */
+  const byDayMerged = Object.fromEntries(
+    [...new Set([...Object.keys(byDay), ...Object.keys(joinsByDay)])]
+      .map((d) => [d, withSelfJoins(byDay[d] || {}, joinsByDay[d] || {}, regs)]),
+  );
 
   const mark = async (reg, next) => {
     setBusyId(reg.id);
@@ -167,6 +186,8 @@ export default function AttendancePage() {
           <AttendanceRegister
             rows={regs}
             marks={marks}
+            officeMarks={byDay[takingDay] || {}}
+            joined={joinedToday}
             onMark={mark}
             onMarkAll={markAll}
             busyId={busyId}
@@ -229,7 +250,7 @@ export default function AttendancePage() {
           </span>
         </label>
 
-        {Object.keys(byDay).length > 0 && (
+        {Object.keys(byDayMerged).length > 0 && (
           <label className="check mt-3">
             <input
               type="checkbox"
@@ -251,7 +272,7 @@ export default function AttendancePage() {
           registrations={regs}
           phones={withPhones}
           day={day}
-          byDay={withMarks && Object.keys(byDay).length > 0 ? byDay : null}
+          byDay={withMarks && Object.keys(byDayMerged).length > 0 ? byDayMerged : null}
         />
       )}
     </main>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getPublicWorkshop } from '../../lib/publicdb.js';
+import { recordSelfJoin } from '../../lib/attendancedb.js';
 import { classIsLive, classClosedReason, canEmbedMeeting } from '../../lib/meeting.js';
 import { formatDateRange } from '../../lib/tickets.js';
 import { ISSUER } from '../../lib/schema.js';
@@ -14,6 +15,23 @@ import '../../class.css';
    through a class — so both use `.f-label` and `.f-input` from site.css.
    They used to each inline the same eight declarations, which is how one of
    them kept an invisible field border after the other was fixed. */
+
+/** Today, as the register keys its days. */
+const today = () => new Date().toISOString().slice(0, 10);
+
+/**
+ * Enough of a shape to catch a typo, and no more.
+ *
+ * It deliberately does NOT check the ticket against the register: that
+ * would mean letting an unauthenticated browser read registrations, and
+ * the roster is exactly what must not be readable. A wrong ticket records
+ * attendance against nobody, and the office sees an unmarked row — which
+ * is the same thing that happens today when nobody takes the register.
+ */
+function looksLikeTicketId(v) {
+  return /^[A-Z0-9]{2,}[A-Z0-9 _-]*[A-Z0-9]$/i.test(String(v).trim())
+    && String(v).trim().length >= 3;
+}
 
 /** What the student was called last time. A class runs for days. */
 const NAME_KEY = 'class.name';
@@ -46,6 +64,12 @@ export default function JoinClassPage() {
   const [name, setName] = useState(() => remembered(NAME_KEY));
   const [ticket, setTicket] = useState(() => remembered(TICKET_KEY));
   const [joining, setJoining] = useState(false);
+  const [ticketError, setTicketError] = useState('');
+  /* Whether today's attendance was taken. null while the write is in
+     flight, then true or false. It is shown because the student is
+     being told they no longer have to be marked by hand — and a
+     promise like that has to say when it did not keep itself. */
+  const [recorded, setRecorded] = useState(null);
 
   useEffect(() => {
     let live = true;
@@ -95,9 +119,25 @@ export default function JoinClassPage() {
   const submit = (e) => {
     e.preventDefault();
     const clean = name.trim();
-    if (!clean) return;
+    const tick = ticket.trim().toUpperCase();
+    if (!clean || !tick) return;
+
+    if (!looksLikeTicketId(tick)) {
+      setTicketError('That does not look like a ticket ID. It is the code on '
+        + 'your ticket, like AIHOW26-014.');
+      return;
+    }
+    setTicketError('');
     remember(NAME_KEY, clean);
-    remember(TICKET_KEY, ticket.trim());
+    remember(TICKET_KEY, tick);
+
+    /* The register marks itself. This is the whole point of asking for the
+       ticket: nobody has to go down a list of forty names while also
+       teaching. It is deliberately NOT awaited — being in the class matters
+       more than recording that you are, and the write is create-only, so a
+       second attempt on a second day is the only thing that can happen. */
+    setRecorded(null);
+    recordSelfJoin(workshopId, today(), tick).then(setRecorded, () => setRecorded(false));
     setJoining(true);
   };
 
@@ -141,6 +181,14 @@ export default function JoinClassPage() {
               displayName={displayName}
             />
           </div>
+
+          <p className="t-xs mt-4" style={{ color: 'var(--ink-soft)' }} aria-live="polite">
+            {recorded === null ? 'Taking today\u2019s attendance\u2026'
+              : recorded
+                ? <>Today&rsquo;s attendance is recorded against <b>{ticket.trim().toUpperCase()}</b>.</>
+                : <>Today&rsquo;s attendance could not be recorded from here, so you
+                    will be marked by hand. Nothing else about the class is affected.</>}
+          </p>
 
           <div className="btn-row mt-4">
             <button className="btn ghost" type="button" onClick={() => setJoining(false)}>
@@ -209,24 +257,28 @@ export default function JoinClassPage() {
               className="f-input"
             />
 
-            <label htmlFor="join-ticket" className="f-label mt-5">
-              Ticket ID (optional)
-            </label>
+            <label htmlFor="join-ticket" className="f-label mt-5">Your ticket ID *</label>
             <input
               id="join-ticket"
               value={ticket}
               onChange={(e) => setTicket(e.target.value)}
-              placeholder="e.g. AIHOW26-014"
-              aria-describedby="join-ticket-hint"
-              className="f-input"
+              required
+              placeholder="AIHOW26-014"
+              aria-invalid={ticketError ? 'true' : undefined}
+              aria-describedby={ticketError ? 'join-ticket-wrong join-ticket-hint' : 'join-ticket-hint'}
+              className="f-input f-code"
             />
             <p id="join-ticket-hint" className="t-xs" style={{ marginTop: 6, color: 'var(--ink-soft)' }}>
-              From the ticket you were sent. Adding it makes sure today&rsquo;s
-              attendance is recorded against you and not somebody with a
-              similar name.
+              It is on the ticket you were sent. Today&rsquo;s attendance is
+              recorded against it, so you do not have to be marked by hand —
+              and it is what tells two people with the same name apart.
             </p>
 
-            <button className="btn mt-5" type="submit" disabled={!name.trim()}>
+            {ticketError && (
+              <p className="f-wrong" id="join-ticket-wrong" role="alert">{ticketError}</p>
+            )}
+
+            <button className="btn mt-5" type="submit" disabled={!name.trim() || !ticket.trim()}>
               Join the class
             </button>
 

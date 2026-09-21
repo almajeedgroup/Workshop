@@ -44,6 +44,16 @@ not provide an export named …" on a screen unrelated to the change.
 `AuthContext.jsx` is stubbed the same way: a signed-in administrator,
 always.
 
+A stub's records have to be the REAL shape, not a plausible one. The
+attendance stub once returned marks of `'P'` and `'A'`, which the app does
+not recognise, so every row rendered unmarked and anything measured on
+that screen was measuring a state the app never shows.
+
+`classroomdb.js` keeps its handouts and questions in memory rather than
+returning a fixed list, because those screens subscribe rather than fetch:
+a stub that fires its callback once can show a queue but cannot show a
+question arriving in it.
+
 ## What it is not
 
 Nothing here is loaded by the app. It is a development view, not a test

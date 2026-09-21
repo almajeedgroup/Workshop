@@ -909,9 +909,25 @@ a.badge:hover {
 .reg-row[data-tone='red']       { border-left-color: var(--alert); }
 .reg-row[data-tone='none']      { border-left-color: var(--faint); }
 .reg-n { flex: none; width: 26px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
-.reg-who { flex: 1; min-width: 0; }
+/* The row is a button, and buttons here are `white-space: nowrap` so a
+   label never breaks mid-phrase. Inherited into this column that rule wins
+   over the `overflow-wrap` below and a long name pushes the whole register
+   sideways on a phone — which is the one device it is taken on. So the
+   column, and only the column, is allowed to wrap. */
+.reg-who { flex: 1; min-width: 0; white-space: normal; }
 .reg-who b { display: block; font-weight: 700; overflow-wrap: anywhere; }
 .reg-who small { display: block; font-size: 11px; color: var(--muted); font-weight: 400; margin-top: 1px; }
+/* Where a mark came from. The register has two authors now — the person
+   walking the room, and the door letting somebody in with their own ticket —
+   and a mark whose author you cannot name is a mark you cannot defend. It is
+   set in words rather than a colour because the row's colour is already
+   spoken for by the mark itself. */
+.reg-self {
+  display: block; margin-top: 2px;
+  font-size: 11px; font-style: normal; font-weight: 700;
+  letter-spacing: 0.02em; color: var(--lime-ink);
+}
+.reg-row[data-self='clash'] .reg-self { color: var(--alert); }
 .reg-mark {
   flex: none; min-width: 80px; text-align: center; padding: 4px 12px;
   border: 1px solid rgba(10,10,10,.22); border-radius: var(--r-pill);

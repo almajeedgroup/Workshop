@@ -336,6 +336,17 @@
 .site .f-input:focus-visible{border-color:var(--ink); box-shadow:0 0 0 4px var(--lime-wash)}
 .site .f-hint{display:block; margin-top:var(--sp-1); font-size:var(--tx-xs); color:var(--ink-faint)}
 
+/* A field holding a code rather than words. Monospace so a 0 is not an O and
+   a 1 is not an l when somebody is copying it off a printed ticket, and
+   upper-cased on the way in so the register does not have to care. */
+.site .f-input.f-code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  text-transform:uppercase; letter-spacing:.06em;
+}
+/* Something the person has to fix before the form will go. Stated in words
+   next to the field, not only in colour, and given the row to itself. */
+.site .f-wrong{display:block; margin-top:var(--sp-2); font-size:var(--tx-sm); color:var(--alert); font-weight:500}
+
 /* A binary choice, offered as two targets rather than a dropdown: on a phone
    a select is a modal wheel for two options, and the answer matters enough to
    be visible without opening anything. Real radios underneath, so it is one

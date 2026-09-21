@@ -99,6 +99,36 @@ service cloud.firestore {
           && request.resource.data.keys().hasOnly(['marks'])
           && request.resource.data.marks is map
           && request.resource.data.marks.keys().size() <= 2000;
+
+        // A student marking themselves present, from the class link.
+        //
+        // The document's ID is their TICKET NUMBER, which is the whole
+        // reason this can be allowed at all: one document per ticket per
+        // day, addressed by path, so the rule can say exactly what may
+        // happen to it. CREATE ONLY — no update and no delete — so a
+        // student cannot change their own entry, cannot remove anybody
+        // else's, and cannot touch the `marks` map above, which stays the
+        // office's alone. An explicit mark therefore always wins.
+        //
+        // Joining twice is not an error: the second create simply fails,
+        // and the client ignores it.
+        //
+        // WHAT THIS DOES NOT PROVE. It does not prove the person holding
+        // the link is the ticket-holder. Ticket numbers run in sequence,
+        // so somebody with the class link who knows one can record it as
+        // present. Without a server there is no way to do better: the
+        // browser cannot be trusted and registrations are, correctly,
+        // unreadable to it. What the shape does give is provenance — a
+        // join is never mistaken for a mark the office made — so the
+        // register shows where each came from and can be corrected.
+        match /joins/{ticketId} {
+          allow read, update, delete: if isAdmin();
+          allow create: if classIsOpen(workshopId)
+            && day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+            && ticketId.size() >= 3 && ticketId.size() <= 40
+            && request.resource.data.keys().hasOnly(['at'])
+            && request.resource.data.at == request.time;
+        }
       }
 
       // Participant photographs for ID cards, kept apart from the
