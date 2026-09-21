@@ -1018,6 +1018,7 @@ tests/                     parser, tickets, dedupe, stats, xlsx,
 tools/harness/             the admin and the public task pages, mounted
                            against fabricated records (npm run harness)
 tools/contrast-audit.mjs   colour and focus, measured in a browser
+tools/motion-audit.mjs     whether the animations actually animate
 tools/print-audit.mjs      what paper each document actually prints on
 tools/rules-audit.mjs      firestore.rules, run against the rules engine
 firestore.rules            access control
@@ -1691,6 +1692,41 @@ joined with a space.
 The numbered sequence is deliberately **not pinned**. Pinning hijacks the
 scrollbar: the page stops moving while the content changes, which on a phone
 reads as the site having frozen.
+
+---
+
+### How the motion is checked
+
+Twice an effect has been reported as "not working" and the cause was the same:
+the tween ran perfectly against a selector that no longer matched anything,
+because the markup underneath had been rebuilt. Code that runs is not an
+effect that happens, and neither `npm test` nor a read of `motion.js` can tell
+those apart. Only a browser can.
+
+```bash
+npm run build && npx vite preview --port 4177 &
+npm run motion-audit
+```
+
+It measures the page in two states and fails if the numbers are the same: the
+hero's `--glow-a` before and after a scroll, a figure caught mid-count, a step
+dimmed ahead of the reader and lit once reached, a card's transform flat and
+then a 3D matrix under the pointer. Then it walks all thirteen public pages
+looking for the only failure that really matters — something hidden to be
+revealed and never revealed, which is not a missing animation but a blank
+page. Four sabotages confirm it reaches: pointing the headline split at
+markup that does not exist fails 2 checks, unbinding the tilt 1, pointing the
+counters at the old `.stats .n` 1, and a reveal that never un-hides fails 14.
+
+**Two traps it walked into first, both about the clock.** It judged "shown
+above the fold" against the bottom of the window rather than against the
+reveal's own `top 88%` line, and reported an element with 16px of itself
+peeking over the edge as broken when it was correctly still waiting. And it
+allowed 900ms for a page to settle, which is less than a staggered 0.72s tween
+takes — long enough to report four pages broken that were merely still
+arriving, and very nearly long enough to get a fix written for a bug that was
+never there. A motion check is a race against the thing it is measuring, and
+the settle window is the measurement.
 
 ---
 
