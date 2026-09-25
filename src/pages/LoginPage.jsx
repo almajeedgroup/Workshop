@@ -25,7 +25,11 @@ const MESSAGES = {
     'Google sign-in could not start. Usually this means the Google window was blocked, or this address is not on the project’s authorised domains list.',
   'auth/account-exists-with-different-credential':
     'An account already exists for that email with a password. Sign in with the password instead.',
-  'app/not-the-owner': `Google sign-in is only for ${BOOTSTRAP_ADMIN_EMAIL}. Other administrators sign in with an email and password.`,
+  /* A student who found this page is the likeliest person to hit this, and
+     telling them only that they are not the owner leaves them nowhere. */
+  'app/not-the-owner': `This is the administrators' sign-in, and Google here is only for `
+    + `${BOOTSTRAP_ADMIN_EMAIL}. Students: your recordings and notes are under `
+    + `"Your courses" on the main site. Other administrators sign in with an email and password.`,
 };
 
 export default function LoginPage() {

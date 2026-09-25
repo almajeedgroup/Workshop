@@ -71,15 +71,22 @@ const ADMIN_ROUTES = [
      claimed ticket, so the harness is the only place they render. `who=out`
      is the sign-in door, which is a different page from the dashboard and
      the one an unclaimed visitor actually lands on. */
-  '/study', '/study/AIHOW26',
+  /* `#out` is this list's own marker for the SIGNED-OUT face. The sign-in
+     door is a different page from the dashboard — different panels,
+     different controls — and auditing only the signed-in one measured the
+     half nobody who is locked out ever sees. */
+  '/study#out', '/study', '/study/AIHOW26',
 ];
 
 const ADMIN = process.env.ADMIN || '';
 const PATHS = ADMIN
-  ? ADMIN_ROUTES.map((r) => `/?at=${encodeURIComponent(r)}`
+  ? ADMIN_ROUTES.map((r) => {
       /* The student pages render nothing at all as an administrator, and a
          page that renders nothing measures clean. */
-      + (r.startsWith('/study') ? '&who=student' : ''))
+      const [path, face] = r.split('#');
+      const who = path.startsWith('/study') ? `&who=${face === 'out' ? 'out' : 'student'}` : '';
+      return `/?at=${encodeURIComponent(path)}${who}`;
+    })
   : SITE_PATHS;
 
 /* The page-side pass. A template literal, so every backslash in a regex here

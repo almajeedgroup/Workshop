@@ -32,6 +32,23 @@ export function AuthProvider({ children }) {
     // Signing in HERE is how the signed-out face is checked against the
     // signed-in one without a Google popup the harness cannot open.
     loginStudentWithGoogle: async () => { setUser(STUDENT); return { user: STUDENT }; },
+    /* The email door, including its failures — those are most of what there
+       is to look at, and a stub that always succeeds shows none of them. */
+    signUpStudent: async (email, password, name) => {
+      if (String(email).startsWith('taken@')) {
+        const e = new Error('in use'); e.code = 'auth/email-already-in-use'; throw e;
+      }
+      setUser({ uid: 'harness-new', email, displayName: name || '' });
+      return { user: { uid: 'harness-new', email } };
+    },
+    signInStudent: async (email) => {
+      if (String(email).startsWith('wrong@')) {
+        const e = new Error('nope'); e.code = 'auth/invalid-credential'; throw e;
+      }
+      setUser(STUDENT);
+      return { user: STUDENT };
+    },
+    redirectError: null,
     resetPassword: async () => {},
     logout: async () => { setUser(null); },
   };

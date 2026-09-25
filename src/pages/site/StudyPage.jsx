@@ -27,7 +27,10 @@ const looksLikeTicketId = (v) => /^[A-Z0-9][A-Z0-9 _-]*[A-Z0-9]$/i.test(String(v
   && String(v).trim().length >= 3;
 
 export default function StudyPage() {
-  const { user, loading, loginStudentWithGoogle, logout } = useAuth();
+  const {
+    user, loading, loginStudentWithGoogle, signUpStudent, signInStudent,
+    resetPassword, redirectError, logout,
+  } = useAuth();
 
   const [courses, setCourses] = useState(null);   // null = not looked yet
   const [ticket, setTicket] = useState('');
@@ -35,6 +38,17 @@ export default function StudyPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [note, setNote] = useState('');
+
+  /* The door. `mode` is which of the two the card is showing — with an email
+     and a password those are genuinely different acts, and a single form
+     that guesses gets one of them wrong. */
+  const [mode, setMode] = useState('in');       // 'in' | 'up'
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [doorError, setDoorError] = useState('');
+  const [doorNote, setDoorNote] = useState('');
+  const [doorBusy, setDoorBusy] = useState(false);
 
   const load = useCallback(async (uid) => {
     const mine = await listMyCourses(uid);
@@ -48,18 +62,54 @@ export default function StudyPage() {
     setCourses(withTitles);
   }, []);
 
+  /* A redirect sign-in finishes on a LATER page load than the one that
+     started it, so its failure has no handler to land in. Without this the
+     student is simply returned to a signed-out page with nothing said. */
+  useEffect(() => {
+    if (redirectError) setDoorError(authMessage(redirectError));
+  }, [redirectError]);
+
   useEffect(() => {
     if (!user) { setCourses(null); return; }
     load(user.uid).catch(() => setCourses([]));
   }, [user, load]);
 
   const signIn = async () => {
-    setError('');
+    setDoorError('');
     try { await loginStudentWithGoogle(); }
     catch (e) {
-      // A popup the person closed themselves is not an error worth showing.
-      if (e?.code === 'auth/popup-closed-by-user' || e?.code === 'auth/cancelled-popup-request') return;
-      setError('Google sign-in did not complete. Try again, or use a different browser.');
+      // A window the person closed themselves is not an error worth showing.
+      if (e?.code === 'auth/popup-closed-by-user') return;
+      setDoorError(authMessage(e));
+    }
+  };
+
+  const withEmail = async (e) => {
+    e.preventDefault();
+    setDoorError(''); setDoorNote('');
+    if (password.length < 6) {
+      setDoorError('A password needs at least six characters.');
+      return;
+    }
+    setDoorBusy(true);
+    try {
+      if (mode === 'up') await signUpStudent(email, password, fullName);
+      else await signInStudent(email, password);
+    } catch (err) {
+      setDoorError(authMessage(err));
+    } finally {
+      setDoorBusy(false);
+    }
+  };
+
+  const forgot = async () => {
+    setDoorError(''); setDoorNote('');
+    if (!email.trim()) { setDoorError('Type your email address first.'); return; }
+    try {
+      await resetPassword(email);
+      setDoorNote('If that address has an account, a reset link is on its way to it.');
+    } catch (err) {
+      setDoorError(authMessage(err));
     }
   };
 
@@ -108,28 +158,127 @@ export default function StudyPage() {
               <h1 className="display-lead">Your recordings, <em>kept</em></h1>
               <p className="lede">
                 Every class you took, the recordings and the notes, in one place.
-                Sign in with the Google account you want them kept under, then
-                add the ticket ID from your ticket.
+                Make an account, then add the ticket ID printed on your ticket.
               </p>
-              <div className="acts">
-                <button className="btn" type="button" onClick={signIn}>
-                  Sign in with Google <IconArrow />
-                </button>
-              </div>
-              {error && <p className="f-wrong" role="alert">{error}</p>}
             </div>
           </div>
         </section>
 
         <section className="band paper tight" data-tone="light">
-          <div className="wrap">
-            <div className="panel" data-reveal style={{ maxWidth: 720 }}>
-              <span className="kick"><IconShield /> What signing in does</span>
+          <div className="wrap door">
+            <div className="panel" data-reveal>
+              {/* Two acts, named. With an email and a password, "sign in" and
+                  "create an account" are genuinely different, and a single
+                  form that guesses which one you meant gets it wrong for
+                  everybody who has not been here before. */}
+              <div className="seg" role="tablist" aria-label="Sign in or create an account">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === 'in'}
+                  className={mode === 'in' ? 'on' : undefined}
+                  onClick={() => { setMode('in'); setDoorError(''); setDoorNote(''); }}
+                >
+                  I have an account
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === 'up'}
+                  className={mode === 'up' ? 'on' : undefined}
+                  onClick={() => { setMode('up'); setDoorError(''); setDoorNote(''); }}
+                >
+                  Create an account
+                </button>
+              </div>
+
+              <button className="btn wide mt-5" type="button" onClick={signIn}>
+                Continue with Google <IconArrow />
+              </button>
+              <p className="t-xs mt-2" style={{ color: 'var(--ink-faint)' }}>
+                Works for signing in and for making an account — Google does both.
+              </p>
+
+              <div className="or"><span>or use an email address</span></div>
+
+              <form onSubmit={withEmail}>
+                {mode === 'up' && (
+                  <>
+                    <label htmlFor="door-name" className="f-label">Your full name *</label>
+                    <input
+                      id="door-name"
+                      className="f-input"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="As it is on your ticket"
+                      autoComplete="name"
+                      required
+                    />
+                  </>
+                )}
+
+                <label htmlFor="door-email" className={`f-label${mode === 'up' ? ' mt-5' : ''}`}>
+                  Email address *
+                </label>
+                <input
+                  id="door-email"
+                  className="f-input"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  required
+                />
+
+                <label htmlFor="door-password" className="f-label mt-5">Password *</label>
+                <input
+                  id="door-password"
+                  className="f-input"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete={mode === 'up' ? 'new-password' : 'current-password'}
+                  minLength={6}
+                  required
+                />
+                <span className="f-hint">
+                  {mode === 'up' ? 'At least six characters.' : ''}
+                </span>
+
+                {doorError && <p className="f-wrong" role="alert">{doorError}</p>}
+                {doorNote && (
+                  <p className="t-sm mt-3" style={{ color: 'var(--lime-ink)' }} role="status">
+                    {doorNote}
+                  </p>
+                )}
+
+                <button className="btn wide mt-5" type="submit" disabled={doorBusy}>
+                  {doorBusy
+                    ? 'One moment…'
+                    : mode === 'up' ? 'Create my account' : 'Sign in'}
+                </button>
+
+                {mode === 'in' && (
+                  <p className="t-sm mt-4" style={{ color: 'var(--ink-faint)' }}>
+                    Forgotten it?{' '}
+                    <button type="button" className="linkish" onClick={forgot}>
+                      Email me a reset link
+                    </button>
+                  </p>
+                )}
+              </form>
+            </div>
+
+            <div className="panel" data-reveal>
+              <span className="kick"><IconShield /> What an account does</span>
               <p className="t-base mt-3">
-                It identifies you, and nothing more. It does not give this account
-                access to anybody&rsquo;s details, any course you did not take, or
-                anything at all until you add a ticket that belongs to you. A ticket
-                can be claimed once, so it stays yours.
+                It identifies you, and nothing more. It gives this account no access
+                to anybody&rsquo;s details, no course you did not take, and nothing
+                at all until you add a ticket that belongs to you.
+              </p>
+              <p className="t-base mt-3">
+                A ticket can be claimed <b>once</b>, so it stays yours. If somebody
+                else has taken yours, the office can free it.
               </p>
               <p className="t-base mt-3">
                 Lost your ticket ID? Call the office on{' '}
@@ -257,4 +406,56 @@ function claimError(err) {
       + 'published this course yet — give them a call.';
   }
   return err?.message || 'That did not work. Try again in a moment.';
+}
+
+/**
+ * What went wrong, in words a student can act on.
+ *
+ * Firebase codes are precise and useless to a reader: `auth/invalid-credential`
+ * covers a wrong password AND an address with no account, and the SDK will
+ * not say which — deliberately, so the form cannot be used to find out who
+ * has an account here. So that one names both possibilities rather than
+ * guessing at the likelier.
+ *
+ * The three that matter most on this audience's phones are the popup ones.
+ * A link opened from WhatsApp runs in WhatsApp's own browser, where Google
+ * refuses OAuth outright; the app sends those round by redirect instead, and
+ * what is left here is the case where even that could not start.
+ */
+function authMessage(err) {
+  const code = String(err?.code || '');
+  switch (code) {
+    case 'auth/invalid-credential':
+    case 'auth/wrong-password':
+    case 'auth/user-not-found':
+      return 'That email and password do not match an account. Check the password, '
+        + 'or use "Create an account" if you have not made one yet.';
+    case 'auth/email-already-in-use':
+      return 'There is already an account with that email. Use "I have an account" '
+        + 'to sign in, or ask for a reset link if you have forgotten the password.';
+    case 'auth/weak-password':
+      return 'That password is too short. Six characters or more.';
+    case 'auth/invalid-email':
+      return 'That does not look like an email address.';
+    case 'auth/too-many-requests':
+      return 'Too many attempts from this device. Wait a few minutes and try again.';
+    case 'auth/network-request-failed':
+      return 'No connection reached us. Check the network and try again.';
+    case 'auth/operation-not-allowed':
+      return 'Accounts are not switched on for this site yet. Tell the office — '
+        + 'it is one setting at their end, not anything you have done.';
+    case 'auth/unauthorized-domain':
+      return 'This address is not one the sign-in is set up for. Tell the office — '
+        + 'it is a setting at their end.';
+    case 'auth/popup-blocked':
+    case 'auth/operation-not-supported-in-this-environment':
+      return 'Your browser would not open the Google window. Open this page in '
+        + 'Chrome or Safari rather than inside another app, or use an email '
+        + 'address and password below.';
+    case 'auth/account-exists-with-different-credential':
+      return 'That email already has an account made a different way. Sign in with '
+        + 'an email and password instead.';
+    default:
+      return err?.message || 'That did not work. Try again in a moment.';
+  }
 }

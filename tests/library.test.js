@@ -162,6 +162,59 @@ test('an unknown size says nothing rather than claiming to be nothing', () => {
   for (const v of [0, -1, NaN, null, undefined, 'big']) assert.equal(formatBytes(v), '');
 });
 
+/* ---- the student's door ------------------------------------------ */
+
+test('a popup that cannot open falls back to a redirect', () => {
+  // Links to this site get sent on WhatsApp, and a WhatsApp link opens in
+  // WhatsApp's own browser, where Google refuses OAuth in a popup outright.
+  // A popup-only sign-in is unusable for most of this audience.
+  const ctx = readFileSync(new URL('../src/AuthContext.jsx', import.meta.url), 'utf8');
+  const student = ctx.slice(ctx.indexOf('loginStudentWithGoogle'));
+  assert.match(student, /signInWithRedirect\(auth, provider\)/);
+  assert.match(student, /'auth\/popup-blocked'/);
+  assert.match(student, /'auth\/operation-not-supported-in-this-environment'/);
+  // …and the other half: a redirect finishes on a LATER page load, so its
+  // failure has no handler unless the result is asked for.
+  assert.match(ctx, /getRedirectResult\(auth\)/);
+});
+
+test('there is a way in that does not need Google at all', () => {
+  const ctx = readFileSync(new URL('../src/AuthContext.jsx', import.meta.url), 'utf8');
+  assert.match(ctx, /createUserWithEmailAndPassword/);
+  assert.match(ctx, /const signUpStudent/);
+  assert.match(ctx, /const signInStudent/);
+  // A name given at sign-up must reach the office's members list, and
+  // onAuthStateChanged has already fired by then with no name on it.
+  assert.match(ctx, /updateProfile\(credential\.user, \{ displayName: clean \}\)/);
+  assert.match(ctx, /setUser\(snapshot\(credential\.user\)\)/);
+});
+
+test('the signed-out page offers both, and names the two acts separately', () => {
+  const page = readFileSync(new URL('../src/pages/site/StudyPage.jsx', import.meta.url), 'utf8');
+  assert.match(page, /Continue with Google/);
+  assert.match(page, /I have an account/);
+  assert.match(page, /Create an account/);
+  assert.match(page, /Email me a reset link/);
+});
+
+test('a failure says what to do, not what the code was', () => {
+  const page = readFileSync(new URL('../src/pages/site/StudyPage.jsx', import.meta.url), 'utf8');
+  // invalid-credential covers a wrong password AND an address with no
+  // account, and Firebase will not say which — so the message names both
+  // rather than guessing at the likelier.
+  assert.match(page, /'auth\/invalid-credential'/);
+  assert.match(page, /Create an account" if you have not made one yet/);
+  // The two that are somebody else's job to fix say so.
+  assert.match(page, /'auth\/operation-not-allowed'/);
+  assert.match(page, /'auth\/unauthorized-domain'/);
+  assert.match(page, /it is a setting at their end|one setting at their end/);
+});
+
+test('a student who lands on the administrators\' page is sent to the right one', () => {
+  const login = readFileSync(new URL('../src/pages/LoginPage.jsx', import.meta.url), 'utf8');
+  assert.match(login, /Your courses" on the main site/);
+});
+
 test('the panel says the one thing that actually breaks a Drive link', () => {
   // Sharing left on Restricted gives students a "Request access" page. No
   // browser can detect that, so the panel has to say it.

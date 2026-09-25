@@ -1717,3 +1717,34 @@
   background:var(--paper-2); color:var(--ink-soft);
   font-size:14.5px; line-height:1.7; white-space:pre-wrap; overflow-wrap:anywhere;
 }
+
+/* ── The student's door ────────────────────────────────────────────────────
+   Two panels side by side: the form, and what an account does and does not
+   give you. The second is not decoration — somebody being asked to make an
+   account on a school's website is owed that in plain sight, not in a
+   privacy page nobody opens. */
+.site .door{display:grid; grid-template-columns:minmax(0,1.1fr) minmax(0,1fr); gap:var(--sp-5); align-items:start}
+@media (max-width:860px){ .site .door{grid-template-columns:minmax(0,1fr)} }
+
+/* Two named acts, not a guess. */
+.site .seg{display:flex; gap:4px; padding:4px; border:1px solid var(--hair); border-radius:12px; background:var(--paper-2)}
+.site .seg button{
+  flex:1; padding:9px 12px; border:0; border-radius:9px; background:transparent;
+  font:inherit; font-size:13.5px; font-weight:600; color:var(--ink-soft); cursor:pointer;
+}
+/* The selected one is INK-FILLED, not a white tile with a shadow. White on
+   the seg's own near-white ground is a 1.24:1 edge — a control whose
+   boundary cannot be seen, which is 1.4.11's whole point — and a shadow is
+   not an edge a checker or an eye can measure. Caught by the contrast audit
+   on the very page this control was written for. */
+.site .seg button.on{background:var(--ink); color:#fff}
+.site .seg button.on:hover{background:var(--ink); color:#fff}
+.site .seg button:hover:not(.on){color:var(--ink)}
+
+/* A rule with a word in it, for "this way, or that way". */
+.site .or{display:flex; align-items:center; gap:var(--sp-3); margin:var(--sp-5) 0 var(--sp-4)}
+.site .or::before, .site .or::after{content:''; flex:1; height:1px; background:var(--hair)}
+.site .or span{font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint)}
+
+/* A door's buttons run the width of the door. */
+.site .btn.wide{width:100%; justify-content:center}
