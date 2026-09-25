@@ -75,7 +75,7 @@ const ADMIN_ROUTES = [
      door is a different page from the dashboard — different panels,
      different controls — and auditing only the signed-in one measured the
      half nobody who is locked out ever sees. */
-  '/study#out', '/study', '/study/AIHOW26',
+  '/study#out', '/study', '/study#new', '/study/AIHOW26', '/study/INNO25#new',
 ];
 
 const ADMIN = process.env.ADMIN || '';
@@ -84,7 +84,12 @@ const PATHS = ADMIN
       /* The student pages render nothing at all as an administrator, and a
          page that renders nothing measures clean. */
       const [path, face] = r.split('#');
-      const who = path.startsWith('/study') ? `&who=${face === 'out' ? 'out' : 'student'}` : '';
+      /* `#new` is the OUTER student — an account holding no ticket, which
+         is a different page again: no courses of their own, and the open
+         ones listed instead. */
+      const who = path.startsWith('/study')
+        ? `&who=${face === 'out' ? 'out' : face === 'new' ? 'new' : 'student'}`
+        : '';
       return `/?at=${encodeURIComponent(path)}${who}`;
     })
   : SITE_PATHS;

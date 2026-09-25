@@ -162,6 +162,62 @@ test('an unknown size says nothing rather than claiming to be nothing', () => {
   for (const v of [0, -1, NaN, null, undefined, 'big']) assert.equal(formatBytes(v), '');
 });
 
+/* ---- a library opened to everybody ------------------------------- */
+
+test('opening a library is PER COURSE, not one switch for the app', () => {
+  // A single switch would mean opening an outreach course also gives away
+  // the recordings of a paid one.
+  const db = readFileSync(new URL('../src/lib/librarydb.js', import.meta.url), 'utf8');
+  assert.match(db, /export async function setLibraryAccess\(workshopId, workshop, open\)/);
+  assert.match(db, /libraryAccess: open \? 'Open' : 'Ticket'/);
+});
+
+test('the rules read the MIRROR, because they cannot see the workshop', () => {
+  const pub = readFileSync(new URL('../src/lib/publicdb.js', import.meta.url), 'utf8');
+  assert.match(pub, /libraryOpen: str\(workshop\.libraryAccess\) === 'Open'/);
+  const rules = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
+  assert.match(rules, /function libraryIsOpen\(workshopId\)/);
+  assert.match(rules, /\.data\.get\('libraryOpen', false\) == true/);
+});
+
+test('an open library still needs an ACCOUNT, not merely a URL', () => {
+  const rules = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
+  assert.match(rules, /\|\| \(request\.auth != null && libraryIsOpen\(workshopId\)\)/);
+});
+
+test('the index that lists open courses grants nothing', () => {
+  // Access is decided by libraryOpen on the mirror. A stale entry in the
+  // index names a course whose shelf still refuses to open.
+  const rules = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
+  const block = rules.slice(rules.indexOf('match /publicIndex/'));
+  assert.match(block, /allow get: if true;/);
+  assert.match(block, /allow list, write: if isAdmin\(\);/);
+});
+
+test('the page decides on the same field the rules do', () => {
+  // A page that decided for itself would eventually show a shelf the
+  // database then refused to fill.
+  const page = readFileSync(new URL('../src/pages/site/StudyCoursePage.jsx', import.meta.url), 'utf8');
+  assert.match(page, /ws\?\.libraryOpen === true/);
+  assert.match(page, /if \(!member && !openToAll\) \{ setState\('denied'\); return; \}/);
+});
+
+test('a student is not shown the same course twice', () => {
+  const page = readFileSync(new URL('../src/pages/site/StudyPage.jsx', import.meta.url), 'utf8');
+  assert.match(page, /filter\(\(c\) => !claimed\.has\(c\.id\)\)/);
+});
+
+test('opening a library asks first, and closing it does not', () => {
+  // Opening gives the recordings away to anybody who makes an account, and
+  // closing later cannot take back what has been downloaded.
+  const panel = readFileSync(new URL('../src/components/LibraryPanel.jsx', import.meta.url), 'utf8');
+  assert.match(panel, /openConfirm/);
+  assert.match(panel, /Yes, open it to everyone/);
+  assert.match(panel, /does not take back what anybody has already downloaded/);
+  // Closing is one press.
+  assert.match(panel, /onClick=\{\(\) => setOpen\(false\)\}/);
+});
+
 /* ---- the student's door ------------------------------------------ */
 
 test('a popup that cannot open falls back to a redirect', () => {

@@ -561,7 +561,12 @@ export default function WorkshopPage() {
         toggling={toggling}
       />
 
-      <LibraryPanel workshop={workshop} items={library} onChanged={reloadLibrary} />
+      <LibraryPanel
+        workshop={workshop}
+        items={library}
+        onChanged={reloadLibrary}
+        onWorkshop={setWorkshop}
+      />
 
       <StudentAccessPanel
         workshop={workshop}

@@ -21,7 +21,7 @@ export const useAuth = () => useContext(Ctx);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(
-    WHO === 'out' ? null : WHO === 'student' ? STUDENT : ADMIN,
+    WHO === 'out' ? null : (WHO === 'student' || WHO === 'new') ? STUDENT : ADMIN,
   );
   const value = {
     user,

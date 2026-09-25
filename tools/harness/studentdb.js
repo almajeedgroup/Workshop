@@ -4,7 +4,11 @@ export * from '../../src/lib/studentdb.js';
 /* A student who has taken two courses, one of which has no public mirror —
    the case where the dashboard has an ID and no title, and must still be
    readable rather than showing a blank card. */
-let courses = [
+/* `?who=new` is the OUTER student: a real account holding no ticket at all,
+   which is the whole case this exists for and the one that used to show an
+   empty page with a form asking for a ticket they do not have. */
+const NOBODY = new URLSearchParams(window.location.search).get('who') === 'new';
+let courses = NOBODY ? [] : [
   { workshopId: 'AIHOW26', ticketId: 'AIHOW26014' },
   { workshopId: 'RESM26', ticketId: 'RESM26007' },
 ];

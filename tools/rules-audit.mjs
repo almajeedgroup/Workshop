@@ -315,6 +315,51 @@ await allowed('a student may write their own course list',
 await refused('and forging a row in it still opens nothing',
   () => getDocs(libraryCol('OPEN26')));
 
+/* ---- a course the office has opened to everybody ------------------ */
+
+/* This is the one place a signed-in account with NO ticket may read
+   something, and it is a per-course decision. Everything above still has to
+   hold for every other course. */
+await seed('publicWorkshops/FREE26', {
+  classOpen: { booleanValue: false }, libraryOpen: { booleanValue: true },
+});
+await seed('workshops/FREE26/library/item1', {
+  title: { stringValue: 'Open day' }, kind: { stringValue: 'recording' },
+  source: { stringValue: 'link' }, url: { stringValue: 'https://e.org/open' },
+  path: { stringValue: '' }, text: { stringValue: '' }, format: { stringValue: 'link' },
+  bytes: { integerValue: '0' }, day: { stringValue: '' },
+});
+await seed('publicIndex/openLibraries', {
+  courses: { arrayValue: { values: [{ mapValue: { fields: {
+    id: { stringValue: 'FREE26' }, title: { stringValue: 'Open day' },
+  } } }] } },
+});
+
+await as('ben');    // has claimed nothing, anywhere
+await allowed('a signed-in account with NO ticket can read an OPEN library',
+  () => getDocs(libraryCol('FREE26')));
+await allowed('and can find which courses are open',
+  () => getDoc(doc(db, 'publicIndex', 'openLibraries')));
+await refused('but STILL cannot read a course that was not opened',
+  () => getDocs(libraryCol('OPEN26')));
+await refused('nor write to the open one',
+  () => setDoc(doc(libraryCol('FREE26'), 'mine'), {
+    title: 'x', kind: 'notes', source: 'link', url: 'https://e.org/a',
+    path: '', text: '', format: 'link', bytes: 0, day: '',
+  }));
+await refused('nor open a course for themselves by editing the index',
+  () => setDoc(doc(db, 'publicIndex', 'openLibraries'), { courses: [] }));
+await refused('nor by editing the mirror the rules actually read',
+  () => setDoc(doc(db, 'publicWorkshops', 'OPEN26'), { libraryOpen: true }));
+await refused('and an open library still hides the register behind it',
+  () => getDocs(collection(db, 'workshops', 'FREE26', 'registrations')));
+
+await as(null);
+await refused('a stranger with no account cannot read an open library either',
+  () => getDocs(libraryCol('FREE26')));
+await allowed('though anybody may see which courses are open',
+  () => getDoc(doc(db, 'publicIndex', 'openLibraries')));
+
 /* ---- a member of one course is not a member of another ----------- */
 
 await seed('workshops/OTHER26/library/item1', {

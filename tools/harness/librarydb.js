@@ -31,7 +31,11 @@ let items = [
 let n = items.length;
 
 export async function listLibrary(workshopId) {
-  return workshopId === 'AIHOW26' ? items : [];
+  if (workshopId === 'AIHOW26') return items;
+  // The open course has a shelf of its own, or "open to everyone" would
+  // lead to an empty page and prove nothing.
+  if (workshopId === 'INNO25') return items.slice(0, 2);
+  return [];
 }
 export async function libraryFileUrl(item) {
   return `https://example.invalid/${encodeURIComponent(item.path)}`;
@@ -51,4 +55,18 @@ export async function uploadLibraryFile(workshopId, file, item = {}, onProgress 
 }
 export async function removeLibraryItem(workshopId, item) {
   items = items.filter((i) => i.id !== item.id);
+}
+
+/* One course open to everybody, so both faces of the dashboard can be seen:
+   the student who holds tickets, and the one who holds none. */
+let openCourses = [
+  { id: 'INNO25', title: 'Innovation practice', startDate: '2025-11-10', endDate: '2025-11-15' },
+];
+export async function listOpenLibraries() { return openCourses; }
+export async function setLibraryAccess(workshopId, workshop, open) {
+  openCourses = open
+    ? [...openCourses.filter((c) => c.id !== workshopId),
+      { id: workshopId, title: workshop.title, startDate: workshop.startDate, endDate: workshop.endDate }]
+    : openCourses.filter((c) => c.id !== workshopId);
+  return { ...workshop, libraryAccess: open ? 'Open' : 'Ticket' };
 }

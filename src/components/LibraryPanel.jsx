@@ -5,7 +5,9 @@ import {
   libraryByDay, libraryCounts, libraryFormat, formatBytes,
   MAX_FILE_BYTES, LIBRARY_KINDS, tidyShareLink,
 } from '../lib/library.js';
-import { addLibraryLink, uploadLibraryFile, removeLibraryItem } from '../lib/librarydb.js';
+import {
+  addLibraryLink, uploadLibraryFile, removeLibraryItem, setLibraryAccess,
+} from '../lib/librarydb.js';
 import { canStoreFiles } from '../firebase.js';
 
 /**
@@ -23,7 +25,7 @@ import { canStoreFiles } from '../firebase.js';
  * rather than guessing — and says what each one means, because "Drive link"
  * and "upload" look interchangeable until a student cannot open one.
  */
-export default function LibraryPanel({ workshop, items, onChanged }) {
+export default function LibraryPanel({ workshop, items, onChanged, onWorkshop }) {
   const [source, setSource] = useState('link');
   const [title, setTitle] = useState('');
   const [kind, setKind] = useState('recording');
@@ -38,6 +40,8 @@ export default function LibraryPanel({ workshop, items, onChanged }) {
      a recording they meant to rename. Same two-step the requests panel uses:
      the row asks before it acts, and nothing shouts until it is about to. */
   const [confirmingId, setConfirmingId] = useState('');
+  const [openBusy, setOpenBusy] = useState(false);
+  const [openConfirm, setOpenConfirm] = useState(false);
   const fileInput = useRef(null);
 
   const days = courseDays(workshop);
@@ -104,6 +108,24 @@ export default function LibraryPanel({ workshop, items, onChanged }) {
   };
 
   const uploading = progress >= 0 && source === 'file';
+  const isOpen = String(workshop.libraryAccess || '') === 'Open';
+
+  /* Opening a library gives it away to anybody who makes an account, and
+     that cannot be undone for whoever already took a copy — so it asks,
+     and closing again does not. */
+  const setOpen = async (open) => {
+    setOpenBusy(true); setError('');
+    try {
+      const next = await setLibraryAccess(workshop.id, workshop, open);
+      setOpenConfirm(false);
+      onWorkshop?.(next);
+      await onChanged?.();
+    } catch (e) {
+      setError(e?.message || 'That could not be changed.');
+    } finally {
+      setOpenBusy(false);
+    }
+  };
   /* Shown before saving rather than after, so the office sees the address a
      student will get while they can still object to it. */
   const cleaned = tidyShareLink(url);
@@ -123,9 +145,49 @@ export default function LibraryPanel({ workshop, items, onChanged }) {
 
       <p className="hint">
         What students can open after the course, from <b>Your courses</b> on the
-        public site. Only students who have claimed a ticket for this course can
-        see any of it.
+        public site.
       </p>
+
+      {/* WHO IT IS FOR, stated before what is on it. This is the setting that
+          decides whether a recording is for the people who paid for the
+          course or for anybody at all, and it belongs above the shelf rather
+          than buried under it. */}
+      <div className={`notice mt-3${isOpen ? ' open-lib' : ''}`}>
+        <b>{isOpen ? 'Open to anyone with an account.' : 'Only for students with a ticket.'}</b>{' '}
+        {isOpen
+          ? 'Anybody who signs up on the public site can open this course\u2019s '
+            + 'recordings and notes, whether or not they took it.'
+          : 'A student has to claim a ticket this course issued. Nobody else can see any of it.'}
+
+        <div className="btn-row mt-3">
+          {isOpen ? (
+            <button type="button" disabled={openBusy} onClick={() => setOpen(false)}>
+              {openBusy ? '\u2026' : 'Close it to ticket holders'}
+            </button>
+          ) : openConfirm ? (
+            <>
+              <button
+                className="small danger"
+                type="button"
+                disabled={openBusy}
+                onClick={() => setOpen(true)}
+              >
+                {openBusy ? '\u2026' : 'Yes, open it to everyone'}
+              </button>
+              <button className="small" type="button" onClick={() => setOpenConfirm(false)}>
+                Keep it private
+              </button>
+              <span className="hint" style={{ marginLeft: 4 }}>
+                Closing it later does not take back what anybody has already downloaded.
+              </span>
+            </>
+          ) : (
+            <button type="button" onClick={() => setOpenConfirm(true)}>
+              Open it to everyone
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* ---------------- add ---------------- */}
       <form onSubmit={add} className="mt-4">

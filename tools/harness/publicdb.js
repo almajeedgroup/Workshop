@@ -35,6 +35,17 @@ const WORKSHOP = {
    the page has an ID and no title and still has to be readable. */
 const MIRRORS = {
   AIHOW26: WORKSHOP,
+  /* The course opened to everybody. `libraryOpen` is the field the RULES
+     read, so the page must decide on the same one rather than on anything
+     of its own. */
+  INNO25: {
+    ...WORKSHOP,
+    id: 'INNO25',
+    title: 'Innovation practice',
+    startDate: '2025-11-10',
+    endDate: '2025-11-15',
+    libraryOpen: true,
+  },
   RESM26: {
     ...WORKSHOP,
     id: 'RESM26',

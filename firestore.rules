@@ -251,7 +251,13 @@ service cloud.firestore {
       // keys are always present so this list can be fixed. `addedAt` is the
       // server's, never the client's.
       match /library/{itemId} {
-        allow read: if isAdmin() || isMember(workshopId);
+        // Three ways in, and the third is a decision the office makes per
+        // course: an open library is readable by anybody signed in, ticket
+        // or no ticket. A course left on the default is unchanged — only
+        // its own students can read it.
+        allow read: if isAdmin()
+          || isMember(workshopId)
+          || (request.auth != null && libraryIsOpen(workshopId));
         allow delete: if isAdmin();
         allow create, update: if isAdmin()
           && request.resource.data.keys().hasOnly(
@@ -406,6 +412,22 @@ service cloud.firestore {
         && request.resource.data.at == request.time;
     }
 
+    // ---- The list of open libraries -------------------------------------
+    //
+    // One document, so a student who never registered can FIND the courses
+    // that are open to them. Nothing else lists workshops publicly: the
+    // mirror above is readable one document at a time by ID, and opening it
+    // to `list` would expose every course, including ones not announced
+    // yet. This holds only what has been deliberately opened.
+    //
+    // IT GRANTS NOTHING. Access is decided by `libraryOpen` on the mirror,
+    // which the library rule reads. A stale entry here names a course whose
+    // shelf still refuses to open.
+    match /publicIndex/{docId} {
+      allow get: if true;
+      allow list, write: if isAdmin();
+    }
+
     match /publicWorkshops/{workshopId} {
       allow get: if true;
       allow list: if isAdmin();
@@ -448,6 +470,24 @@ service cloud.firestore {
     // `openForRegistration` above and for the same reason: `get` on a path
     // that does not exist raises rather than returning nothing, and a mirror
     // written before this field existed has no `classOpen` at all.
+    /**
+     * A course whose library the office has opened to everybody.
+     *
+     * Written like `classIsOpen` and for the same reason: `get` on a path
+     * that does not exist raises rather than returning nothing, and a
+     * mirror written before this field existed has no `libraryOpen` at all.
+     *
+     * It still requires an ACCOUNT. That is not security — anybody can make
+     * one — it is accountability: a recording opened by a named account can
+     * be traced, and the office can see who has been in. What it is not is
+     * a claim on a ticket, which is the point.
+     */
+    function libraryIsOpen(workshopId) {
+      return exists(/databases/$(database)/documents/publicWorkshops/$(workshopId))
+        && get(/databases/$(database)/documents/publicWorkshops/$(workshopId))
+             .data.get('libraryOpen', false) == true;
+    }
+
     function classIsOpen(workshopId) {
       return exists(/databases/$(database)/documents/publicWorkshops/$(workshopId))
         && get(/databases/$(database)/documents/publicWorkshops/$(workshopId))

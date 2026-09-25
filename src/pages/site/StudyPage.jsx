@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../AuthContext.jsx';
 import { getPublicWorkshop } from '../../lib/publicdb.js';
 import { listMyCourses, claimTicket } from '../../lib/studentdb.js';
+import { listOpenLibraries } from '../../lib/librarydb.js';
 import { formatDateRange } from '../../lib/tickets.js';
 import { ISSUER } from '../../lib/schema.js';
 import { IconArrow, IconBook, IconShield } from '../../components/site/Icons.jsx';
@@ -33,6 +34,10 @@ export default function StudyPage() {
   } = useAuth();
 
   const [courses, setCourses] = useState(null);   // null = not looked yet
+  /* Courses the office has opened to everybody. A student who never
+     registered has nothing in `courses` and would otherwise see an empty
+     page with a form asking for a ticket they do not have. */
+  const [open, setOpen] = useState([]);
   const [ticket, setTicket] = useState('');
   const [workshopId, setWorkshopId] = useState('');
   const [busy, setBusy] = useState(false);
@@ -60,6 +65,12 @@ export default function StudyPage() {
       workshop: await getPublicWorkshop(c.workshopId).catch(() => null),
     })));
     setCourses(withTitles);
+
+    /* Not shown twice: a course you hold a ticket for is YOURS, and listing
+       it again under "open to everyone" would read as two different
+       things. */
+    const claimed = new Set(withTitles.map((c) => c.workshopId));
+    setOpen((await listOpenLibraries().catch(() => [])).filter((c) => !claimed.has(c.id)));
   }, []);
 
   /* A redirect sign-in finishes on a LATER page load than the one that
@@ -324,8 +335,9 @@ export default function StudyPage() {
           {courses?.length === 0 && (
             <div className="panel mt-5" data-reveal>
               <p className="t-base">
-                Nothing here yet. Add the ticket ID from your ticket below and the
-                course&rsquo;s recordings and notes will appear.
+                No course is claimed to this account yet. Add the ticket ID from
+                your ticket below{open.length > 0 ? ', or open one of the courses '
+                  + 'below that anybody may watch' : ''}.
               </p>
             </div>
           )}
@@ -347,6 +359,27 @@ export default function StudyPage() {
                   <span className="course-go" aria-hidden="true"><IconArrow /></span>
                 </Link>
               ))}
+            </div>
+          )}
+
+          {open.length > 0 && (
+            <div className="mt-7" data-reveal>
+              <h3 className="t-md" style={{ fontWeight: 700 }}>Open to everyone</h3>
+              <p className="t-sm" style={{ color: 'var(--ink-faint)', marginTop: 4 }}>
+                No ticket needed — these are open to anybody signed in.
+              </p>
+              <div className="courses mt-4">
+                {open.map((c) => (
+                  <Link className="course" key={c.id} to={`/study/${c.id}`}>
+                    <span className="course-ico" aria-hidden="true"><IconBook /></span>
+                    <span className="course-what">
+                      <b>{c.title || c.id}</b>
+                      <em>{formatDateRange(c) || 'Open course'}</em>
+                    </span>
+                    <span className="course-go" aria-hidden="true"><IconArrow /></span>
+                  </Link>
+                ))}
+              </div>
             </div>
           )}
 

@@ -24,6 +24,7 @@ export default function StudyCoursePage() {
 
   const [state, setState] = useState('looking'); // looking | ok | denied | error
   const [workshop, setWorkshop] = useState(null);
+  const [openToAll, setOpenToAll] = useState(false);
   const [items, setItems] = useState([]);
 
   useEffect(() => {
@@ -39,7 +40,12 @@ export default function StudyCoursePage() {
       if (!live) return;
       setWorkshop(ws);
 
-      if (!member) { setState('denied'); return; }
+      /* Two ways to be allowed in: a ticket, or a course the office has
+         opened to everybody. Asked of the same mirror the rules read, so
+         the page and the server cannot disagree about who is welcome. */
+      const openToAll = ws?.libraryOpen === true;
+      setOpenToAll(openToAll);
+      if (!member && !openToAll) { setState('denied'); return; }
       try {
         const shelf = await listLibrary(workshopId);
         if (!live) return;
@@ -70,7 +76,9 @@ export default function StudyCoursePage() {
             <h1 className="display-lead sm">Not open to this account</h1>
             <p className="lede">
               {user
-                ? 'This account has not claimed a ticket for this course, or its access was withdrawn.'
+                ? 'This account has not claimed a ticket for this course, and the '
+                  + 'course is not one of the open ones. If you took it, add your '
+                  + 'ticket ID on Your courses.'
                 : 'Sign in to open your courses.'}
             </p>
             <div className="acts">
@@ -98,6 +106,11 @@ export default function StudyCoursePage() {
             <h1 className="display-lead sm">{workshop?.title || workshopId}</h1>
             {workshop && formatDateRange(workshop) && (
               <p className="lede">{formatDateRange(workshop)}</p>
+            )}
+            {openToAll && (
+              <p className="t-sm">
+                <span className="ann flat sm"><b>Open</b> to anyone with an account</span>
+              </p>
             )}
             <p className="t-sm" style={{ color: 'var(--ink-faint)' }}>
               {counts.total === 0

@@ -68,6 +68,11 @@ export function publicWorkshopRecord(workshop) {
     classOpen: classIsLive(workshop),
     meetingRoom: classIsLive(workshop) ? str(workshop.meetingRoom) : '',
     meetingHost: ISSUER.meetingHost || '',
+    // Whether the course library is open to anybody with an account, rather
+    // than only to the people holding a ticket for it. Mirrored here
+    // because firestore.rules reads THIS document to decide — the same way
+    // it reads classOpen — and rules cannot see the workshop itself.
+    libraryOpen: str(workshop.libraryAccess) === 'Open',
   };
 }
 

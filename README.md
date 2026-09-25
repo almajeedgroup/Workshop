@@ -1627,6 +1627,34 @@ before saving so the office can object. Non-Google links are left completely
 alone: rewriting somebody else's URL on a guess is how a working link becomes
 a broken one.
 
+### Two kinds of course
+
+Access is decided **per course**, and the default is unchanged:
+
+| setting | who can open the library |
+|---|---|
+| `Ticket` (default) | only students who claimed a ticket this course issued |
+| `Open` | anybody with an account, ticket or no ticket |
+
+Per course, deliberately: one switch for the whole app would mean opening an
+outreach course also gives away the recordings of a paid one, and that is not
+a decision anybody should make by accident. The toggle sits at the top of the
+Library panel, above the shelf it governs, and **opening asks first** —
+closing later cannot take back what has already been downloaded. Closing again
+is one press.
+
+An open library still requires an **account**. That is not security — anybody
+can make one — it is accountability: a recording opened by a named account can
+be traced, and the office can see who has been in.
+
+`libraryOpen` is mirrored onto `publicWorkshops/{id}` because that is what the
+rules read; they cannot see the workshop document. And because nothing else
+lists workshops publicly — the mirror is readable one document at a time, by
+ID, and opening it to `list` would expose every course including unannounced
+ones — one public document, `publicIndex/openLibraries`, names the open ones
+so a student who never registered can find them. **That index grants
+nothing.** A stale entry names a course whose shelf still refuses to open.
+
 ### How a student gets in
 
 They sign in with Google and claim the ticket ID printed on their ticket.

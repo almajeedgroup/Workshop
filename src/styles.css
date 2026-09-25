@@ -1143,3 +1143,9 @@ p.count {
   border: 1px solid var(--faint); overflow: hidden; margin-bottom: 6px;
 }
 .up-bar i { display: block; height: 100%; background: var(--lime); transition: width .2s ease; }
+
+/* A library that has been opened to everybody. Lime rail rather than the
+   default ink one: this is a standing state somebody chose, not a warning
+   and not a problem — the red-dashed `warn` would read as "something is
+   wrong here" on a course that is working exactly as intended. */
+.notice.open-lib { border-left-color: var(--lime); }

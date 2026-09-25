@@ -21,7 +21,8 @@
  */
 
 import {
-  collection, doc, addDoc, deleteDoc, getDocs, setDoc, query, orderBy, serverTimestamp,
+  collection, doc, addDoc, deleteDoc, getDoc, getDocs, setDoc,
+  query, orderBy, serverTimestamp,
 } from 'firebase/firestore';
 import {
   ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject,
@@ -29,6 +30,7 @@ import {
 import { db, storage } from '../firebase.js';
 import { libraryRecord, libraryFilePath, MAX_FILE_BYTES, formatOfFile } from './library.js';
 import { getNotes, listHandouts } from './classroomdb.js';
+import { syncPublicWorkshop } from './publicdb.js';
 import { formatDate } from './tickets.js';
 
 const WORKSHOPS = 'workshops';
@@ -147,6 +149,73 @@ export async function removeLibraryItem(workshopId, item) {
       /* Already gone, or never arrived. The shelf is what students see. */
     });
   }
+}
+
+/* ------------------------------------------------------------------ *
+ * Who a library is for
+ * ------------------------------------------------------------------ */
+
+export const OPEN_INDEX = 'publicIndex';
+export const OPEN_INDEX_DOC = 'openLibraries';
+
+/**
+ * Open a course's library to anybody with an account, or shut it again.
+ *
+ * PER COURSE, DELIBERATELY. A single switch for the whole app would mean
+ * opening an outreach course also gives away the recordings of a paid one,
+ * and that is not a decision anybody should make by accident.
+ *
+ * Two writes, because two readers need to know:
+ *
+ *   the MIRROR — `publicWorkshops/{id}.libraryOpen` — is what the rules
+ *   read. It is what actually grants or refuses the read.
+ *
+ *   the INDEX — one public document listing the open courses — is how a
+ *   student who never registered FINDS them. Nothing lists workshops
+ *   publicly otherwise: the mirror is readable one document at a time, by
+ *   ID, and listing it would expose every course including unannounced
+ *   ones. So the index holds only what has been deliberately opened.
+ *
+ * The index is a convenience and grants nothing. A course removed from the
+ * mirror's `libraryOpen` is shut even if a stale index still names it.
+ */
+export async function setLibraryAccess(workshopId, workshop, open) {
+  const next = { ...workshop, libraryAccess: open ? 'Open' : 'Ticket' };
+
+  await setDoc(
+    doc(db, WORKSHOPS, workshopId),
+    { libraryAccess: next.libraryAccess, updatedAt: serverTimestamp() },
+    { merge: true },
+  );
+  await syncPublicWorkshop(workshopId, next);
+  await refreshOpenIndex(workshopId, next, open);
+  return next;
+}
+
+/** Add this course to the public list of open libraries, or take it off. */
+async function refreshOpenIndex(workshopId, workshop, open) {
+  const ref = doc(db, OPEN_INDEX, OPEN_INDEX_DOC);
+  const snap = await getDoc(ref).catch(() => null);
+  const current = Array.isArray(snap?.data()?.courses) ? snap.data().courses : [];
+
+  const without = current.filter((c) => c.id !== workshopId);
+  const courses = open
+    ? [...without, {
+      id: workshopId,
+      title: String(workshop.title || workshopId).slice(0, 200),
+      startDate: String(workshop.startDate || ''),
+      endDate: String(workshop.endDate || ''),
+    }]
+    : without;
+
+  await setDoc(ref, { courses, updatedAt: serverTimestamp() });
+}
+
+/** The courses whose libraries anybody with an account may open. */
+export async function listOpenLibraries() {
+  const snap = await getDoc(doc(db, OPEN_INDEX, OPEN_INDEX_DOC)).catch(() => null);
+  const courses = snap?.exists() ? snap.data().courses : [];
+  return Array.isArray(courses) ? courses : [];
 }
 
 /* ------------------------------------------------------------------ *
