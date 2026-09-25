@@ -73,8 +73,13 @@ export function nextMark(current) {
  * copied off a printed slip by somebody on a phone — `aihow26 001` and
  * `AIHOW26-001` are the same person, and refusing the first would mean a
  * student sitting in the class recorded as absent.
+ *
+ * EXPORTED, because the library claims a ticket too. A student who typed
+ * `aihow26 014` to get into the class and `AIHOW26-014` to claim their
+ * recordings must land in the same place both times, and two functions that
+ * agree today will not agree forever.
  */
-const ticketKey = (v) => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+export const ticketKey = (v) => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
 export function joinedRegistrationIds(joins = {}, rows = []) {
   const byTicket = new Map();

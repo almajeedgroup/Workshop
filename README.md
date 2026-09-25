@@ -2249,12 +2249,25 @@ timestamp nor add a field, a day that is not a date and a ticket too short to
 be one are refused, and a stranger can read back neither the sign-ins, nor the
 office's marks, nor the register.
 
-It **pushes `firestore.rules` into the emulator on every run**, because the
-emulator holds whatever it started with and does not reload the file. Without
-that, editing a rule and re-running grades the old one and reports a clean
-sheet for rules nobody has tested. Both sabotage checks confirm it reaches:
-loosening `classIsOpen` fails seven assertions, and dropping the
-`at == request.time` clause fails two.
+It **pushes the rules into the emulator on every run**, and `RULES_FILE=` can
+point it at a copy instead. An earlier version of this paragraph said the push
+was needed because the emulator never reloads the file. That was wrong — it
+watches it. The real reasons are better ones:
+
+- the reload is asynchronous, so a run that relied on it would be racing the
+  watcher, passing or failing by whichever won. That is how a sabotage check
+  quietly stops checking anything;
+- and a sabotage has to be tried against a **copy**. Editing the real file to
+  test it is what killed the emulator mid-run: the watcher read the file
+  half-written, failed to parse it, and took the Auth emulator down with it.
+
+Nine sabotages confirm it reaches. On the class sign-in: loosening
+`classIsOpen` fails 7 assertions, dropping `at == request.time` fails 2. On
+the library: making membership mean merely "signed in" fails 5 — including
+the one that says a signed-in stranger must still see nothing — letting a
+claim name somebody else fails 7, letting a membership ignore its own claim
+fails 3, skipping the ticket index fails 1, and dropping the shape check on a
+library item fails 1.
 
 firebase-tools is kept out of `package.json` on purpose — it needs a Java
 runtime and brings six hundred packages, and `npm test` is deliberately

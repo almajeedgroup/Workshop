@@ -13,7 +13,7 @@
     "harness": "vite --config tools/harness/vite.config.js",
     "print-audit": "node tools/print-audit.mjs",
     "motion-audit": "node tools/motion-audit.mjs",
-    "emulator": "npx --yes --package firebase-tools firebase emulators:start --only firestore --project demo-workshop",
+    "emulator": "npx --yes --package firebase-tools firebase emulators:start --only firestore,auth,storage --project demo-workshop",
     "rules-audit": "node tools/rules-audit.mjs"
   },
   "dependencies": {

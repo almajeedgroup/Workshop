@@ -1,0 +1,90 @@
+rules_version = '2';
+
+/**
+ * The file store.
+ *
+ * This app kept everything in Firestore for a long time, and said so: a
+ * handout was a link, or a PDF small enough to sit inside a 1 MiB document.
+ * The course library is what broke that. A recording is hundreds of
+ * megabytes and a slide deck is tens, so there is now one bucket, and it
+ * holds exactly one kind of thing:
+ *
+ *   workshops/{workshopId}/library/{fileName}
+ *
+ * NOTHING PERSONAL IS EVER STORED HERE. No photographs of participants — ID
+ * card pictures stay in Firestore under their own admin-only rule — and no
+ * documents about a person. What is here is course material: what was said
+ * and shown in a class, which is the same category as the notes and the
+ * transcript. That is what makes it safe to hand to a student at all.
+ *
+ * ── WHO MAY READ ─────────────────────────────────────────────────────────
+ *
+ * An administrator, or a student who has claimed a ticket for THAT course.
+ * Membership is a Firestore document, so this file reaches across services
+ * to read it — `firestore.exists` on a path, never a query. One course's
+ * membership grants one course's files and nothing else: the workshopId in
+ * the object path is the same one looked up in the database, so there is no
+ * arrangement of claims that opens a course the student never took.
+ *
+ * ── WHO MAY WRITE ────────────────────────────────────────────────────────
+ *
+ * An administrator, and only within the size and type bounds below. A
+ * student can read this bucket and never write to it: there is no student
+ * upload anywhere in this app, so an unbounded write from an account anyone
+ * can create would be a bill and a malware host in one.
+ */
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAdmin() {
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid));
+    }
+
+    function isMember(workshopId) {
+      return request.auth != null
+        && firestore.exists(
+             /databases/(default)/documents/workshops/$(workshopId)/members/$(request.auth.uid));
+    }
+
+    /**
+     * What may be put in the bucket.
+     *
+     * The type is checked against a list rather than a prefix. `video/` and
+     * `application/` as prefixes would wave through anything at all, and
+     * `application/x-msdownload` is an executable. The cap is 512 MB, which
+     * is a long recording and is not an accident — a mis-picked file is
+     * refused before it spends anybody's bandwidth.
+     */
+    function allowedFile() {
+      return request.resource.size > 0
+        && request.resource.size <= 512 * 1024 * 1024
+        && request.resource.contentType in [
+          'video/mp4', 'video/webm', 'video/quicktime', 'video/x-matroska',
+          'audio/mpeg', 'audio/mp4', 'audio/webm',
+          'application/pdf',
+          'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+          'application/vnd.ms-powerpoint',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'application/vnd.ms-excel',
+          'text/plain', 'text/csv',
+          'image/png', 'image/jpeg', 'image/webp'
+        ];
+    }
+
+    match /workshops/{workshopId}/library/{fileName} {
+      allow read: if isAdmin() || isMember(workshopId);
+      allow create, update: if isAdmin() && allowedFile();
+      allow delete: if isAdmin();
+    }
+
+    // Everything else in the bucket, including anything left over from
+    // before this file existed. A bucket with one open path and one closed
+    // default is a bucket whose surface can be read off in ten seconds.
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

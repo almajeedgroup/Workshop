@@ -45,6 +45,23 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
+    /**
+     * A student who has claimed a ticket for THIS course.
+     *
+     * The one thing in this file that grants a signed-in account who is not
+     * an administrator the right to read something. It grants exactly one
+     * collection on one course — the library — and it is a path lookup, not
+     * a query, because rules cannot run queries.
+     *
+     * Note what it deliberately is NOT: `request.auth != null`. Anybody
+     * holding the public API key can create an account, so "signed in" is
+     * not a permission anywhere in this file and must never become one.
+     */
+    function isMember(workshopId) {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/workshops/$(workshopId)/members/$(request.auth.uid));
+    }
+
     // Holder of the permanent owner address. Grants no data access on its
     // own — only the right to join the allow-list above.
     function isBootstrapOwner() {
@@ -219,6 +236,91 @@ service cloud.firestore {
           && sized(request.resource.data.get('askedAt', ''), 40);
       }
 
+      // ---- The course library, and who may open it ------------------
+      //
+      // Everything under a class is live and then gone: the room closes and
+      // the notes and transcript close with it. The library is the opposite
+      // — a permanent shelf of recordings and handouts, put there by the
+      // office and readable after the course by the people who took it.
+      //
+      // It holds NOTHING PERSONAL. What is on the shelf is what was said
+      // and shown in a class, which is the same category as the transcript.
+      // That is what makes it safe to hand to a student at all.
+      //
+      // `source` decides which of `url` and `path` is meaningful, and both
+      // keys are always present so this list can be fixed. `addedAt` is the
+      // server's, never the client's.
+      match /library/{itemId} {
+        allow read: if isAdmin() || isMember(workshopId);
+        allow delete: if isAdmin();
+        allow create, update: if isAdmin()
+          && request.resource.data.keys().hasOnly(
+               ['title', 'kind', 'source', 'url', 'path', 'format', 'bytes', 'day', 'addedAt'])
+          && request.resource.data.kind in ['recording', 'notes']
+          && request.resource.data.source in ['link', 'file']
+          && sized(request.resource.data.title, 200)
+          && request.resource.data.title.size() > 0
+          && sized(request.resource.data.url, 2000)
+          && sized(request.resource.data.path, 500)
+          && sized(request.resource.data.format, 20)
+          && sized(request.resource.data.day, 10)
+          && request.resource.data.bytes is int
+          && request.resource.data.bytes >= 0;
+      }
+
+      // Which tickets this course issued. The document IS its ticket, and
+      // holds nothing else — the name and number that ticket belongs to
+      // stay in `registrations`, which no student can read.
+      //
+      // Written by the office, read by NOBODY. A rule's `exists()` does not
+      // need the caller to hold read permission, so this can answer "was
+      // this ticket ever issued?" while staying shut to every client.
+      match /tickets/{ticketId} {
+        allow read, write: if isAdmin();
+      }
+
+      // The lock. One document per ticket, holding the account that claimed
+      // it, and CREATE ONLY — so the first claim wins and every later one is
+      // refused. That is what makes a ticket exclusive: a student whose
+      // ticket has been taken finds out, rather than quietly sharing it.
+      //
+      // The claimant must name THEMSELVES. Without that, one account could
+      // burn every ticket on a course by claiming them all for somebody
+      // else and lock the whole cohort out.
+      match /claims/{ticketId} {
+        allow read, update, delete: if isAdmin();
+        allow create: if request.auth != null
+          && exists(/databases/$(database)/documents/workshops/$(workshopId)/tickets/$(ticketId))
+          && request.resource.data.keys().hasOnly(['uid', 'at'])
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.at == request.time;
+      }
+
+      // The membership the library rule above reads.
+      //
+      // Allowed ONLY once the lock exists and names this account. That is
+      // why claiming is three sequential writes and not one batch: rules see
+      // a batch against the state before it, so a `members` write in the
+      // same batch as its own claim could never satisfy this line.
+      //
+      // A student may re-write their own membership — the claim still has
+      // to be theirs — so a claim that failed halfway can be finished by
+      // trying again. They may read their own and nobody else's; the office
+      // reads them all, because it is the office that revokes one.
+      match /members/{uid} {
+        allow read: if isAdmin() || (request.auth != null && request.auth.uid == uid);
+        allow delete: if isAdmin();
+        allow create, update: if request.auth != null
+          && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['ticketId', 'name', 'email', 'at'])
+          && exists(/databases/$(database)/documents/workshops/$(workshopId)/claims/$(request.resource.data.ticketId))
+          && get(/databases/$(database)/documents/workshops/$(workshopId)/claims/$(request.resource.data.ticketId)).data.uid == request.auth.uid
+          && sized(request.resource.data.ticketId, 40)
+          && sized(request.resource.data.name, 120)
+          && sized(request.resource.data.email, 200)
+          && request.resource.data.at == request.time;
+      }
+
       match /classHandouts/{handoutId} {
         allow read: if isAdmin() || classIsOpen(workshopId);
         allow delete: if isAdmin();
@@ -275,6 +377,30 @@ service cloud.firestore {
     // nothing else. The workshop document itself carries internal notes and
     // counters, and Firestore rules cannot expose half a document — hence a
     // separate one. src/lib/publicdb.js builds it from a whitelist.
+    // ---- A student's own list of courses --------------------------------
+    //
+    // "Which courses am I in" is a question no rule can answer and no
+    // reasonable query can either: membership lives under each workshop, and
+    // a collection-group search would need its own index and its own rule
+    // for a handful of documents. So the student keeps their own list.
+    //
+    // THIS GRANTS NOTHING. Writing a row here does not open a library — the
+    // library is gated by `members`, which is gated by the claim, which is
+    // gated by the ticket index. A student who forged a row here would get
+    // a dashboard entry that refuses to open, which is the correct failure.
+    //
+    // The office can read and delete, because revoking has to clear the
+    // student's list too or their dashboard keeps offering a course it can
+    // no longer open.
+    match /students/{uid}/courses/{workshopId} {
+      allow read, delete: if isAdmin() || (request.auth != null && request.auth.uid == uid);
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['ticketId', 'at'])
+        && sized(request.resource.data.ticketId, 40)
+        && request.resource.data.at == request.time;
+    }
+
     match /publicWorkshops/{workshopId} {
       allow get: if true;
       allow list: if isAdmin();
