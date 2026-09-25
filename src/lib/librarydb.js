@@ -21,13 +21,15 @@
  */
 
 import {
-  collection, doc, addDoc, deleteDoc, getDocs, query, orderBy, serverTimestamp,
+  collection, doc, addDoc, deleteDoc, getDocs, setDoc, query, orderBy, serverTimestamp,
 } from 'firebase/firestore';
 import {
   ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject,
 } from 'firebase/storage';
 import { db, storage } from '../firebase.js';
 import { libraryRecord, libraryFilePath, MAX_FILE_BYTES, formatOfFile } from './library.js';
+import { getNotes, listHandouts } from './classroomdb.js';
+import { formatDate } from './tickets.js';
 
 const WORKSHOPS = 'workshops';
 export const LIBRARY = 'library';
@@ -145,4 +147,81 @@ export async function removeLibraryItem(workshopId, item) {
       /* Already gone, or never arrived. The shelf is what students see. */
     });
   }
+}
+
+/* ------------------------------------------------------------------ *
+ * Keeping what the class produced
+ * ------------------------------------------------------------------ */
+
+/**
+ * Carry a class's own notes and handouts onto the shelf.
+ *
+ * Run when a class closes. Everything under a live class is readable only
+ * while `classOpen` is true — that is right for a room nobody was given a
+ * copy of, and wrong for the notes a student was reading ten minutes ago.
+ * Closing the class should not take those away from the people who were in
+ * it; it should stop strangers reading them.
+ *
+ * IDEMPOTENT BY CONSTRUCTION. The IDs are derived from what is being
+ * carried, not generated, so closing a class twice — or closing, reopening
+ * and closing again, which is a normal afternoon — writes the same
+ * documents again instead of a second copy of everything.
+ *
+ * A title the office later edits IS overwritten by a re-run. That is the
+ * cost of the deterministic ID, and it is the better way round: a duplicate
+ * shelf is a support call, an overwritten title is a retype.
+ */
+export async function keepClassMaterial(workshopId, days = []) {
+  if (!workshopId) return { notes: 0, handouts: 0 };
+  let notes = 0;
+
+  for (const day of days) {
+    const text = await getNotes(workshopId, day).catch(() => '');
+    if (!String(text || '').trim()) continue;      // an empty day is not a note
+
+    await setDoc(doc(libraryRef(workshopId), `notes-${day}`), {
+      ...libraryRecord({
+        title: `Class notes — ${formatDate(day)}`,
+        kind: 'notes',
+        source: 'text',
+        text,
+        day,
+      }),
+      addedAt: serverTimestamp(),
+    });
+    notes += 1;
+  }
+
+  /* Handouts carry across as they are — a link stays a link.
+   *
+   * A handout uploaded BEFORE this app had a bucket is base64 inside its own
+   * Firestore document: it has `data`, not a `path`, and there is nothing
+   * for a library item to point at. Carrying one would put a row on the
+   * shelf that opens nothing, which is worse than not carrying it, so those
+   * are counted and reported rather than written. The office can re-upload
+   * them through the library panel, where they become real objects. */
+  const handouts = await listHandouts(workshopId).catch(() => []);
+  let carried = 0;
+  let stuck = 0;
+
+  for (const h of handouts) {
+    const isFile = h.kind === 'file';
+    if (isFile && !h.path) { stuck += 1; continue; }
+
+    await setDoc(doc(libraryRef(workshopId), `handout-${h.id}`), {
+      ...libraryRecord({
+        title: h.title,
+        kind: 'notes',
+        source: isFile ? 'file' : 'link',
+        url: h.url,
+        path: h.path || '',
+        bytes: h.bytes,
+        fileName: h.title,
+      }),
+      addedAt: serverTimestamp(),
+    });
+    carried += 1;
+  }
+
+  return { notes, handouts: carried, stuck };
 }

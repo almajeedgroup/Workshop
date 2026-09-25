@@ -346,8 +346,24 @@ await allowed('publishes the ticket index',
 await allowed('puts something on the shelf',
   () => setDoc(doc(libraryCol('OPEN26'), 'item2'), {
     title: 'Slides', kind: 'notes', source: 'file', url: '',
-    path: 'workshops/OPEN26/library/x.pptx', format: 'ppt',
+    path: 'workshops/OPEN26/library/x.pptx', text: '', format: 'ppt',
     bytes: 2048, day: '2026-02-09', addedAt: serverTimestamp(),
+  }));
+await allowed('and the class notes that were typed live',
+  () => setDoc(doc(libraryCol('OPEN26'), 'notes-2026-02-09'), {
+    title: 'Class notes', kind: 'notes', source: 'text', url: '', path: '',
+    text: 'What a model is.', format: 'text',
+    bytes: 0, day: '2026-02-09', addedAt: serverTimestamp(),
+  }));
+/* EVERY field is required, not merely allowed. The record builder writes all
+   of them, always, so a document arriving without one did not come from this
+   app — and the shape is the only thing standing between a shelf item and
+   whatever a stolen session felt like storing. Found by this check: adding
+   `text` to the rules refused every item written before it existed. */
+await refused('but not an item missing one of the fields',
+  () => setDoc(doc(libraryCol('OPEN26'), 'item6'), {
+    title: 'No text key', kind: 'notes', source: 'link', url: 'https://e.org/a',
+    path: '', format: 'link', bytes: 0, day: '', addedAt: serverTimestamp(),
   }));
 await refused('but not a shelf item with a field nobody named',
   () => setDoc(doc(libraryCol('OPEN26'), 'item3'), {

@@ -13,6 +13,10 @@ import {
   setRegistrationOpen, restoreRequest,
 } from '../lib/publicdb.js';
 import RequestsPanel from '../components/RequestsPanel.jsx';
+import LibraryPanel from '../components/LibraryPanel.jsx';
+import StudentAccessPanel from '../components/StudentAccessPanel.jsx';
+import { listLibrary } from '../lib/librarydb.js';
+import { listMembers, ticketIndexSize } from '../lib/studentdb.js';
 import RegistrationCards from '../components/RegistrationCards.jsx';
 import { getPhotos } from '../lib/photodb.js';
 import { amountCollected, paymentCounts, seatsLeft as seatsLeftFor } from '../lib/stats.js';
@@ -73,6 +77,13 @@ export default function WorkshopPage() {
   const [picked, setPicked] = useState(null);
   const [carryQ, setCarryQ] = useState('');
   const [requests, setRequests] = useState([]);
+  /* The library and who may read it. Loaded beside the rest rather than on
+     a tab: they are part of what this course IS, and a panel nobody opens
+     is a ticket list nobody publishes — which silently refuses every
+     student's claim. */
+  const [library, setLibrary] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [ticketCount, setTicketCount] = useState(0);
   const [reqBusy, setReqBusy] = useState('');
   const [toggling, setToggling] = useState(false);
   // Both belong to the requests panel, and are shown inside it.
@@ -102,6 +113,24 @@ export default function WorkshopPage() {
     setRegs(r);
     setRequests(q);
   };
+
+  /* Separate from `reload`, and tolerant of failure. These three are the
+     newest collections in the database, so they are the ones most likely to
+     be missing their rules on a deployment that is behind — and a workshop
+     page that will not render because the library refused to load would
+     take the whole course's administration down with it. */
+  const reloadLibrary = async () => {
+    const [items, who, tickets] = await Promise.all([
+      listLibrary(id).catch(() => []),
+      listMembers(id).catch(() => []),
+      ticketIndexSize(id).catch(() => 0),
+    ]);
+    setLibrary(items);
+    setMembers(who);
+    setTicketCount(tickets);
+  };
+
+  useEffect(() => { reloadLibrary(); /* eslint-disable-next-line */ }, [id]);
 
   useEffect(() => {
     let live = true;
@@ -530,6 +559,16 @@ export default function WorkshopPage() {
         onToggleOpen={toggleRegistration}
         busyId={reqBusy}
         toggling={toggling}
+      />
+
+      <LibraryPanel workshop={workshop} items={library} onChanged={reloadLibrary} />
+
+      <StudentAccessPanel
+        workshop={workshop}
+        registrations={regs}
+        members={members}
+        ticketCount={ticketCount}
+        onChanged={reloadLibrary}
       />
 
       <div className="panel">

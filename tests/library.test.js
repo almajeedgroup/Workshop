@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  FORMATS, LIBRARY_KINDS, MAX_FILE_BYTES, libraryFormat,
+  FORMATS, LIBRARY_KINDS, MAX_FILE_BYTES, MAX_TEXT, libraryFormat,
   extensionOf, formatOfFile, formatOfLink, formatBytes,
   libraryRecord, libraryTitle, libraryFilePath,
   sortLibrary, libraryByDay, libraryCounts,
@@ -136,7 +136,7 @@ test('a link item keeps its url and stores no path or size', () => {
   });
   assert.deepEqual(r, {
     title: 'Day one', kind: 'recording', source: 'link',
-    url: 'https://drive.google.com/file/d/abc/view', path: '',
+    url: 'https://drive.google.com/file/d/abc/view', path: '', text: '',
     format: 'link', bytes: 0, day: '2026-02-09',
   });
 });
@@ -153,6 +153,43 @@ test('a file item keeps its path and stores no url', () => {
   assert.equal(r.bytes, 2049, 'bytes are a whole number');
 });
 
+/* ---- the third source: words, not a file ------------------------- */
+
+test('typed class notes are kept as text, not made into a file', () => {
+  const r = libraryRecord({
+    title: 'Class notes', kind: 'notes', source: 'text',
+    text: 'line one\nline two', day: '2026-02-09',
+  });
+  assert.equal(r.source, 'text');
+  assert.equal(r.format, 'text');
+  assert.equal(r.text, 'line one\nline two');
+  assert.equal(r.url, '');
+  assert.equal(r.path, '');
+  assert.equal(r.bytes, 0);
+});
+
+test('only a text item carries text, so the other two cannot smuggle any', () => {
+  // The rules cap `text` at 100000 and name a fixed field list. A link item
+  // that carried text would be a second, unbounded payload nobody checks.
+  assert.equal(libraryRecord({ title: 't', source: 'link', url: 'https://e.org/a', text: 'x' }).text, '');
+  assert.equal(libraryRecord({ title: 't', source: 'file', path: 'p', text: 'x' }).text, '');
+});
+
+test('text is capped at what the rules allow', () => {
+  const r = libraryRecord({ title: 't', source: 'text', text: 'x'.repeat(MAX_TEXT + 500) });
+  assert.equal(r.text.length, MAX_TEXT);
+  const rules = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
+  assert.match(rules, /sized\(request\.resource\.data\.text, 100000\)/,
+    'the browser must not offer to store what the database will refuse');
+  assert.equal(MAX_TEXT, 100000);
+});
+
+test('the rules know about all three sources', () => {
+  const rules = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
+  assert.match(rules, /source in \['link', 'file', 'text'\]/);
+  assert.match(rules, /'title', 'kind', 'source', 'url', 'path', 'text',/);
+});
+
 test('the record is a whitelist: nothing else gets through', () => {
   // The form state carries React keys and half-finished fields. A spread
   // would store them and then have to be defended in the rules.
@@ -162,7 +199,7 @@ test('the record is a whitelist: nothing else gets through', () => {
   });
   assert.deepEqual(
     Object.keys(r).sort(),
-    ['bytes', 'day', 'format', 'kind', 'path', 'source', 'title', 'url'],
+    ['bytes', 'day', 'format', 'kind', 'path', 'source', 'text', 'title', 'url'],
   );
   assert.equal(r.bytes, 0, 'a link has no size of ours to report');
 });
@@ -249,6 +286,35 @@ test('the counts say what is on the shelf', () => {
 });
 
 /* ---- the vocabulary ---------------------------------------------- */
+
+test('carrying a class onto the shelf is idempotent by construction', () => {
+  // Closing, reopening and closing again is a normal afternoon. The IDs are
+  // derived from what is carried, not generated, so a second close rewrites
+  // the same documents instead of writing a second copy of everything.
+  const db = readFileSync(new URL('../src/lib/librarydb.js', import.meta.url), 'utf8');
+  assert.match(db, /`notes-\$\{day\}`/);
+  assert.match(db, /`handout-\$\{h\.id\}`/);
+  assert.doesNotMatch(db.slice(db.indexOf('keepClassMaterial')), /addDoc/,
+    'a generated ID would duplicate the whole shelf on the second close');
+});
+
+test('a handout with nothing to point at is left behind, not shelved dead', () => {
+  const db = readFileSync(new URL('../src/lib/librarydb.js', import.meta.url), 'utf8');
+  assert.match(db, /if \(isFile && !h\.path\) \{ stuck \+= 1; continue; \}/);
+  const page = readFileSync(new URL('../src/pages/ClassPage.jsx', import.meta.url), 'utf8');
+  assert.match(page, /could not be moved/, 'and the office is told which ones');
+});
+
+test('closing the class files its material, and a filing failure does not reopen it', () => {
+  const page = readFileSync(new URL('../src/pages/ClassPage.jsx', import.meta.url), 'utf8');
+  assert.match(page, /keepClassMaterial\(id, \[\.\.\.days\]\)/);
+  // The close happens first and the carry is wrapped: a class that failed to
+  // file must not be left open.
+  // Compared against the CALL, not the import, which sits at the top of the
+  // file and made this pass for the wrong reason first time round.
+  assert.ok(page.indexOf('setClassOpen(id, workshop, !live)') < page.indexOf('keepClassMaterial(id,'));
+  assert.match(page, /try \{[\s\S]{0,400}keepClassMaterial[\s\S]{0,200}\} catch/);
+});
 
 test('every format has a label and an icon, and an unknown one is a link', () => {
   for (const f of FORMATS) {

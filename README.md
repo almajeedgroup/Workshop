@@ -978,6 +978,9 @@ src/
   lib/meeting.js           room names, join links, and who is in the room
   lib/classroom.js         notes, transcript lines, handouts and recordings
   lib/classroomdb.js       the live side of those three
+  lib/library.js           the course library: recordings, notes, formats
+  lib/librarydb.js         the shelf, the bucket, and what a class leaves
+  lib/studentdb.js         tickets, claims, memberships — who may read a shelf
   lib/speech.js            the browser's speech recogniser, wrapped
   lib/recorder.js          screen + microphone recording, wrapped
   lib/meetingdb.js         opening and closing a class, and moving its room
@@ -994,6 +997,7 @@ src/
                            FittedName, SeatBar, BoardGroup, Sidebar,
                            RegistrationCards, AttendanceRegister, Overlay,
                            PhoneFixPanel, JitsiRoom, RoomLauncher, ClassBoard,
+                           LibraryPanel, StudentAccessPanel,
                            Finder,
                            CertificateDocument,
                            CertificateStage
@@ -1002,7 +1006,8 @@ src/
                            Edit, Ticket, CertificateAllot, IdCard, IdCards,
                            Attendance, Class, People, Person
   pages/site/              the public site: Home, Programmes, Certificates,
-                           About, Contact, Register, JoinClass
+                           About, Contact, Register, JoinClass,
+                           Study, StudyCourse
   AuthContext.jsx          sign-in + admin allow-list check
   class.css                the online classroom, on both sides of it
   styles.css               the admin tool; near-black + the four colours
@@ -1013,8 +1018,8 @@ src/
 public/fonts, public/crests  certificate typefaces and crests
 tests/                     parser, tickets, dedupe, stats, xlsx,
                            certificates, imagefile, idcards, attendance,
-                           selfjoin, exporters, association, requests,
-                           overview, navigation
+                           selfjoin, library, exporters, association,
+                           requests, overview, navigation
 tools/harness/             the admin and the public task pages, mounted
                            against fabricated records (npm run harness)
 tools/contrast-audit.mjs   colour and focus, measured in a browser
@@ -1022,6 +1027,7 @@ tools/motion-audit.mjs     whether the animations actually animate
 tools/print-audit.mjs      what paper each document actually prints on
 tools/rules-audit.mjs      firestore.rules, run against the rules engine
 firestore.rules            access control
+storage.rules              the file store: course material only
 firebase.json              hosting, caching and security headers
 ```
 
@@ -1567,6 +1573,90 @@ The room's own traffic is inside that frame and governed by its origin, so no
 Self-hosting a Jitsi means changing `ISSUER.meetingHost` in
 `src/lib/schema.js` and those three places. Everything else addresses the
 server by that one name.
+
+---
+
+## 17a. The course library and the student dashboard
+
+A class is live and then gone: the room closes, and `firestore.rules` closes
+its notes and transcript with it. That is right for a room nobody was given a
+copy of and wrong for a recording somebody paid for a course to watch. So a
+course also has a **library** — a permanent shelf the office fills, and the
+students who took the course can open afterwards from **Your courses** on the
+public site.
+
+Two kinds, because a student looking for "the class I missed on Tuesday" and
+one looking for "the slide about prompt structure" are doing different things:
+**recordings** and **notes**. Three sources:
+
+| source | what it is | costs | breaks when |
+|---|---|---|---|
+| `link` | a Drive/OneDrive/any https URL | nothing | somebody moves the folder or changes its sharing |
+| `file` | an object in this project's bucket | storage | never, from outside this app |
+| `text` | the words themselves, in the record | nothing | never |
+
+`text` exists for the notes a presenter types during a class. Making a file of
+them would need the bucket and hand a student a download where they wanted a
+page; a link would point back at a class that has closed.
+
+**Firebase Storage is switched on for this** — the first thing in this app
+that is a file rather than a record. `storage.rules` reaches across to
+Firestore for membership, allows a **list** of content types rather than a
+prefix (`application/` would wave through an executable), and caps a file at
+512 MB. Nothing personal goes in the bucket: ID card photographs stay in
+Firestore under their own admin-only rule.
+
+### How a student gets in
+
+They sign in with Google and claim the ticket ID printed on their ticket.
+Four collections, because **rules cannot run a query** — they can ask whether a
+document exists at an exact path and nothing else, so every question the rules
+must answer has to *be* a path:
+
+```
+workshops/{id}/tickets/{ticket}   was this ticket ever issued?
+workshops/{id}/claims/{ticket}    has anybody already claimed it?   (create-only)
+workshops/{id}/members/{uid}      may this account read the shelf?
+students/{uid}/courses/{id}       the student's own list — not a permission
+```
+
+Claiming is **three sequential writes, not a batch**, and that is the design:
+rules evaluate a batch against the state *before* it, so a `members` rule
+saying "only if the claim exists and is yours" could never be satisfied by a
+batch that creates both at once.
+
+**The ticket list has to be published first** — that is the button on the
+workshop page. Until it is, every claim is refused, and from the student's
+side that looks exactly like a typo. The panel says so in as many words when
+tickets are outstanding.
+
+**What a claim proves:** that a Google-verified account holds a ticket this
+course really issued, and that nobody else holds it. The claim is exclusive,
+so a student whose ticket has been taken finds out rather than quietly
+sharing it.
+
+**What it does not prove:** that the account belongs to the person the ticket
+was printed for. Ticket numbers run in sequence, so somebody holding one can
+guess another. Without a server that is as far as it goes, and it is
+meaningfully further than nothing — the theft costs an identifiable account,
+it is exclusive, and the office can revoke it with a name and an email beside
+it. Revoking frees the ticket for whoever it really belongs to.
+
+**Signing in is not a permission.** Anybody holding the public API key can
+create an account, so `request.auth != null` grants nothing anywhere in this
+file and must never start to. The rules audit proves it with a signed-in
+account that has claimed nothing: it can read no library, no register, no
+ticket index and no other student's anything.
+
+### When a class closes
+
+Its typed notes and its handouts move onto the shelf, so nothing a student saw
+live disappears on them. The IDs are derived from what is carried
+(`notes-{day}`, `handout-{id}`), not generated, so closing and reopening a
+class — a normal afternoon — rewrites the same documents instead of writing a
+second copy of everything. A handout uploaded before this app had a bucket is
+base64 inside its own document with no path to point at; those are counted and
+reported rather than shelved as a row that opens nothing.
 
 ---
 

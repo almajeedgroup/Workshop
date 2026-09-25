@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getWorkshop, getRegistrations } from '../lib/db.js';
 import { setClassOpen, replaceRoom } from '../lib/meetingdb.js';
+import { keepClassMaterial } from '../lib/librarydb.js';
+import { courseDays } from '../lib/attendance.js';
 import { setMarks } from '../lib/attendancedb.js';
 import { watchQuestions } from '../lib/classroomdb.js';
 import { attendanceRows } from '../lib/attendance.js';
@@ -126,9 +128,32 @@ export default function ClassPage() {
     try {
       const next = await setClassOpen(id, workshop, !live);
       setWorkshop(next);
-      setNotice(next.classOpen === 'Open'
-        ? 'The class is open. The join link now works.'
-        : 'The class is closed. The join link no longer lets anyone in.');
+
+      if (next.classOpen === 'Open') {
+        setNotice('The class is open. The join link now works.');
+        return;
+      }
+
+      /* Closing takes the notes and handouts away with the room — right for
+         a stranger, wrong for the people who were in it ten minutes ago. So
+         they move onto the course library on the way out, where the same
+         students keep them for good.
+
+         After the close, not before: a failure here must not leave a class
+         that is still open because its filing failed. */
+      let kept = null;
+      try {
+        const days = new Set([...courseDays(next), new Date().toISOString().slice(0, 10)]);
+        kept = await keepClassMaterial(id, [...days]);
+      } catch {
+        /* Reported below as not-kept. The class is closed either way. */
+      }
+
+      setNotice('The class is closed. The join link no longer lets anyone in.'
+        + (kept
+          ? ` ${describeKept(kept)}`
+          : ' Its notes and handouts could NOT be copied to the library — '
+            + 'add them there by hand.'));
     } catch (e) {
       setError(e.message);
     } finally {
@@ -385,4 +410,26 @@ export default function ClassPage() {
       </div>
     </main>
   );
+}
+
+/**
+ * What survived the close, in a sentence.
+ *
+ * Says nothing rather than "0 notes and 0 handouts" when a class produced
+ * neither: a count of nothing reads as a failure, and this is the normal
+ * case for a class where the presenter typed no notes.
+ */
+function describeKept({ notes = 0, handouts = 0, stuck = 0 }) {
+  const parts = [];
+  if (notes) parts.push(`${notes} day${notes === 1 ? '' : 's'} of notes`);
+  if (handouts) parts.push(`${handouts} handout${handouts === 1 ? '' : 's'}`);
+
+  const carried = parts.length
+    ? `${parts.join(' and ')} moved to the library, where students keep them.`
+    : '';
+  const left = stuck
+    ? ` ${stuck} handout${stuck === 1 ? ' was' : 's were'} uploaded before this app had a `
+      + 'file store and could not be moved — add them to the library by hand.'
+    : '';
+  return (carried + left).trim();
 }

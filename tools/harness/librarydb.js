@@ -14,6 +14,18 @@ let items = [
   { id: 'l4', ...libraryRecord({ title: 'Day two — building a chatbot', kind: 'recording', source: 'file', path: 'workshops/AIHOW26/library/c.mp4', fileName: 'day-two.mp4', bytes: 486_000_000, day: '2026-02-10' }) },
   { id: 'l5', ...libraryRecord({ title: 'Exercises', kind: 'notes', source: 'link', url: 'https://docs.google.com/spreadsheets/d/xyz/edit', day: '2026-02-10' }) },
   { id: 'l6', ...libraryRecord({ title: 'Course pack', kind: 'notes', source: 'link', url: 'https://docs.google.com/document/d/pack/edit', day: '' }) },
+  /* The third source: notes typed during the class, carried onto the shelf
+     when it closed. Kept multi-line on purpose — the numbering is the only
+     structure they have, and normal wrapping would collapse it. */
+  { id: 'notes-2026-02-09', ...libraryRecord({
+    title: 'Class notes — 9 Feb 2026', kind: 'notes', source: 'text', day: '2026-02-09',
+    text: ['What a model actually is — a function with learned numbers in it, nothing more.',
+      '',
+      'Three things to try before the break:',
+      '  1. Ask for the same thing twice and read both answers side by side.',
+      '  2. Give it a worked example and watch the shape of the answer change.',
+      '  3. Ask it for its sources, then check one.'].join('\n'),
+  }) },
 ];
 
 let n = items.length;

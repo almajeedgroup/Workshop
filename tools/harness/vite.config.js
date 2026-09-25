@@ -23,6 +23,7 @@ export default defineConfig({
       { find: /^(?:\.\.\/)+lib\/librarydb\.js$/, replacement: here('./librarydb.js') },
       { find: /^(?:\.\.\/)+lib\/studentdb\.js$/, replacement: here('./studentdb.js') },
       { find: /^(?:\.{1,2}\/)+AuthContext\.jsx$/, replacement: here('./AuthContext.jsx') },
+      { find: /^(?:\.{1,2}\/)+firebase\.js$/, replacement: here('./firebase.js') },
     ],
   },
   publicDir: here('../../public'),

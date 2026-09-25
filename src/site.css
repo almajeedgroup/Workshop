@@ -1566,6 +1566,19 @@
 .site .hdr.stuck.over-dark .nav .menu a:hover{color:var(--ink); background:var(--paper-2)}
 .site .hdr .nav .menu .menu-foot a:hover,
 .site .hdr.stuck.over-dark .nav .menu .menu-foot a:hover{color:var(--lime-ink); background:none}
+/* THE DRAWER IS THE SECOND PANEL THIS CAUGHT. Same shape as the mega-menu
+   above: it hangs off a capsule that inverts over a dark band, but it is
+   its own white sheet and keeps its own colours. Nobody had put a button
+   in it until "Your courses" arrived, and the inverted ghost rule painted
+   it white on white — 1:1, on five pages. Found by the contrast audit at
+   1079px, which is the one width where the drawer exists and the nav does
+   not. */
+.site .hdr.stuck.over-dark .drawer .btn.ghost{
+  background:transparent; color:var(--ink);
+  box-shadow:inset 0 0 0 1.5px var(--control-line);
+}
+.site .hdr.stuck.over-dark .drawer .btn.ghost:hover{background:var(--ink); color:#fff; box-shadow:none}
+.site .hdr.stuck.over-dark .drawer nav a{color:var(--ink)}
 /* A flex item will not go below its content's min-content width unless it
    is told it may, so the tagline ignored its 210px track and ran clean
    across the next column. The icon is `flex:none`; this is the half that
@@ -1694,3 +1707,13 @@
   text-decoration:underline; text-underline-offset:2px; cursor:pointer;
 }
 .site .linkish:hover{color:var(--ink)}
+
+/* Notes typed during a class, read in place. `pre-wrap` because they were
+   written as lines — a presenter's numbered list collapses into a paragraph
+   under normal wrapping, and the numbering is the only structure it has. */
+.site .shelf-text{
+  margin:6px 0 0; padding:var(--sp-4) var(--sp-5);
+  border:1px solid var(--hair); border-top:0; border-radius:0 0 14px 14px;
+  background:var(--paper-2); color:var(--ink-soft);
+  font-size:14.5px; line-height:1.7; white-space:pre-wrap; overflow-wrap:anywhere;
+}

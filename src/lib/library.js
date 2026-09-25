@@ -17,15 +17,20 @@
  * and a single undifferentiated list serves neither. Everything else here —
  * the format, the icon, the size — is presentation. This one is navigation.
  *
- * ── TWO SOURCES ──────────────────────────────────────────────────────────
+ * ── THREE SOURCES ────────────────────────────────────────────────────────
  *
  *   link    a URL somebody else hosts: Drive, OneDrive, anything https
  *   file    an object in this project's bucket, uploaded here
+ *   text    the words themselves, in the record
  *
  * Links cost nothing and break silently when somebody moves the folder.
- * Files cost storage and cannot be revoked out from under the course. Both
- * are legitimate, so the shape carries both and the reader does not care
- * which it got.
+ * Files cost storage and cannot be revoked out from under the course.
+ *
+ * `text` exists for the notes a presenter types during a class. Those are
+ * neither: making a file of them would need the bucket and give a student a
+ * download where they wanted a page, and a link would point back at a class
+ * that has closed. They are short, they are already in the database, and the
+ * honest thing is to keep them where they are.
  */
 
 /* ------------------------------------------------------------------ *
@@ -42,6 +47,7 @@
  */
 export const FORMATS = [
   { key: 'video', label: 'Video', icon: '▶' },
+  { key: 'text', label: 'Written notes', icon: '¶' },
   { key: 'audio', label: 'Audio', icon: '♪' },
   { key: 'pdf', label: 'PDF', icon: 'PDF' },
   { key: 'ppt', label: 'Slides', icon: 'PPT' },
@@ -199,24 +205,30 @@ const DAY = /^\d{4}-\d{2}-\d{2}$/;
  * rules. What comes out is exactly the shape firestore.rules names, and
  * nothing else can get through.
  */
+export const MAX_TEXT = 100000;
+
 export function libraryRecord({
-  title, kind, source, url = '', path = '', format = '',
+  title, kind, source, url = '', path = '', text = '', format = '',
   bytes = 0, day = '', fileName = '',
 }) {
-  const isFile = source === 'file';
+  const kept = source === 'file' ? 'file' : source === 'text' ? 'text' : 'link';
   const chosen = String(format || '').trim()
-    || (isFile ? formatOfFile(fileName, '') : formatOfLink(url));
+    || (kept === 'file' ? formatOfFile(fileName, '')
+      : kept === 'text' ? 'text'
+        : formatOfLink(url));
 
   return {
     title: libraryTitle(title, fileName),
     kind: kind === 'recording' ? 'recording' : 'notes',
-    source: isFile ? 'file' : 'link',
-    // Only one of these is ever set. Keeping both keys present, with the
-    // unused one empty, means the rules can name a fixed field list.
-    url: isFile ? '' : String(url || ''),
-    path: isFile ? String(path || '') : '',
+    source: kept,
+    // Only one of these three carries anything. All three keys are always
+    // present, with the unused ones empty, so the rules can name a fixed
+    // field list rather than branching on the source.
+    url: kept === 'link' ? String(url || '') : '',
+    path: kept === 'file' ? String(path || '') : '',
+    text: kept === 'text' ? String(text || '').slice(0, MAX_TEXT) : '',
     format: FORMAT_BY_KEY[chosen] ? chosen : 'link',
-    bytes: isFile ? Math.max(0, Math.round(Number(bytes) || 0)) : 0,
+    bytes: kept === 'file' ? Math.max(0, Math.round(Number(bytes) || 0)) : 0,
     day: DAY.test(String(day || '')) ? String(day) : '',
   };
 }

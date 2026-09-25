@@ -147,6 +147,10 @@ export default function StudyCoursePage() {
 function ShelfItem({ item }) {
   const [opening, setOpening] = useState(false);
   const [failed, setFailed] = useState('');
+  /* Written notes are already here, so they open in place. Sending somebody
+     to another page for two paragraphs that are in the document they are
+     looking at would be a download dressed up as a link. */
+  const [shown, setShown] = useState(false);
   const format = libraryFormat(item.format);
   const size = formatBytes(item.bytes);
   /* An unknown format is the normal case for a Drive link — Drive will not
@@ -159,6 +163,7 @@ function ShelfItem({ item }) {
   const glyph = unknown && item.kind === 'recording' ? '▶' : format.icon;
 
   const open = async (e) => {
+    if (item.source === 'text') { e.preventDefault(); setShown((o) => !o); return; }
     if (item.source !== 'file') return;          // a link opens by itself
     e.preventDefault();
     setOpening(true); setFailed('');
@@ -178,10 +183,11 @@ function ShelfItem({ item }) {
       <a
         className="shelf-link"
         href={item.source === 'link' ? item.url : '#'}
-        target="_blank"
-        rel="noopener noreferrer"
+        target={item.source === 'link' ? '_blank' : undefined}
+        rel={item.source === 'link' ? 'noopener noreferrer' : undefined}
         onClick={open}
         aria-busy={opening || undefined}
+        aria-expanded={item.source === 'text' ? shown : undefined}
       >
         <span className="shelf-ico" aria-hidden="true">{glyph}</span>
         <span className="shelf-what">
@@ -192,12 +198,18 @@ function ShelfItem({ item }) {
               unknown ? '' : format.label,
               size,
               item.source === 'link' ? 'opens elsewhere' : '',
+              item.source === 'text' ? (shown ? 'tap to close' : 'tap to read') : '',
             ].filter(Boolean).join(' · ')}
           </small>
           {failed && <em className="shelf-wrong">{failed}</em>}
         </span>
-        <span className="shelf-go" aria-hidden="true">{opening ? '…' : '↗'}</span>
+        <span className="shelf-go" aria-hidden="true">
+          {opening ? '…' : item.source === 'text' ? (shown ? '−' : '+') : '↗'}
+        </span>
       </a>
+      {item.source === 'text' && shown && (
+        <div className="shelf-text">{item.text}</div>
+      )}
     </li>
   );
 }
