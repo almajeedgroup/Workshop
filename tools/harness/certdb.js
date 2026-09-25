@@ -49,3 +49,20 @@ export async function listAllCertificates() { return []; }
 export async function allocateCertificateIds() { return []; }
 export async function issueCertificates() { return []; }
 export async function setCertificateRevoked() {}
+
+/* A certificate a student can find from their own dashboard. Keyed by the
+   ticket, because that is the only thing they know — see the AWARDS comment
+   in the real module. `RESM26` has none on purpose: a course still running
+   is the ordinary case, and the card must read properly without one. */
+export async function getAward(workshopId, ticketId) {
+  if (workshopId !== 'AIHOW26') return null;
+  return {
+    ticketId,
+    certificateId: 'AIHOW26-COM-001',
+    type: 'completion',
+    typeLabel: 'Certificate of Completion',
+    issuedOn: '2026-02-16',
+    holderKey: 'hk-demo',
+  };
+}
+export async function syncAwardIndex() { return { published: 12, withoutTicket: 1 }; }

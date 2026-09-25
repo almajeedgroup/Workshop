@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { syncTicketIndex, revokeMember } from '../lib/studentdb.js';
+import { syncAwardIndex } from '../lib/certdb.js';
 
 /**
  * Who can open this course's library, and the switch that lets them.
@@ -39,9 +40,26 @@ export default function StudentAccessPanel({ workshop, registrations, members, t
     setBusy('publish'); setError(''); setNote('');
     try {
       const { added, total } = await syncTicketIndex(workshop.id, registrations);
-      setNote(added === 0
-        ? `Already published — all ${total} tickets.`
-        : `Published ${added} more. ${total} tickets can now be claimed.`);
+      /* Certificates go out with the tickets. They are the same act from the
+         office's side — making this course's students able to find their own
+         things — and a second button nobody knew to press is how a cohort
+         ends up with certificates they cannot see. */
+      const awards = await syncAwardIndex(workshop.id).catch(() => null);
+
+      setNote([
+        added === 0
+          ? `Already published — all ${total} tickets.`
+          : `Published ${added} more. ${total} tickets can now be claimed.`,
+        awards?.published
+          ? `${awards.published} certificate${awards.published === 1 ? '' : 's'} `
+            + 'can now be found by the students they belong to.'
+          : '',
+        awards?.withoutTicket
+          ? `${awards.withoutTicket} certificate${awards.withoutTicket === 1 ? ' has' : 's have'} `
+            + 'no ticket number, so they cannot be found this way — they are still '
+            + 'valid and still verifiable by their ID.'
+          : '',
+      ].filter(Boolean).join(' '));
       await onChanged?.();
     } catch (e) {
       setError(e?.message || 'That did not work.');
@@ -95,10 +113,11 @@ export default function StudentAccessPanel({ workshop, registrations, members, t
 
       <div className="btn-row mt-3">
         <button className="primary" type="button" disabled={busy === 'publish'} onClick={publish}>
-          {busy === 'publish' ? 'Publishing…' : 'Publish the ticket list'}
+          {busy === 'publish' ? 'Publishing…' : 'Publish tickets and certificates'}
         </button>
         <span className="hint" style={{ marginLeft: 4 }}>
-          Run this again after adding people. It never removes anything.
+          Run this again after adding people or issuing certificates. It never
+          removes anything.
         </span>
       </div>
 

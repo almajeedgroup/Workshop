@@ -1665,6 +1665,35 @@ Bundling the two once meant a student whose place could not be read was told
 they were not on the course, which is both worse and untrue. Worst case they
 start from the beginning.
 
+### Finding your own certificate
+
+A certificate has always been readable **by its ID** — that is what lets an
+employer check one. The problem is different: a student does not *know* their
+ID. It is printed on a sheet they may never have been handed, and
+`certificates` cannot be queried by anybody but the office.
+
+So there is a pointer keyed by the one thing they do know, their ticket:
+
+```
+workshops/{id}/awards/{ticketId}   { certificateId, typeLabel, issuedOn, holderKey }
+```
+
+and **exactly one account may read it** — the one whose membership names that
+ticket. Not every member of the course: that would hand the whole cohort each
+other's certificate IDs, and with them each other's names and awards. The rule
+does a `get` on the reader's own membership to check.
+
+Issuing writes the pointer, so new certificates need no second step. Older
+ones are published by **Publish tickets and certificates** — one button, because
+two is how a cohort ends up with certificates none of them can see. A
+certificate issued to somebody with no ticket number cannot be found this way;
+it is still valid and still verifiable by its ID, and the office is told how
+many.
+
+Both student pages **link** to `/c/{id}` rather than redrawing the certificate.
+That page already prints properly, and a second rendering would be a second
+thing to keep true.
+
 ### Two kinds of course
 
 Access is decided **per course**, and the default is unchanged:

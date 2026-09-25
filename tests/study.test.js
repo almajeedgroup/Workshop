@@ -180,3 +180,68 @@ test('progress is the student\'s alone — the office cannot read it', () => {
     'progress is a reading habit, not attendance; nothing in the app needs it');
   assert.match(own, /allow read, delete: if mine\(\);/);
 });
+
+/* ---- finding your own certificate --------------------------------- */
+
+test('a certificate is found by the one thing a student knows: their ticket', () => {
+  // A certificate is readable by its ID and always has been — that is what
+  // lets an employer check one. The problem is that a student does not KNOW
+  // their ID: it is printed on a sheet they may never have been handed, and
+  // `certificates` cannot be queried by anybody but the office.
+  const db = read('../src/lib/certdb.js');
+  assert.match(db, /const AWARDS = 'awards';/);
+  assert.match(db, /export async function getAward\(workshopId, ticketId\)/);
+  // The SAME normalisation as the register and the library claim.
+  assert.match(db, /import \{ ticketKey as ticketDocId \} from '\.\/attendance\.js'/);
+});
+
+test('exactly one account can read a pointer, and it is the holder', () => {
+  // Not every member of the course — that would hand the whole cohort each
+  // other's certificate IDs, and with them each other's names and awards.
+  const rules = read('../firestore.rules');
+  const block = rules.slice(rules.indexOf('match /awards/{ticketId}'));
+  const own = block.slice(0, block.indexOf('match /claims'));
+  assert.match(own, /\.data\.ticketId == ticketId/);
+  assert.match(own, /allow write: if isAdmin\(\);/);
+  assert.doesNotMatch(own, /allow read: if isAdmin\(\)\s*\|\| isMember\(workshopId\);/);
+});
+
+test('issuing writes the pointer, so new certificates need no second step', () => {
+  const db = read('../src/lib/certdb.js');
+  const issue = db.slice(db.indexOf('export async function issueCertificates'));
+  assert.match(issue.slice(0, issue.indexOf('export async function setCertificateRevoked')),
+    /AWARDS, ticketDocId\(rec\.ticketId\)/);
+});
+
+test('and older certificates can be published without re-issuing them', () => {
+  const db = read('../src/lib/certdb.js');
+  assert.match(db, /export async function syncAwardIndex\(workshopId\)/);
+  // A certificate issued to somebody with no ticket cannot be found this
+  // way. It is still valid, and the office is told how many.
+  assert.match(db, /withoutTicket \+= 1; continue;/);
+  const panel = read('../src/components/StudentAccessPanel.jsx');
+  assert.match(panel, /syncAwardIndex\(workshop\.id\)/);
+  assert.match(panel, /no ticket number, so they cannot be found this way/);
+});
+
+test('one button does both, because two is how a cohort loses its certificates', () => {
+  const panel = read('../src/components/StudentAccessPanel.jsx');
+  assert.match(panel, /Publish tickets and certificates/);
+  assert.match(panel, /a second button nobody knew to press/);
+});
+
+test('the pages link to the certificate rather than redrawing it', () => {
+  // /c/:id already prints properly. A second rendering would be a second
+  // thing to keep true.
+  const course = read('../src/pages/site/StudyCoursePage.jsx');
+  assert.match(course, /to=\{`\/c\/\$\{award\.certificateId\}`\}/);
+  const dash = read('../src/pages/site/StudyPage.jsx');
+  assert.match(dash, /course-award/);
+});
+
+test('only a ticket-holder is asked for one', () => {
+  // Somebody reading an open course they never took has no certificate, and
+  // asking would be refused.
+  const course = read('../src/pages/site/StudyCoursePage.jsx');
+  assert.match(course, /if \(member\?\.ticketId\) \{/);
+});

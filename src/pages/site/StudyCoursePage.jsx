@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../../AuthContext.jsx';
 import { getPublicWorkshop } from '../../lib/publicdb.js';
 import { getMembership } from '../../lib/studentdb.js';
+import { getAward } from '../../lib/certdb.js';
 import { listLibrary, libraryFileUrl } from '../../lib/librarydb.js';
 import { getProgress, markOpened, setDone } from '../../lib/progressdb.js';
 import {
@@ -10,7 +11,7 @@ import {
   embeddableUrl, viewerKind, libraryProgress, nextUp, sortLibrary,
 } from '../../lib/library.js';
 import { formatDate, formatDateRange } from '../../lib/tickets.js';
-import { IconArrow, IconCheck } from '../../components/site/Icons.jsx';
+import { IconArrow, IconCheck, IconAward } from '../../components/site/Icons.jsx';
 
 /**
  * One course, as a place to actually study rather than a list of links.
@@ -40,6 +41,7 @@ export default function StudyCoursePage() {
   const [items, setItems] = useState([]);
   const [progress, setProgress] = useState({ done: {}, last: '' });
   const [current, setCurrent] = useState(null);
+  const [award, setAward] = useState(null);
 
   useEffect(() => {
     if (loading) return undefined;
@@ -60,6 +62,14 @@ export default function StudyCoursePage() {
       const anyone = ws?.libraryOpen === true;
       setOpenToAll(anyone);
       if (!member && !anyone) { setState('denied'); return; }
+
+      /* Only a ticket-holder has a certificate to find. Somebody reading an
+         open course they never took has none, and asking would be refused. */
+      if (member?.ticketId) {
+        getAward(workshopId, member.ticketId)
+          .then((a) => { if (live) setAward(a); })
+          .catch(() => {});
+      }
 
       let shelf;
       try {
@@ -181,6 +191,8 @@ export default function StudyCoursePage() {
             </div>
           )}
         </header>
+
+        {award && <Award award={award} />}
 
         {counts.total === 0 ? (
           <div className="panel mt-6">
@@ -357,5 +369,30 @@ function Viewer({ item, done, onDone }) {
         </div>
       </div>
     </>
+  );
+}
+
+/**
+ * The certificate for this course, if one was awarded.
+ *
+ * At the top, because it is the thing the course was FOR — and because a
+ * student who has one has usually come back for exactly this. It links to
+ * the certificate itself rather than trying to draw one: that page already
+ * prints properly, and a second rendering would be a second thing to keep
+ * true.
+ */
+function Award({ award }) {
+  return (
+    <Link className="award mt-5" to={`/c/${award.certificateId}`}>
+      <span className="award-ico" aria-hidden="true"><IconAward /></span>
+      <span className="award-what">
+        <b>{award.typeLabel || 'Your certificate'}</b>
+        <em>
+          {award.issuedOn ? `Awarded ${formatDate(award.issuedOn)} · ` : ''}
+          <span className="mono-id">{award.certificateId}</span>
+        </em>
+      </span>
+      <span className="btn sm" aria-hidden="true">Open it <IconArrow /></span>
+    </Link>
   );
 }

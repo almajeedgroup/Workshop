@@ -5,10 +5,11 @@ import { getPublicWorkshop } from '../../lib/publicdb.js';
 import { listMyCourses, claimTicket } from '../../lib/studentdb.js';
 import { listOpenLibraries, listLibrary } from '../../lib/librarydb.js';
 import { getAllProgress } from '../../lib/progressdb.js';
+import { getAward } from '../../lib/certdb.js';
 import { libraryProgress, nextUp, libraryFormat } from '../../lib/library.js';
 import { formatDateRange } from '../../lib/tickets.js';
 import { ISSUER } from '../../lib/schema.js';
-import { IconArrow, IconBook, IconShield } from '../../components/site/Icons.jsx';
+import { IconArrow, IconBook, IconShield, IconAward } from '../../components/site/Icons.jsx';
 
 /**
  * A student's own shelf: every course they took, and what is on it.
@@ -87,6 +88,9 @@ export default function StudyPage() {
       ...c,
       items: await listLibrary(c.workshopId).catch(() => []),
       progress: seen[c.workshopId] || { done: {}, last: '', at: 0 },
+      // Theirs alone, and only where they hold a ticket — see the rule on
+      // workshops/{id}/awards.
+      award: await getAward(c.workshopId, c.ticketId).catch(() => null),
     })));
     setCourses(shelves);
 
@@ -404,6 +408,11 @@ export default function StudyPage() {
                           opens, and the student can tell the office which
                           one looks wrong. */}
                       <em>{c.workshop ? formatDateRange(c.workshop) : `Course ${c.workshopId}`}</em>
+                      {c.award && (
+                        <span className="course-award">
+                          <IconAward /> {c.award.typeLabel || 'Certificate awarded'}
+                        </span>
+                      )}
                       {bar.total > 0 && (
                         <>
                           <span className="pbar sm" role="img"

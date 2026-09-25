@@ -315,6 +315,47 @@ await allowed('a student may write their own course list',
 await refused('and forging a row in it still opens nothing',
   () => getDocs(libraryCol('OPEN26')));
 
+/* ---- finding your own certificate --------------------------------- */
+
+/* Ana holds OPEN26014 and has a membership; Ben holds nothing on this
+   course. The pointer must be readable by her and by nobody else — it
+   carries a certificate ID, and with it a name and an award. */
+await seed('workshops/OPEN26/awards/OPEN26014', {
+  certificateId: { stringValue: 'AIHOW26-COM-001' },
+  type: { stringValue: 'completion' },
+  holderKey: { stringValue: 'hk-ana' },
+});
+await seed('workshops/OPEN26/awards/OPEN26015', {
+  certificateId: { stringValue: 'AIHOW26-COM-002' },
+  type: { stringValue: 'completion' },
+  holderKey: { stringValue: 'hk-someone-else' },
+});
+await seed('certificates/AIHOW26-COM-001', {
+  certificateId: { stringValue: 'AIHOW26-COM-001' },
+  recipientName: { stringValue: 'Ana' },
+});
+
+await as('ana');
+await allowed('a student reads the pointer to their OWN certificate',
+  () => getDoc(doc(db, 'workshops', 'OPEN26', 'awards', 'OPEN26014')));
+await refused("but NOT a classmate's, even on a course they are both on",
+  () => getDoc(doc(db, 'workshops', 'OPEN26', 'awards', 'OPEN26015')));
+await refused('nor the whole course\u2019s awards at once',
+  () => getDocs(collection(db, 'workshops', 'OPEN26', 'awards')));
+await refused('nor write a pointer to somebody else\u2019s certificate',
+  () => setDoc(doc(db, 'workshops', 'OPEN26', 'awards', 'OPEN26014'),
+    { certificateId: 'FORGED-001' }));
+await allowed('and the certificate itself is public by ID, as it always was',
+  () => getDoc(doc(db, 'certificates', 'AIHOW26-COM-001')));
+
+await as('ben');
+await refused('an account with no membership reads no pointer at all',
+  () => getDoc(doc(db, 'workshops', 'OPEN26', 'awards', 'OPEN26014')));
+
+await as(null);
+await refused('and neither does a stranger',
+  () => getDoc(doc(db, 'workshops', 'OPEN26', 'awards', 'OPEN26014')));
+
 /* ---- what a student has watched ----------------------------------- */
 
 const progressDoc = (uid, w) => doc(db, 'students', uid, 'progress', w);

@@ -290,6 +290,28 @@ service cloud.firestore {
         allow read, write: if isAdmin();
       }
 
+      // ---- Where a student finds their own certificate ---------------
+      //
+      // A certificate is readable by its ID and always has been — that is
+      // what lets an employer check one. This solves a different problem: a
+      // student does not KNOW their ID. It is printed on a sheet they may
+      // never have been handed, and `certificates` cannot be queried by
+      // anybody but the office.
+      //
+      // So the pointer is keyed by the one thing they do know, their ticket,
+      // and read by EXACTLY ONE ACCOUNT: the one whose membership names that
+      // ticket. Not every member of the course — that would hand the whole
+      // cohort each other's certificate IDs, and with them each other's
+      // names and awards. The `get` below is what makes it the holder.
+      match /awards/{ticketId} {
+        allow read: if isAdmin()
+          || (request.auth != null
+              && exists(/databases/$(database)/documents/workshops/$(workshopId)/members/$(request.auth.uid))
+              && get(/databases/$(database)/documents/workshops/$(workshopId)/members/$(request.auth.uid))
+                   .data.ticketId == ticketId);
+        allow write: if isAdmin();
+      }
+
       // The lock. One document per ticket, holding the account that claimed
       // it, and CREATE ONLY — so the first claim wins and every later one is
       // refused. That is what makes a ticket exclusive: a student whose
