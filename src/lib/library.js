@@ -159,6 +159,70 @@ export function formatOfLink(url) {
 }
 
 /* ------------------------------------------------------------------ *
+ * Tidying a shared link
+ * ------------------------------------------------------------------ */
+
+/**
+ * The link as a STUDENT should receive it.
+ *
+ * A link pasted out of the address bar is the link the office was using,
+ * which is not the same thing. Two problems, both of which land on the
+ * student rather than on the person who pasted it:
+ *
+ *   1. `/edit` — copied from an open Doc, Sheet or Slides. A reader with
+ *      view-only access following it gets the editor in a degraded state,
+ *      or a permission wall, depending on the file. `/preview` is the
+ *      read-only view and is what a handout wants.
+ *   2. `?usp=drive_link`, `?usp=sharing` — Drive's own tracking, and
+ *      `#slide=id.p` or `#gid=0`, which pins the reader to whatever the
+ *      office happened to be looking at.
+ *
+ * What it does NOT do is fix sharing. Nothing in a browser can tell whether
+ * a Drive file is readable by the class — that needs the office to set
+ * "Anyone with the link" — so this tidies the address and the panel says
+ * the rest out loud.
+ *
+ * Anything that is not a Google link comes back with only its whitespace
+ * removed. Rewriting somebody else's URLs on a guess is how a working link
+ * becomes a broken one.
+ */
+export function tidyShareLink(url) {
+  const raw = String(url || '').trim();
+  if (!raw) return '';
+
+  let u = null;
+  try { u = new URL(raw); } catch { return raw; }
+  if (u.protocol !== 'https:' && u.protocol !== 'http:') return raw;
+
+  const host = u.hostname.toLowerCase();
+  const isGoogle = host.endsWith('google.com') || host.endsWith('googleusercontent.com');
+  if (!isGoogle) return raw;
+
+  // `drive.google.com/open?id=FILEID` — the old share format, still handed
+  // out by some clients, and it 302s rather than opening anything.
+  if (u.pathname === '/open' && u.searchParams.get('id')) {
+    return `https://drive.google.com/file/d/${u.searchParams.get('id')}/view`;
+  }
+
+  // The editing URL of a Doc, Sheet or Slides becomes its reading URL.
+  const editor = u.pathname.match(
+    /^\/(document|presentation|spreadsheets)\/d\/([^/]+)/,
+  );
+  if (editor) {
+    return `https://docs.google.com/${editor[1]}/d/${editor[2]}/preview`;
+  }
+
+  const file = u.pathname.match(/^\/file\/d\/([^/]+)/);
+  if (file) return `https://drive.google.com/file/d/${file[1]}/view`;
+
+  // A Google link this does not recognise keeps its path and loses only the
+  // tracking, because guessing further would be guessing.
+  u.searchParams.delete('usp');
+  u.hash = '';
+  return u.toString();
+}
+
+/* ------------------------------------------------------------------ *
  * Size
  * ------------------------------------------------------------------ */
 
@@ -224,7 +288,9 @@ export function libraryRecord({
     // Only one of these three carries anything. All three keys are always
     // present, with the unused ones empty, so the rules can name a fixed
     // field list rather than branching on the source.
-    url: kept === 'link' ? String(url || '') : '',
+    // Tidied here rather than at the form, so EVERY path gets it: the
+    // panel, and the handouts carried over when a class closes.
+    url: kept === 'link' ? tidyShareLink(url) : '',
     path: kept === 'file' ? String(path || '') : '',
     text: kept === 'text' ? String(text || '').slice(0, MAX_TEXT) : '',
     format: FORMAT_BY_KEY[chosen] ? chosen : 'link',

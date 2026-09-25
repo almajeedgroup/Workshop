@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { courseDays } from '../lib/attendance.js';
 import { formatDate } from '../lib/tickets.js';
 import {
   libraryByDay, libraryCounts, libraryFormat, formatBytes,
-  MAX_FILE_BYTES, LIBRARY_KINDS,
+  MAX_FILE_BYTES, LIBRARY_KINDS, tidyShareLink,
 } from '../lib/library.js';
 import { addLibraryLink, uploadLibraryFile, removeLibraryItem } from '../lib/librarydb.js';
 import { canStoreFiles } from '../firebase.js';
@@ -48,7 +48,11 @@ export default function LibraryPanel({ workshop, items, onChanged }) {
   // CORS error that names nothing. Say so up front instead.
   const canUpload = canStoreFiles;
 
-  useEffect(() => { if (!canUpload && source === 'file') setSource('link'); }, [canUpload, source]);
+  /* No effect snapping `source` back to 'link' when there is no bucket. One
+     used to, and it made the Upload button look broken: it flipped the
+     choice back before the sentence explaining why could render, so the
+     click did nothing and said nothing. The choice is allowed; it is the
+     SAVE that is not. */
 
   const reset = () => {
     setTitle(''); setUrl(''); setFile(null); setProgress(-1);
@@ -62,6 +66,10 @@ export default function LibraryPanel({ workshop, items, onChanged }) {
     try {
       if (source === 'link') {
         if (!url.trim()) { setError('Paste the link first.'); return; }
+        if (!/^https?:\/\//i.test(url.trim())) {
+          setError('That is not a link. It has to start with https://');
+          return;
+        }
         setProgress(0);
         await addLibraryLink(workshop.id, { title, kind, day, url: url.trim() });
       } else {
@@ -96,6 +104,10 @@ export default function LibraryPanel({ workshop, items, onChanged }) {
   };
 
   const uploading = progress >= 0 && source === 'file';
+  /* Shown before saving rather than after, so the office sees the address a
+     student will get while they can still object to it. */
+  const cleaned = tidyShareLink(url);
+  const tidied = url.trim() && cleaned !== url.trim() ? cleaned : '';
 
   return (
     <div className="panel no-print">
@@ -130,24 +142,28 @@ export default function LibraryPanel({ workshop, items, onChanged }) {
             type="button"
             className={source === 'file' ? 'primary' : undefined}
             aria-pressed={source === 'file'}
-            disabled={!canUpload}
             onClick={() => { setSource('file'); setError(''); }}
-            title={canUpload ? undefined : 'No file store is configured for this project.'}
+            title={canUpload ? undefined : 'Needs a Storage bucket, which needs a paid plan.'}
           >
             Upload a file
           </button>
           <span className="hint" style={{ marginLeft: 4 }}>
             {source === 'link'
-              ? 'Free, and stops working if the Drive folder moves or its sharing changes.'
-              : `Kept here for good. Up to ${formatBytes(MAX_FILE_BYTES)} each.`}
+              ? 'Free. Stops working if the file moves or its sharing changes.'
+              : canUpload
+                ? `Kept here for good. Up to ${formatBytes(MAX_FILE_BYTES)} each.`
+                : 'Not available on this plan.'}
           </span>
         </div>
 
-        {!canUpload && (
-          <div className="notice warn mt-3">
-            No file store is configured, so only links can be added. Turn on
-            Storage for this project in the Firebase console and set
-            <code> VITE_FIREBASE_STORAGE_BUCKET</code>.
+        {/* A project on the free plan has no bucket, and that is a
+            decision rather than a fault — so this states how the library
+            works here instead of reading like something is broken. */}
+        {!canUpload && source === 'file' && (
+          <div className="notice mt-3">
+            This project keeps its library as links. Uploading files needs a
+            Firebase Storage bucket, which needs a paid plan — everything else
+            about the library works exactly the same either way.
           </div>
         )}
 
@@ -188,7 +204,19 @@ export default function LibraryPanel({ workshop, items, onChanged }) {
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://drive.google.com/…"
                 inputMode="url"
+                aria-describedby="lib-url-hint"
               />
+              <span className="hint" id="lib-url-hint">
+                In Drive: <b>Share → General access → Anyone with the link →
+                Viewer</b>. Left on <b>Restricted</b>, students get a
+                &ldquo;Request access&rdquo; page instead of the file — which is
+                the one thing that goes wrong here.
+              </span>
+              {tidied && (
+                <span className="hint" style={{ color: 'var(--lime-ink)' }}>
+                  Will be saved as a read-only link: <code>{tidied}</code>
+                </span>
+              )}
             </div>
           ) : (
             <div className="field">
@@ -220,7 +248,11 @@ export default function LibraryPanel({ workshop, items, onChanged }) {
         )}
 
         <div className="btn-row mt-3">
-          <button className="primary" type="submit" disabled={uploading}>
+          <button
+            className="primary"
+            type="submit"
+            disabled={uploading || (source === 'file' && !canUpload)}
+          >
             {uploading ? 'Uploading…' : 'Add to the library'}
           </button>
         </div>

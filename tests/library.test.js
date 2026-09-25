@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import {
   FORMATS, LIBRARY_KINDS, MAX_FILE_BYTES, MAX_TEXT, libraryFormat,
   extensionOf, formatOfFile, formatOfLink, formatBytes,
-  libraryRecord, libraryTitle, libraryFilePath,
+  libraryRecord, libraryTitle, libraryFilePath, tidyShareLink,
   sortLibrary, libraryByDay, libraryCounts,
 } from '../src/lib/library.js';
 
@@ -91,6 +91,63 @@ test('nonsense is a link rather than a throw', () => {
   assert.equal(formatOfLink(null), 'link');
 });
 
+/* ---- tidying a shared link --------------------------------------- */
+
+test('an editing link becomes a reading link', () => {
+  // Pasted out of the address bar of an open document. A student with
+  // view-only access following /edit gets the editor in a degraded state or
+  // a permission wall, depending on the file.
+  assert.equal(tidyShareLink('https://docs.google.com/presentation/d/ABC/edit#slide=id.p'),
+    'https://docs.google.com/presentation/d/ABC/preview');
+  assert.equal(tidyShareLink('https://docs.google.com/document/d/XYZ/edit?usp=sharing'),
+    'https://docs.google.com/document/d/XYZ/preview');
+  assert.equal(tidyShareLink('https://docs.google.com/spreadsheets/d/S1/edit#gid=0'),
+    'https://docs.google.com/spreadsheets/d/S1/preview');
+});
+
+test("Drive's own tracking and the office's scroll position are dropped", () => {
+  assert.equal(tidyShareLink('https://drive.google.com/file/d/F1/view?usp=drive_link'),
+    'https://drive.google.com/file/d/F1/view');
+});
+
+test('the old open?id= share format is turned into one that opens', () => {
+  assert.equal(tidyShareLink('https://drive.google.com/open?id=F2'),
+    'https://drive.google.com/file/d/F2/view');
+});
+
+test('a link that is not Google is left completely alone', () => {
+  // Rewriting somebody else's URLs on a guess is how a working link becomes
+  // a broken one.
+  for (const u of [
+    'https://www.youtube.com/watch?v=abc',
+    'https://example.org/a.pdf?x=1#page=2',
+    'https://onedrive.live.com/edit?id=1',
+  ]) assert.equal(tidyShareLink(u), u, u);
+});
+
+test('nonsense comes back as it went in, not as a throw', () => {
+  assert.equal(tidyShareLink('not a url'), 'not a url');
+  assert.equal(tidyShareLink(''), '');
+  assert.equal(tidyShareLink(null), '');
+  assert.equal(tidyShareLink('javascript:alert(1)'), 'javascript:alert(1)');
+});
+
+test('every stored link is tidied, whatever path it arrived by', () => {
+  // In the record builder rather than the form, so the handouts carried over
+  // when a class closes get it too.
+  const r = libraryRecord({
+    title: 'Slides', kind: 'notes', source: 'link',
+    url: 'https://docs.google.com/presentation/d/ABC/edit?usp=sharing',
+  });
+  assert.equal(r.url, 'https://docs.google.com/presentation/d/ABC/preview');
+});
+
+test('tidying does not change what format a link is read as', () => {
+  const r = libraryRecord({ title: 'x', kind: 'notes', source: 'link',
+    url: 'https://docs.google.com/spreadsheets/d/S1/edit' });
+  assert.equal(r.format, 'xls');
+});
+
 /* ---- sizes ------------------------------------------------------- */
 
 test('a size is rounded to something a person can act on', () => {
@@ -103,6 +160,31 @@ test('a size is rounded to something a person can act on', () => {
 
 test('an unknown size says nothing rather than claiming to be nothing', () => {
   for (const v of [0, -1, NaN, null, undefined, 'big']) assert.equal(formatBytes(v), '');
+});
+
+test('the panel says the one thing that actually breaks a Drive link', () => {
+  // Sharing left on Restricted gives students a "Request access" page. No
+  // browser can detect that, so the panel has to say it.
+  const panel = readFileSync(new URL('../src/components/LibraryPanel.jsx', import.meta.url), 'utf8');
+  assert.match(panel, /Anyone with the link/);
+  assert.match(panel, /Request access/);
+});
+
+test('uploads are offered only when there is somewhere to put them', () => {
+  const panel = readFileSync(new URL('../src/components/LibraryPanel.jsx', import.meta.url), 'utf8');
+  assert.match(panel, /canStoreFiles/);
+  // And a project without a bucket is told it is a plan, not a fault.
+  assert.match(panel, /needs a paid plan|needs a Firebase Storage bucket/);
+});
+
+test('firebase.json does NOT deploy storage rules, because there is no bucket', () => {
+  // `npm run deploy` is a FULL deploy. A storage target on a project with no
+  // bucket fails the whole thing, not just that part.
+  const cfg = JSON.parse(readFileSync(new URL('../firebase.json', import.meta.url), 'utf8'));
+  assert.equal(cfg.storage, undefined);
+  const rules = readFileSync(new URL('../storage.rules', import.meta.url), 'utf8');
+  assert.match(rules, /NOT CURRENTLY DEPLOYED/, 'and the file says so, so it is not a mystery');
+  assert.match(rules, /TO SWITCH UPLOADS ON/, 'with the steps to change that');
 });
 
 test('the cap matches the one the storage rules enforce', () => {

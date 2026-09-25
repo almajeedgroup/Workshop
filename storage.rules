@@ -1,6 +1,30 @@
 rules_version = '2';
 
 /**
+ * The file store — WRITTEN, TESTED, AND NOT CURRENTLY DEPLOYED.
+ *
+ * This project runs on the free Spark plan, and since late 2024 Google
+ * requires Blaze billing to create a Storage bucket. So the course library
+ * holds LINKS rather than uploaded files, and there is no bucket for these
+ * rules to govern.
+ *
+ * They are kept because the decision is about a billing plan, not about the
+ * design, and it is a decision that can change. `firebase.json` deliberately
+ * does NOT list a `storage` target: `npm run deploy` is a full deploy, and
+ * deploying storage rules against a project with no bucket fails the whole
+ * deploy, not just this part.
+ *
+ * TO SWITCH UPLOADS ON, later:
+ *   1. Console → Build → Storage → Get started (asks for Blaze; the
+ *      location is permanent, so pick asia-south1 for Bengaluru).
+ *   2. Put the bucket name in VITE_FIREBASE_STORAGE_BUCKET.
+ *   3. Add  "storage": { "rules": "storage.rules" }  to firebase.json.
+ *   4. firebase deploy
+ * The app needs no code change: it already offers uploads when, and only
+ * when, a bucket name is configured.
+ *
+ * ── WHAT THESE RULES SAY ─────────────────────────────────────────────────
+ *
  * The file store.
  *
  * This app kept everything in Firestore for a long time, and said so: a

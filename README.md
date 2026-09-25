@@ -1027,7 +1027,7 @@ tools/motion-audit.mjs     whether the animations actually animate
 tools/print-audit.mjs      what paper each document actually prints on
 tools/rules-audit.mjs      firestore.rules, run against the rules engine
 firestore.rules            access control
-storage.rules              the file store: course material only
+storage.rules              the file store: written, not deployed (see §17a)
 firebase.json              hosting, caching and security headers
 ```
 
@@ -1591,20 +1591,41 @@ one looking for "the slide about prompt structure" are doing different things:
 
 | source | what it is | costs | breaks when |
 |---|---|---|---|
-| `link` | a Drive/OneDrive/any https URL | nothing | somebody moves the folder or changes its sharing |
-| `file` | an object in this project's bucket | storage | never, from outside this app |
+| `link` | a Drive/OneDrive/any https URL | nothing | somebody moves the file or changes its sharing |
+| `file` | an object in a Storage bucket | a paid plan | never, from outside this app |
 | `text` | the words themselves, in the record | nothing | never |
 
 `text` exists for the notes a presenter types during a class. Making a file of
-them would need the bucket and hand a student a download where they wanted a
+them would need a bucket and hand a student a download where they wanted a
 page; a link would point back at a class that has closed.
 
-**Firebase Storage is switched on for this** — the first thing in this app
-that is a file rather than a record. `storage.rules` reaches across to
-Firestore for membership, allows a **list** of content types rather than a
-prefix (`application/` would wave through an executable), and caps a file at
-512 MB. Nothing personal goes in the bucket: ID card photographs stay in
-Firestore under their own admin-only rule.
+### This project runs on links
+
+**`file` is built and not in use.** Since late 2024 Google requires Blaze
+billing to create a Storage bucket, and this project is on the free Spark
+plan. Everything else about the library works identically — the panel says so
+plainly rather than reading like a misconfiguration, and offers the choice so
+the reason is visible instead of the button simply being dead.
+
+`firebase.json` deliberately has **no `storage` target**. `npm run deploy` is
+a full deploy, and deploying storage rules against a project with no bucket
+fails the *whole* deploy. `storage.rules` is written and carries its own
+four-step note on switching uploads on later; the app needs no code change,
+because it offers uploads when, and only when, a bucket name is configured.
+
+**The one thing that actually goes wrong with links** is Drive sharing left on
+*Restricted*, which gives students a "Request access" page instead of the
+file. No browser can detect that, so the panel says it next to the field.
+
+What the app *can* fix, it does: `tidyShareLink()` turns an `/edit` URL into a
+`/preview` one — a reader with view-only access following `/edit` gets the
+editor in a degraded state or a permission wall — drops `?usp=drive_link` and
+the `#slide=` the office happened to be on, and converts the old
+`open?id=` format. It runs inside `libraryRecord`, so handouts carried over
+when a class closes get it too, and the panel shows the rewritten address
+before saving so the office can object. Non-Google links are left completely
+alone: rewriting somebody else's URL on a guess is how a working link becomes
+a broken one.
 
 ### How a student gets in
 
