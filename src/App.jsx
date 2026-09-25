@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Routes, Route, NavLink, Navigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext.jsx';
 import { isConfigured } from './firebase.js';
+import { BOOTSTRAP_ADMIN_EMAIL } from './lib/schema.js';
 import { brandTitle, brandLockup } from './lib/brand.js';
 
 import Sidebar from './components/Sidebar.jsx';
@@ -97,33 +98,67 @@ function SetupNotice() {
   );
 }
 
-/** Signed in AND on the /admins allow-list. */
-function Protected({ children }) {
+/**
+ * Signed in AND on the /admins allow-list.
+ *
+ * The refusal branches on WHICH account, because the two cases have nothing
+ * to do with each other and only one of them is a fault.
+ *
+ * A browser holds ONE signed-in account at a time. Signing in on the student
+ * page therefore signs you in here too — as that student — and the admin
+ * area correctly refuses. This screen used to answer that by asking for a
+ * Firestore document to be hand-created, which is alarming, irrelevant, and
+ * sends somebody into the console to fix a session.
+ */
+export function Protected({ children }) {
   const { user, isAdmin, loading, logout } = useAuth();
   if (loading) return <main><p className="count">Loading…</p></main>;
   if (!user) return <Navigate to="/login" replace />;
+
   if (!isAdmin) {
+    const owner = (user.email || '').toLowerCase() === BOOTSTRAP_ADMIN_EMAIL.toLowerCase();
     return (
       <main>
         <div className="panel">
-          <h2>Not authorised</h2>
+          <h2>{owner ? 'The owner account could not add itself' : 'This is not an administrator account'}</h2>
           <p>
-            You are signed in as <strong>{user.email}</strong>, but this account has not
-            been added to the administrator list.
+            You are signed in as <strong>{user.email || 'an account with no address'}</strong>.
           </p>
-          <p className="hint">
-            An existing administrator must create a document with ID <code>{user.uid}</code>{' '}
-            in the <code>admins</code> collection in Firestore.
-          </p>
-          <p className="hint">
-            If this should be the owner account, it failed to add itself to the list.
-            Check that the address matches <code>BOOTSTRAP_ADMIN_EMAIL</code> in{' '}
-            <code>src/lib/schema.js</code> and the same address in{' '}
-            <code>firestore.rules</code>, that the rules are deployed, then sign out and
-            in again.
-          </p>
+
+          {owner ? (
+            <>
+              <p className="hint">
+                This IS the owner address, so it should have added itself to the
+                allow-list on sign-in and the write was refused. In order of
+                likelihood: the rules are not deployed yet
+                (<code>firebase deploy --only firestore:rules</code>); or the address
+                in <code>firestore.rules</code> no longer matches{' '}
+                <code>BOOTSTRAP_ADMIN_EMAIL</code> in <code>src/lib/schema.js</code>.
+              </p>
+              <p className="hint">
+                Failing both, an existing administrator can create a document with ID{' '}
+                <code>{user.uid}</code> in the <code>admins</code> collection.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="hint">
+                Nothing is wrong with this account — it simply is not an
+                administrator. A browser holds one signed-in account at a time, so
+                if you signed in as a student, that is the account the whole site is
+                using, this part included.
+              </p>
+              <p className="hint">
+                Students: your recordings and notes are under{' '}
+                <Link to="/study">Your courses</Link>. Administrators: sign out and
+                back in with the administrator address.
+              </p>
+            </>
+          )}
+
           <div className="btn-row mt-4">
-            <button onClick={logout}>Sign out</button>
+            <button className="primary" onClick={logout}>Sign out</button>
+            {!owner && <Link className="btn" to="/study">Your courses</Link>}
           </div>
         </div>
       </main>

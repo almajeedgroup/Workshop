@@ -7,7 +7,15 @@
  *
  *   ?who=out       signed out — the sign-in door
  *   ?who=student   a signed-in student
+ *   ?who=new       a signed-in student holding no ticket at all
+ *   ?who=stuck     the OWNER address, not on the allow-list — the case where
+ *                  the bootstrap write was refused, which looks completely
+ *                  different and is the only one that IS a fault
  *   (anything else) the administrator
+ *
+ * A student identity is ALSO how the admin area's refusal gets looked at:
+ * a browser holds one account, so signing in as a student is exactly what
+ * puts a real person on that screen.
  */
 import { createContext, useContext, useState } from 'react';
 
@@ -21,11 +29,14 @@ export const useAuth = () => useContext(Ctx);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(
-    WHO === 'out' ? null : (WHO === 'student' || WHO === 'new') ? STUDENT : ADMIN,
+    WHO === 'out' ? null
+      : (WHO === 'student' || WHO === 'new') ? STUDENT
+        : WHO === 'stuck' ? { ...ADMIN, uid: 'gEulxFxyA6VOk41cSdUVcnDm4Ny1' }
+          : ADMIN,
   );
   const value = {
     user,
-    isAdmin: user?.uid === ADMIN.uid,
+    isAdmin: WHO !== 'stuck' && user?.uid === ADMIN.uid,
     loading: false,
     login: async () => {},
     loginWithGoogle: async () => {},

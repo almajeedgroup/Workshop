@@ -76,6 +76,10 @@ const ADMIN_ROUTES = [
      different controls — and auditing only the signed-in one measured the
      half nobody who is locked out ever sees. */
   '/study#out', '/study', '/study#new', '/study/AIHOW26', '/study/INNO25#new',
+  /* The admin area's two refusals. Real people land on these — a browser
+     holds one account, so signing in as a student puts you on the first —
+     and neither had ever been measured. */
+  '/not-admin#student', '/not-admin#stuck',
 ];
 
 const ADMIN = process.env.ADMIN || '';
@@ -87,9 +91,9 @@ const PATHS = ADMIN
       /* `#new` is the OUTER student — an account holding no ticket, which
          is a different page again: no courses of their own, and the open
          ones listed instead. */
-      const who = path.startsWith('/study')
-        ? `&who=${face === 'out' ? 'out' : face === 'new' ? 'new' : 'student'}`
-        : '';
+      const who = face ? `&who=${face}`
+        : path.startsWith('/study') ? '&who=student'
+          : '';
       return `/?at=${encodeURIComponent(path)}${who}`;
     })
   : SITE_PATHS;

@@ -28,6 +28,10 @@ import CertificatePage from '../../src/pages/CertificatePage.jsx';
 import VerifyPage from '../../src/pages/VerifyPage.jsx';
 import StudyPage from '../../src/pages/site/StudyPage.jsx';
 import StudyCoursePage from '../../src/pages/site/StudyCoursePage.jsx';
+/* The admin area's refusal. Mounted here because it is a screen real people
+   land on — a browser holds ONE account, so signing in as a student puts you
+   there — and it had never been looked at or measured. */
+import { Protected } from '../../src/App.jsx';
 import '../../src/idcard.css';
 
 const at = new URLSearchParams(location.search).get('at') || '/';
@@ -72,6 +76,7 @@ createRoot(document.getElementById('root')).render(
           <Route path="/verify/:certificateId" element={<VerifyPage />} />
             <Route path="/study" element={<StudyPage />} />
             <Route path="/study/:workshopId" element={<StudyCoursePage />} />
+            <Route path="/not-admin" element={<Protected><p>never reached</p></Protected>} />
           </Routes>
         </Shell>
       </MemoryRouter>

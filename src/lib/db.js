@@ -102,7 +102,12 @@ export async function registerOwner(user) {
       createdAt: serverTimestamp(),
     });
     return true;
-  } catch {
+  } catch (e) {
+    /* The screen that follows can only GUESS why this failed — it says the
+       likely reasons in order. The actual code is worth one line in the
+       console for whoever opens it, because "permission-denied" and
+       "unavailable" send you to completely different places. */
+    console.warn('Owner could not add itself to /admins:', e?.code || e?.message || e);
     return false;
   }
 }

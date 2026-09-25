@@ -162,6 +162,42 @@ test('an unknown size says nothing rather than claiming to be nothing', () => {
   for (const v of [0, -1, NaN, null, undefined, 'big']) assert.equal(formatBytes(v), '');
 });
 
+/* ---- being refused the admin area -------------------------------- */
+
+test('the refusal branches on WHICH account, because only one is a fault', () => {
+  // A browser holds one signed-in account at a time, so signing in as a
+  // student signs you in here too. Telling that person to hand-create a
+  // Firestore document is alarming, irrelevant, and sends them into the
+  // console to fix a session.
+  const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
+  const block = app.slice(app.indexOf('function Protected'));
+  assert.match(block, /const owner = \(user\.email \|\| ''\)\.toLowerCase\(\) === BOOTSTRAP_ADMIN_EMAIL/);
+  assert.match(block, /This is not an administrator account/);
+  assert.match(block, /The owner account could not add itself/);
+  // The student is sent somewhere useful rather than left on a dead end.
+  assert.match(block, /one signed-in account at a time/);
+  assert.match(block, /to="\/study">Your courses/);
+  // And the Firestore instructions are shown ONLY to the owner.
+  const studentHalf = block.slice(block.indexOf(') : ('));
+  assert.doesNotMatch(studentHalf.slice(0, studentHalf.indexOf('</>')), /admins<\/code> collection/);
+});
+
+test('the address is the same in the app and in the rules', () => {
+  // The refusal screen names this as a thing to check, so it is worth
+  // checking automatically instead.
+  const schema = readFileSync(new URL('../src/lib/schema.js', import.meta.url), 'utf8');
+  const rules = readFileSync(new URL('../firestore.rules', import.meta.url), 'utf8');
+  const inApp = schema.match(/BOOTSTRAP_ADMIN_EMAIL = '([^']+)'/)[1].toLowerCase();
+  assert.ok(rules.includes(`== '${inApp}'`),
+    `firestore.rules does not bootstrap ${inApp}; the owner could never sign in`);
+});
+
+test('a refused bootstrap says why in the console, since the screen can only guess', () => {
+  const db = readFileSync(new URL('../src/lib/db.js', import.meta.url), 'utf8');
+  const fn = db.slice(db.indexOf('export async function registerOwner'));
+  assert.match(fn, /console\.warn\('Owner could not add itself/);
+});
+
 /* ---- a library opened to everybody ------------------------------- */
 
 test('opening a library is PER COURSE, not one switch for the app', () => {
