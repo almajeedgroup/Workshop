@@ -6,12 +6,15 @@ import { headlineFigures, needsAttention, upcoming } from '../lib/overview.js';
 import { formatDateRange } from '../lib/tickets.js';
 import { CURRENCY, isFreeWorkshop } from '../lib/schema.js';
 import SeatBar from '../components/SeatBar.jsx';
+import PhoneFixPanel from '../components/PhoneFixPanel.jsx';
+import IssuerStampPanel from '../components/IssuerStampPanel.jsx';
+import Finder from '../components/Finder.jsx';
 
 /** Which colour each figure carries. Meaning, not position. */
 const TONE = {
   workshops: 'blue',
-  registered: 'jade',
-  collected: 'jade',
+  registered: 'lime',
+  collected: 'lime',
   waiting: 'blue',
   owing: 'tangerine',
 };
@@ -64,7 +67,7 @@ export default function ConsolePage() {
       <div className="page-head">
         <div>
           <h1>Console</h1>
-          <div className="count" style={{ marginTop: 4 }}>
+          <div className="count mt-1">
             {todo.length ? `${todo.length} workshop${todo.length === 1 ? '' : 's'} need attention` : 'Nothing outstanding'}
           </div>
         </div>
@@ -76,6 +79,11 @@ export default function ConsolePage() {
       </div>
 
       {error && <div className="notice warn">{error}</div>}
+
+      {/* Above the figures on purpose. The figures answer "how are we doing";
+          this answers "where is this one person", which is the question that
+          arrives by phone in the middle of everything else. */}
+      <Finder bundles={bundles} requests={requests} />
 
       <div className="tiles">
         {figures.map((f) => {
@@ -106,7 +114,7 @@ export default function ConsolePage() {
             {todo.map(({ workshop, registrations, reasons }) => (
               <div className="todo-row" key={workshop.id} data-tone={reasons[0].tone}>
                 <div className="btn-row" style={{ alignItems: 'baseline' }}>
-                  <Link to={`/w/${workshop.id}`} style={{ fontWeight: 700, fontSize: 15 }}>
+                  <Link to={`/w/${workshop.id}`} className="t-md" style={{ fontWeight: 700 }}>
                     {workshop.title || 'Untitled workshop'}
                   </Link>
                   <span className="count">
@@ -155,6 +163,10 @@ export default function ConsolePage() {
           </div>
         </div>
       )}
+
+      <IssuerStampPanel />
+
+      <PhoneFixPanel />
     </main>
   );
 }

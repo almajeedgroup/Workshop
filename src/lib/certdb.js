@@ -25,8 +25,13 @@ import {
   serverTimestamp, writeBatch, runTransaction, arrayUnion,
 } from 'firebase/firestore';
 import { db } from '../firebase.js';
+import { issuerStamp, hasIssuerStamp, LEGACY_ISSUER } from './issuer.js';
 import { matchKeys } from './dedupe.js';
 import { ticketPrefixFor } from './tickets.js';
+/* The SAME normalisation the register and the library claim use. A student
+   who typed `aihow26 014` in one place and `AIHOW26-014` in another must
+   land on the same document every time. */
+import { ticketKey as ticketDocId } from './attendance.js';
 import {
   certificateTypeCode, formatCertificateId, highestCertificateSeq,
   compareCertificateIds, certificateTypeByKey, certificateDesignByKey,
@@ -36,6 +41,31 @@ import {
 const CERTIFICATES = 'certificates';
 const HOLDERS = 'holders';
 const HOLDER_INDEX = 'holderIndex';
+/**
+ * How a student finds their own certificate.
+ *
+ *   workshops/{workshopId}/awards/{ticketId}
+ *     { certificateId, type, typeLabel, issuedOn, holderKey }
+ *
+ * A certificate is readable by its ID and always has been — that is what
+ * makes an employer able to check one. The problem this solves is different:
+ * a student does not KNOW their ID. It is printed on a certificate they may
+ * never have been handed, and `certificates` cannot be queried by anybody but
+ * the office.
+ *
+ * So the pointer is keyed by the one thing the student does know: their
+ * ticket. The rule then lets exactly one account read it — the one whose
+ * membership names that ticket. Not every member of the course; the holder.
+ *
+ * It carries `holderKey` as well, which is the student's whole history
+ * across courses in one further read. That document is already public to
+ * anyone holding the key, and the person it belongs to is the one person
+ * who should have it.
+ *
+ * NOTHING PERSONAL IS ADDED HERE that is not already on the certificate this
+ * points at.
+ */
+const AWARDS = 'awards';
 const WORKSHOPS = 'workshops';
 const BATCH = 400;
 
@@ -70,7 +100,7 @@ export function durationLine(workshop, dates = '') {
 export function certificateRecord({
   certificateId, type, design, recipientName, workshopId, workshopTitle,
   workshopDates, venue, presentedBy, workshopCode, duration, time, topics,
-  ticketId, holderKey, issuedOn,
+  ticketId, holderKey, issuedOn, issuer = issuerStamp(),
 }) {
   return {
     certificateId: str(certificateId),
@@ -97,6 +127,11 @@ export function certificateRecord({
     ticketId: str(ticketId),
     holderKey: str(holderKey),
     issuedOn: str(issuedOn),
+    // WHO AWARDED THIS, recorded rather than looked up later. Read live from
+    // a constant, every certificate ever issued would silently take on the
+    // next name this school trades under — an employer checking a 2025
+    // certificate would be shown a 2026 organisation.
+    issuer: issuerStamp(issuer),
     revoked: false,
   };
 }
@@ -273,6 +308,22 @@ export async function issueCertificates(workshop, registrations, typeKey, { issu
       merge: true,
     });
 
+    // Where the student looks it up, keyed by the one thing they know.
+    if (rec.ticketId) {
+      ops.push({
+        ref: doc(db, WORKSHOPS, rec.workshopId, AWARDS, ticketDocId(rec.ticketId)),
+        data: {
+          certificateId: rec.certificateId,
+          type: rec.type,
+          typeLabel: rec.typeLabel,
+          issuedOn: rec.issuedOn,
+          holderKey: rec.holderKey,
+          updatedAt: serverTimestamp(),
+        },
+        merge: true,
+      });
+    }
+
     // The private phone/email -> holderKey map, so the next award finds them.
     for (const idxId of resolved[i].ids) {
       ops.push({
@@ -305,4 +356,114 @@ export async function setCertificateRevoked(certificateId, revoked, reason = '')
     { revoked: Boolean(revoked), revokedReason: str(reason), updatedAt: serverTimestamp() },
     { merge: true }
   );
+}
+
+/* ------------------------------------------------------------------ *
+ * Backfilling the issuer onto certificates issued before it was stamped
+ * ------------------------------------------------------------------ */
+
+/**
+ * Every certificate, for the one screen that has to look at all of them.
+ *
+ * Admin-only by the rules, and read nowhere else: the public verifies one
+ * certificate at a time by its exact ID, which is what keeps the set of them
+ * from being walked.
+ */
+export async function listAllCertificates() {
+  const snap = await getDocs(collection(db, CERTIFICATES));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+/**
+ * Which certificates do not yet say who issued them.
+ *
+ * Reads nothing and writes nothing — the caller shows this before anything
+ * is changed, the same way the phone-number migration does.
+ */
+export function scanIssuerStamps(certificates = []) {
+  const missing = certificates.filter((c) => !hasIssuerStamp(c));
+  return { missing, total: certificates.length, stamped: certificates.length - missing.length };
+}
+
+/**
+ * Write the legacy issuer onto every certificate that lacks one.
+ *
+ * LEGACY_ISSUER, not the current constant. Reading the live one would be
+ * correct only if this were run before the rebrand and would quietly destroy
+ * what it exists to protect if it were run after — so the ordering trap is
+ * removed rather than documented.
+ */
+export async function applyIssuerStamps(missing = []) {
+  const stamp = issuerStamp(LEGACY_ISSUER);
+  for (let i = 0; i < missing.length; i += 400) {
+    const batch = writeBatch(db);
+    for (const cert of missing.slice(i, i + 400)) {
+      batch.set(doc(db, CERTIFICATES, cert.id ?? cert.certificateId), { issuer: stamp }, { merge: true });
+    }
+    await batch.commit();
+  }
+  return missing.length;
+}
+
+/* ------------------------------------------------------------------ *
+ * What a student can look up
+ * ------------------------------------------------------------------ */
+
+/**
+ * This ticket's certificate, if one was ever issued for it.
+ *
+ * Read by the student themselves. Returns null rather than throwing when
+ * there is none, which is the ordinary case for a course still running —
+ * and when the rules refuse, which is what a course whose awards have not
+ * been published yet looks like from here.
+ */
+export async function getAward(workshopId, ticketId) {
+  const ticket = ticketDocId(ticketId);
+  if (!workshopId || !ticket) return null;
+  const snap = await getDoc(doc(db, WORKSHOPS, workshopId, AWARDS, ticket)).catch(() => null);
+  return snap?.exists() ? { ticketId: ticket, ...snap.data() } : null;
+}
+
+/**
+ * Publish this course's certificates so its students can find them.
+ *
+ * Certificates issued before this index existed have no pointer, and neither
+ * does one issued while it was failing. Rebuilding from the certificates
+ * themselves is cheap and idempotent, so the office can simply run it — the
+ * same shape as publishing the ticket list, and for the same reason.
+ */
+export async function syncAwardIndex(workshopId) {
+  if (!workshopId) return { published: 0, withoutTicket: 0 };
+  const certs = await listWorkshopCertificates(workshopId);
+
+  let published = 0;
+  let withoutTicket = 0;
+  const ops = [];
+
+  for (const c of certs) {
+    const ticket = ticketDocId(c.ticketId);
+    // A certificate issued to somebody with no ticket number cannot be
+    // found this way. It is still valid and still verifiable by its ID;
+    // it simply has no student-side door, and the office is told how many.
+    if (!ticket) { withoutTicket += 1; continue; }
+    ops.push({
+      ref: doc(db, WORKSHOPS, workshopId, AWARDS, ticket),
+      data: {
+        certificateId: c.certificateId || c.id,
+        type: str(c.type),
+        typeLabel: str(c.typeLabel),
+        issuedOn: str(c.issuedOn),
+        holderKey: str(c.holderKey),
+        updatedAt: serverTimestamp(),
+      },
+    });
+    published += 1;
+  }
+
+  for (let i = 0; i < ops.length; i += BATCH) {
+    const batch = writeBatch(db);
+    for (const op of ops.slice(i, i + BATCH)) batch.set(op.ref, op.data, { merge: true });
+    await batch.commit();
+  }
+  return { published, withoutTicket };
 }

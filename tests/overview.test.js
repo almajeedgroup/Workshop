@@ -9,6 +9,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   headlineFigures, needsAttention, unpaidCount, upcoming, boardGroups, groupSummary,
+  shouldFetchBoard, isFinished,
 } from '../src/lib/overview.js';
 import { seatPressure } from '../src/lib/stats.js';
 
@@ -194,7 +195,7 @@ test('tone: every reason carries one, and only from the palette', () => {
   const [row] = needsAttention(bundles, [{ workshopId: 'a' }]);
   assert.ok(row.reasons.length >= 2);
   for (const r of row.reasons) {
-    assert.ok(['jade', 'tangerine', 'red', 'blue'].includes(r.tone), `${r.kind} has tone ${r.tone}`);
+    assert.ok(['lime', 'tangerine', 'red', 'blue'].includes(r.tone), `${r.kind} has tone ${r.tone}`);
   }
 });
 
@@ -225,9 +226,9 @@ test('board: a settled finished course is quiet, not blue', () => {
   assert.notEqual(by.a.tone, by.old.tone);
 });
 
-test('board: a healthy live course is jade', () => {
+test('board: a healthy live course is lime', () => {
   const groups = boardGroups([{ workshop: free({ id: 'x', seatLimit: 100 }), registrations: regs('Waived') }], [], '2026-09-01');
-  assert.equal(groups[0].tone, 'jade');
+  assert.equal(groups[0].tone, 'lime');
 });
 
 test('board: the rail matches what the console says about the same workshop', () => {
@@ -302,5 +303,99 @@ test('summary: a collapsed group still says enough to judge it by', () => {
   for (const g of boardGroups(bundlesFor(), [], '2026-09-01')) {
     assert.ok(groupSummary(g).length >= 1);
     assert.equal(groupSummary(g)[0][0], 'Registered');
+  }
+});
+
+/* ------------------------------------------------------------------ *
+ * Reported: "The boards page is not responding or displaying the
+ * details correctly."
+ *
+ * The board fetched on mount, before the workshops had loaded, so it
+ * fetched the registrations of nothing and stored []. The guard then read
+ * that array as "already have it" — because [] is truthy — and skipped
+ * every later attempt. The board rendered permanently empty.
+ * ------------------------------------------------------------------ */
+
+test('board fetch: waits until the workshops have arrived', () => {
+  // The exact sequence: mounted, workshops still loading.
+  assert.equal(shouldFetchBoard({ view: 'board', ready: false, loaded: false }), false);
+  // They arrive.
+  assert.equal(shouldFetchBoard({ view: 'board', ready: true, loaded: false }), true);
+});
+
+test('board fetch: an empty result does not count as loaded', () => {
+  // This is the bug. `loaded` is tracked on its own precisely so that a
+  // course list which is genuinely empty cannot be confused with one that
+  // was never fetched.
+  assert.equal(shouldFetchBoard({ view: 'board', ready: true, loaded: false }), true);
+  assert.equal(shouldFetchBoard({ view: 'board', ready: true, loaded: true }), false);
+});
+
+test('board fetch: nothing is fetched for the table view', () => {
+  assert.equal(shouldFetchBoard({ view: 'table', ready: true, loaded: false }), false);
+});
+
+test('board fetch: switching to the table and back does not refetch', () => {
+  let loaded = false;
+  const ready = true;
+  let fetches = 0;
+  const run = (view) => { if (shouldFetchBoard({ view, ready, loaded })) { fetches += 1; loaded = true; } };
+  run('board'); run('table'); run('board'); run('table'); run('board');
+  assert.equal(fetches, 1);
+});
+
+test('board fetch: the whole mount sequence ends with the data loaded', () => {
+  // Mount → workshops load → effect re-runs. Before the fix this fetched
+  // once, against an empty list, and never again.
+  const state = { view: 'board', ready: false, loaded: false };
+  let fetches = 0;
+  const tick = () => { if (shouldFetchBoard(state)) { fetches += 1; state.loaded = true; } };
+
+  tick();                    // mounted, workshops still loading
+  assert.equal(fetches, 0, 'nothing to fetch for yet');
+
+  state.ready = true;        // listWorkshops resolved
+  tick();
+  assert.equal(fetches, 1, 'fetched once the workshops were there');
+
+  tick();                    // any later re-render
+  assert.equal(fetches, 1, 'and not again');
+});
+
+/* ---- when a course is finished ------------------------------------ */
+
+test('finished: the LAST day decides, not the first', () => {
+  // A three-day course is still running on day two.
+  const w = { startDate: '2026-09-03', endDate: '2026-09-05' };
+  assert.equal(isFinished(w, '2026-09-04'), false);
+  assert.equal(isFinished(w, '2026-09-06'), true);
+});
+
+test('finished: the last day itself still counts as running', () => {
+  // Nothing should read as completed while people are still in the room.
+  assert.equal(isFinished({ startDate: '2026-09-03', endDate: '2026-09-05' }, '2026-09-05'), false);
+});
+
+test('finished: a one-day course uses its only date', () => {
+  assert.equal(isFinished({ startDate: '2026-09-05' }, '2026-09-05'), false);
+  assert.equal(isFinished({ startDate: '2026-09-05' }, '2026-09-06'), true);
+});
+
+test('finished: a course with no dates is never called finished', () => {
+  // Guessing would put a Completed badge on something that may not have
+  // started.
+  assert.equal(isFinished({}, '2026-09-05'), false);
+  assert.equal(isFinished({ startDate: '', endDate: '' }, '2026-09-05'), false);
+  assert.equal(isFinished(null, '2026-09-05'), false);
+});
+
+test('finished: the board agrees with isFinished for every group', () => {
+  const bundles = [
+    { workshop: paid({ id: 'past', startDate: '2026-01-01', endDate: '2026-01-02' }), registrations: [] },
+    { workshop: paid({ id: 'now', startDate: '2026-09-01', endDate: '2026-09-30' }), registrations: [] },
+    { workshop: paid({ id: 'undated', startDate: '', endDate: '' }), registrations: [] },
+  ];
+  for (const g of boardGroups(bundles, [], '2026-09-05')) {
+    assert.equal(g.finished, isFinished(g.workshop, '2026-09-05'), g.workshop.id);
   }
 });

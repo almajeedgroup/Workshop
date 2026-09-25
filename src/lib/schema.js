@@ -20,11 +20,36 @@
  * ------------------------------------------------------------------ */
 
 export const ISSUER = {
-  /** Whose receipt this is. */
-  name: 'Islamic Information Centre',
-  unit: 'Beyond Guidance',
-  unitLine: 'Beyond Guidance, a unit of Islamic Information Centre',
-  phones: ['+91 98452 89298', '+91 63646 30740'],
+  /**
+   * Whose receipt this is.
+   *
+   * THE BRAND, spelled out. `src/lib/brand.js` draws it as WORKSH•P, with the
+   * second O as a dot, but a ticket pasted into WhatsApp and a column heading
+   * in a spreadsheet cannot draw anything — so the plain word lives here and
+   * a test asserts the two have not drifted apart.
+   */
+  name: 'WORKSHOP',
+  /**
+   * There is no sub-unit any more. Kept as an empty string rather than
+   * removed: `idcards.js`, `attendance.js` and `issuer.js` all fall back
+   * through it, and a missing key would read as `undefined` on a card.
+   */
+  unit: '',
+  /** The second line under the mark, wherever the mark appears. */
+  unitLine: 'by Al-Majeed School of Research Methodology and Innovation',
+  /**
+   * Who this was, and still is, run with.
+   *
+   * Islamic Information Centre and Beyond Guidance issued everything up to
+   * the rebrand. They are not deleted from the record — they are named on
+   * every document, which is both true and the reason a certificate from
+   * 2025 and one from 2026 can be recognised as coming from the same place.
+   */
+  association: 'Islamic Information Centre · Beyond Guidance',
+  /* The first is the PRIMARY number: it is the one the Call button dials,
+     the one printed on a ticket, and the one a page names when it names
+     only one. Order is the whole of that meaning. */
+  phones: ['+91 63646 30740', '+91 98452 89298'],
   /** Shown in the app masthead — who built/operates the system. */
   /**
    * The school that built and runs this system, and is named as an associate
@@ -49,6 +74,42 @@ export const ISSUER = {
    */
   upiId: '',
   upiName: 'Islamic Information Centre',
+  /**
+   * Where online classes are held.
+   *
+   * Jitsi Meet is open source and its public server, meet.jit.si, is free to
+   * use — which is the whole reason it is here rather than a paid room
+   * licence. Everything in this app addresses the server by this one name,
+   * so moving to a self-hosted Jitsi later is a single-line change and no
+   * room link already sent out has to change shape.
+   *
+   * NOTE on the public server: meet.jit.si asks the person who OPENS a room
+   * to sign in (Google, GitHub or Facebook) before the meeting starts.
+   * Students joining do not sign in to anything. The classroom screen says
+   * so, because being asked to log in to something you were not expecting is
+   * alarming if nobody warned you.
+   */
+  meetingHost: 'meet.jit.si',
+  /**
+   * Whether the meeting is put INSIDE this page, or opened in its own window.
+   *
+   * This is not a style choice. 8x8, who run meet.jit.si, allow embedding it
+   * only as a demo: an embedded call disconnects after FIVE MINUTES, with a
+   * dialog saying so. Used directly, in its own tab, the same free server has
+   * no such limit. So the default is `auto`, which embeds a server that
+   * permits it and launches one that does not.
+   *
+   *   'auto'   embed unless the server is known to forbid it  (recommended)
+   *   'always' embed regardless — for a self-hosted Jitsi
+   *   'never'  always open in a new window
+   *
+   * TO GET EMBEDDING BACK, run your own Jitsi: it is the same open-source
+   * software with no such rule. Point `meetingHost` at it, add it to the
+   * three places in firebase.json that name meet.jit.si, and everything
+   * built on the embedded call — the live register, one-press attendance,
+   * the lobby going on by itself — starts working again.
+   */
+  meetingEmbed: 'auto',
   /**
    * A payment QR supplied by the bank — a BharatQR or merchant standee — used
    * for every workshop that does not set its own.
@@ -172,6 +233,18 @@ export function isFreeWorkshop(w) {
 export function workshopFee(w) {
   if (isFreeWorkshop(w)) return 0;
   return Number(w?.feeAmount) || 0;
+}
+
+/**
+ * Does this course meet online at all?
+ *
+ * Hybrid counts. A hybrid course has people in the room AND people at home,
+ * and the ones at home are the whole reason the online half exists — hiding
+ * the classroom from them because there is also a venue would be exactly
+ * backwards.
+ */
+export function isOnlineWorkshop(w) {
+  return w?.mode === 'Online' || w?.mode === 'Hybrid';
 }
 
 /** The fields to show for a given workshop, honouring every `showWhen`. */
@@ -307,6 +380,10 @@ export const WORKSHOP_FIELDS = [
     key: 'contactNumbers',
     label: 'Enquiry Numbers',
     type: 'list',
+    // A list of phone numbers rather than of names, so each entry is put
+    // into +91 form on save. Resource persons and coordinators are lists too
+    // and must not be touched.
+    phones: true,
     aliases: ['contact', 'contacts', 'contact number', 'contact numbers', 'enquiry', 'enquiries', 'phone', 'call', 'for registration'],
   },
   {
@@ -333,6 +410,28 @@ export const WORKSHOP_FIELDS = [
     options: ['Open', 'Closed'],
     aliases: ['registration open', 'public registration', 'registration status'],
     hint: 'Open lets students register themselves from the QR code on the poster.',
+  },
+  {
+    key: 'classOpen',
+    label: 'Online Class',
+    type: 'enum',
+    options: ['Open', 'Closed'],
+    showWhen: isOnlineWorkshop,
+    aliases: ['online class', 'class open', 'live class'],
+    hint: 'Open publishes the join link and lets students into the room. '
+      + 'Closed takes the room off the public page — the link stops working.',
+  },
+  {
+    key: 'meetingRoom',
+    label: 'Meeting Room',
+    type: 'text',
+    showWhen: isOnlineWorkshop,
+    aliases: ['meeting room', 'room', 'room name'],
+    // Minted, not typed. It is shown because a presenter should be able to
+    // see which room they are about to open, and replaceable because the
+    // only way to shut a leaked link out of a room is to stop using it.
+    hint: 'Left blank, one is created the first time the class is opened. '
+      + 'Replacing it moves the class to a new room and kills the old link.',
   },
   {
     key: 'certificateDesign',
@@ -396,6 +495,13 @@ export const WORKSHOP_FIELDS = [
 /* ------------------------------------------------------------------ *
  * Registration (one per registered candidate)
  * ------------------------------------------------------------------ */
+
+/**
+ * How ONE student attends. A course may also be Hybrid; a student cannot —
+ * they are either in the room or on the link. src/lib/attendmode.js decides
+ * which of these applies to a given student on a given course.
+ */
+export const ATTEND_MODES = ['Offline', 'Online'];
 
 export const PAYMENT_STATUSES = ['Pending', 'Paid', 'Waived', 'Refunded'];
 
@@ -483,6 +589,16 @@ export const REGISTRATION_FIELDS = [
     inTable: true,
     aliases: ['ticket id', 'ticket no', 'ticket', 'ticket number'],
     hint: 'Allocated automatically on save — leave blank.',
+  },
+  {
+    key: 'attendMode',
+    label: 'Attending',
+    type: 'enum',
+    options: ATTEND_MODES,
+    inTable: true,
+    aliases: ['attending', 'attend mode', 'attendance mode', 'mode', 'online or offline',
+              'online/offline', 'participation mode', 'joining'],
+    hint: 'Asked of the student on a Hybrid course. On an Offline or Online course the course decides.',
   },
   {
     key: 'idRole',

@@ -1,15 +1,16 @@
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import SiteHeader from './SiteHeader.jsx';
 import SiteFooter from './SiteFooter.jsx';
 
+
 /**
- * Wraps every public page: header, footer, scroll restoration, and the
- * reveal-on-scroll effect.
+ * Wraps every public page: header, footer, scroll restoration, and motion.
  *
- * The reveal is opt-in per element via `data-reveal`, and is skipped entirely
- * when the visitor has asked for reduced motion — in which case everything is
- * simply shown, rather than shown differently.
+ * Motion is opt-in per element via `data-reveal` and is driven by
+ * src/lib/motion.js. It is skipped entirely when the visitor has asked for
+ * reduced motion — in which case everything is simply shown, rather than
+ * shown differently.
  */
 export default function PublicShell({ children }) {
   const { pathname, hash } = useLocation();
@@ -23,57 +24,53 @@ export default function PublicShell({ children }) {
   }, [pathname, hash]);
 
   /**
-   * Reveal on scroll.
+   * Motion. Everything that moves lives in src/lib/motion.js; this starts it
+   * for the page that is now rendered and stops it when that page goes. The
+   * cleanup matters: a ScrollTrigger left behind after a route change keeps
+   * measuring a page that no longer exists.
    *
-   * A sweep rather than an IntersectionObserver, deliberately: an observer
-   * only reports what is intersecting *now*, so jumping down the page — an
-   * anchor link, a flick-scroll on a phone — leaves everything in between
-   * permanently invisible. This reveals anything at or above the fold on every
-   * scroll, so nothing can be skipped.
+   * GSAP is 48KB gzipped and only the public site uses it, so motion.js is
+   * fetched on demand rather than bundled into the app everybody loads. The
+   * admin tool never asks for it.
    *
-   * The `anim` class is what makes [data-reveal] hidden in the first place, and
-   * it is added here, by script. If the script never runs, the page is simply
-   * visible.
+   * That import is asynchronous, and the browser will happily paint the
+   * finished page before it resolves — one frame of everything visible, then
+   * it all disappears to animate in. So the starting state is set here,
+   * synchronously in a LAYOUT effect, by adding a class; the CSS hides
+   * [data-reveal] under it, and GSAP animates from there.
+   *
+   * The reduced-motion check has to happen before the class goes on, or a
+   * visitor who asked for no motion gets a hidden page for as long as the
+   * fetch takes.
    */
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = document.querySelector('.site');
-    const nodes = Array.from(document.querySelectorAll('[data-reveal]'));
-    if (!root || !nodes.length) return undefined;
+    if (!root) return undefined;
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      nodes.forEach((n) => n.classList.add('in'));
-      return undefined;
-    }
+    root.classList.add('motion');
+    let stop = null;
+    let cancelled = false;
 
-    root.classList.add('anim');
-    let waiting = nodes;
-    let queued = false;
+    import('../../lib/motion.js').then(({ startMotion }) => {
+      if (cancelled) return;
+      stop = startMotion(root);
+    }).catch((err) => {
+      // The page is worth more than the animation: if the chunk fails to load
+      // or throws, drop the class and everything is simply visible.
+      //
+      // It is reported, not swallowed. A silent catch here hid a TDZ error in
+      // motion.js for long enough to look like "the animation just does not
+      // run", with a clean console and a 200 on the chunk.
+      root.classList.remove('motion');
+      console.error('motion failed to start', err);
+    });
 
-    const sweep = () => {
-      queued = false;
-      const limit = window.innerHeight * 0.92;
-      waiting = waiting.filter((n) => {
-        if (n.getBoundingClientRect().top >= limit) return true;
-        n.classList.add('in');
-        return false;
-      });
-      if (!waiting.length) detach();
+    return () => {
+      cancelled = true;
+      if (stop) stop();
+      root.classList.remove('motion');
     };
-    const onScroll = () => {
-      if (queued) return;
-      queued = true;
-      window.requestAnimationFrame(sweep);
-    };
-    const detach = () => {
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
-    };
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll, { passive: true });
-    sweep();
-
-    return () => { detach(); root.classList.remove('anim'); };
   }, [pathname]);
 
   return (

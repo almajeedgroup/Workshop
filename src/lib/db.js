@@ -18,9 +18,11 @@ import {
 import {
   ticketPrefixFor, formatTicketId, compareTicketIds, highestTicketSeq,
 } from './tickets.js';
+import { formatPhone } from './parser.js';
 import { syncPublicWorkshop, removePublicWorkshop } from './publicdb.js';
 import { removePhoto, PHOTOS } from './photodb.js';
 import { removeMarks, ATTENDANCE } from './attendancedb.js';
+import { NOTES, TRANSCRIPT, HANDOUTS } from './classroomdb.js';
 
 const WORKSHOPS = 'workshops';
 const REGISTRATIONS = 'registrations';
@@ -33,8 +35,11 @@ function sanitizeWorkshop(w) {
   const out = {};
   for (const f of WORKSHOP_FIELDS) {
     const v = w[f.key];
-    if (f.type === 'list' || f.type === 'multi') out[f.key] = Array.isArray(v) ? v.filter(Boolean) : [];
-    else if (f.type === 'number') out[f.key] = v === '' || v === null || v === undefined ? null : Number(v);
+    if (f.type === 'list' || f.type === 'multi') {
+      const list = Array.isArray(v) ? v.filter(Boolean) : [];
+      out[f.key] = f.phones ? list.map((n) => formatPhone(n)) : list;
+    } else if (f.type === 'number') out[f.key] = v === '' || v === null || v === undefined ? null : Number(v);
+    else if (f.type === 'tel') out[f.key] = formatPhone(v);
     else out[f.key] = v === undefined || v === null ? '' : String(v);
   }
   out.searchText = [
@@ -49,6 +54,10 @@ function sanitizeRegistration(p) {
   for (const f of REGISTRATION_FIELDS) {
     const v = p[f.key];
     if (f.type === 'number') out[f.key] = v === '' || v === null || v === undefined ? null : Number(v);
+    // Phone numbers are stored one way — `+91 9339214522` — however they
+    // were typed. A register where the same number appears in four shapes
+    // cannot be searched, deduplicated or dialled reliably.
+    else if (f.type === 'tel') out[f.key] = formatPhone(v);
     else out[f.key] = v === undefined || v === null ? '' : String(v).trim();
   }
   out.nameLower = out.name.toLowerCase();
@@ -93,7 +102,12 @@ export async function registerOwner(user) {
       createdAt: serverTimestamp(),
     });
     return true;
-  } catch {
+  } catch (e) {
+    /* The screen that follows can only GUESS why this failed — it says the
+       likely reasons in order. The actual code is worth one line in the
+       console for whoever opens it, because "permission-denied" and
+       "unavailable" send you to completely different places. */
+    console.warn('Owner could not add itself to /admins:', e?.code || e?.message || e);
     return false;
   }
 }
@@ -333,8 +347,11 @@ export async function syncRegistrations(workshopId, registrations, baseIds = nul
 
 export async function deleteWorkshop(id) {
   // Deleting a document does NOT delete its sub-collections — do it
-  // explicitly, for the registrations and for the photographs alike.
-  for (const name of [REGISTRATIONS, PHOTOS, ATTENDANCE]) {
+  // explicitly, for every one of them. The classroom collections matter
+  // most: they are the only things under a workshop the public can read,
+  // and orphaned notes on a deleted course would stay readable for as long
+  // as its public mirror said the class was open.
+  for (const name of [REGISTRATIONS, PHOTOS, ATTENDANCE, NOTES, TRANSCRIPT, HANDOUTS]) {
     const col = collection(db, WORKSHOPS, id, name);
     let snap = await getDocs(query(col, limit(450)));
     while (!snap.empty) {

@@ -1,0 +1,24 @@
+rules_version = '2';
+
+/**
+ * A PLACEHOLDER. Not the app's rules, and never deployed.
+ *
+ * `tools/rules-audit.mjs` pushes the real firestore.rules into the emulator
+ * on every run, so whatever the emulator starts with is irrelevant. This
+ * file exists so that it does not start with the REAL one — because the
+ * emulator watches its rules file, and a watcher reading firestore.rules
+ * while an editor is half way through writing it fails to parse, throws,
+ * and takes the whole emulator process down, Auth included. That happened
+ * three times before this file existed, and once it produced an audit that
+ * graded rules nobody had loaded.
+ *
+ * Deny-all, so that a run which somehow skipped the push fails loudly
+ * rather than passing against something permissive.
+ */
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

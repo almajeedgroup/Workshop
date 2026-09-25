@@ -74,6 +74,39 @@ function stripEmoji(s) {
   return String(s ?? '').replace(EMOJI_RE, '').replace(/\s{2,}/g, ' ').trim();
 }
 
+/**
+ * A phone number as it should be STORED and shown: `+91 9339214522`.
+ *
+ * Numbers arrive typed a dozen ways — bare ten digits, a leading zero, 0091,
+ * spaces and dashes through the middle, or already carrying +91. All of them
+ * mean the same person, and a register where the same number appears in four
+ * shapes cannot be searched, deduplicated or dialled reliably.
+ *
+ * What it will NOT do is guess. A number it cannot confidently read as
+ * Indian — too short, an odd length, or an explicit country code that is not
+ * +91 — is returned exactly as it was typed. Mangling somebody's landline
+ * into a mobile is worse than leaving it untidy.
+ */
+export function formatPhone(v, defaultCC = '91') {
+  const raw = String(v ?? '').trim();
+  if (!raw) return '';
+
+  // An explicit foreign country code is left alone. +1, +44 and +971 are
+  // real numbers this office might hold, and none of them are ours to
+  // rewrite. The test is whether it starts with OUR code — reading "the
+  // first one to three digits" instead matched "919" out of +919339214522
+  // and called an ordinary local number foreign.
+  const compact = raw.replace(/[\s()-]/g, '');
+  if (compact.startsWith('+') && !compact.startsWith(`+${defaultCC}`)) return raw;
+
+  const digits = normalizePhone(raw, defaultCC);
+  // normalizePhone gives country code + ten digits when it recognised one.
+  if (digits.length === `${defaultCC}`.length + 10 && digits.startsWith(defaultCC)) {
+    return `+${defaultCC} ${digits.slice(`${defaultCC}`.length)}`;
+  }
+  return raw;
+}
+
 /** Digits-only phone with an Indian country code, suitable for wa.me links. */
 export function normalizePhone(v, defaultCC = '91') {
   let d = String(v ?? '').replace(/\D/g, '');
