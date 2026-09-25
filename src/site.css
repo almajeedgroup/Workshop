@@ -1631,55 +1631,124 @@
   letter-spacing:.04em; color:var(--ink-soft);
 }
 
-/* ── The course library, as a student reads it ─────────────────────────────
-   A list, not a grid. Every row is the same kind of thing — open this — and
-   a grid of identical tiles makes somebody scan for a difference that is not
-   there. The format badge does the telling apart, and it is set in words
-   (PDF, PPT) rather than colour alone, because "the green one" is no use to
-   a third of readers and no use at all in a phone's dark corridor. */
-.site .shelf{display:grid; gap:8px; list-style:none; padding:0; margin:0}
-.site .shelf-row{margin:0}
-.site .shelf-link{
-  display:flex; align-items:center; gap:var(--sp-4);
-  padding:var(--sp-4); border:1px solid var(--hair); border-radius:14px;
-  background:var(--paper); text-decoration:none; color:var(--ink);
-  transition:border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+/* ── A course, as a place to study ─────────────────────────────────────────
+   The thing being watched fills the page and the contents sit beside it.
+   That is what every course platform converged on, and not by fashion: a
+   list of links throws you into another tab for each item, loses your place,
+   and makes "what is next" something you have to go back and work out. */
+.site .study .wrap{max-width:1320px}
+/* A working page, not a marketing band: the course starts near the top
+   rather than behind a screenful of air. The floating capsule still needs
+   clearing, and that is all this leaves. */
+.site .band.study{padding-block:calc(var(--sp-7) + 16px) var(--sp-7)}
+.site .study-head{
+  display:flex; align-items:flex-end; justify-content:space-between;
+  gap:var(--sp-5); flex-wrap:wrap; margin-top:var(--sp-4);
 }
-.site .shelf-link:hover{border-color:var(--ink); box-shadow:var(--sh-lift); transform:translateY(-1px)}
-.site .shelf-link[aria-busy='true']{opacity:.6; pointer-events:none}
+.site .study-progress{display:flex; align-items:center; gap:var(--sp-3); flex-wrap:wrap}
 
-/* The badge is a fixed width so the titles beside it line up down the page —
-   a ragged left edge on a list this uniform reads as a mistake. */
-.site .shelf-ico{
-  flex:none; display:grid; place-items:center;
-  width:52px; height:52px; border-radius:11px;
-  background:var(--paper-3); border:1px solid var(--hair-2);
+/* A bar, not a ring. A ring is a lovely shape and unreadable at the size a
+   list of courses gives it; a bar is legible at 4px tall. */
+.site .pbar{
+  display:block; width:170px; height:8px; border-radius:99px; overflow:hidden;
+  background:var(--paper-3); border:1px solid var(--hair);
+}
+.site .pbar i{display:block; height:100%; background:var(--lime); transition:width .3s ease}
+.site .pbar.sm{height:6px}
+
+.site .study-grid{display:grid; grid-template-columns:minmax(0,1fr) 380px; gap:var(--sp-5); align-items:start}
+@media (max-width:1040px){
+  /* The viewer goes ON TOP, never beside, once the sidebar would be too
+     narrow to read a title in. */
+  .site .study-grid{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ---- the stage ---- */
+.site .study-view{min-width:0}
+.site .study-stage{
+  position:relative; background:var(--ink); border-radius:16px; overflow:hidden;
+  aspect-ratio:16/9; display:grid; place-items:center;
+}
+/* Text and documents are read, not watched: they get height rather than a
+   television's proportions, and a paper ground rather than a black one. */
+.site .study-stage[data-kind='text'],
+.site .study-stage[data-kind='away'],
+.site .study-stage[data-kind='download']{
+  aspect-ratio:auto; min-height:320px; background:var(--paper-2);
+  border:1px solid var(--hair);
+}
+.site .study-stage[data-kind='frame']{aspect-ratio:16/10}
+.site .study-frame, .site .study-media{width:100%; height:100%; border:0; display:block}
+.site .study-audio{width:min(560px,90%)}
+.site .study-text{
+  align-self:stretch; width:100%; padding:var(--sp-5);
+  overflow:auto; max-height:560px;
+  white-space:pre-wrap; overflow-wrap:anywhere;
+  font-size:15px; line-height:1.75; color:var(--ink-soft); text-align:left;
+}
+.site .study-away{display:grid; justify-items:center; gap:var(--sp-3); padding:var(--sp-6); text-align:center}
+
+.site .study-bar{
+  display:flex; align-items:center; justify-content:space-between; gap:var(--sp-4);
+  flex-wrap:wrap; padding:var(--sp-4) 2px 0;
+}
+
+/* ---- the contents ---- */
+.site .study-list{
+  position:sticky; top:96px; max-height:calc(100vh - 128px); overflow:auto;
+  border:1px solid var(--hair); border-radius:16px; background:var(--paper);
+  padding:var(--sp-4);
+}
+@media (max-width:1040px){
+  .site .study-list{position:static; max-height:none}
+}
+.site .study-day{margin-top:var(--sp-4)}
+.site .study-day h3{
+  font-size:12px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--ink-faint); font-weight:700; margin-bottom:6px;
+}
+.site .study-day ul{list-style:none; margin:0; padding:0; display:grid; gap:2px}
+
+.site .srow{display:flex; align-items:center; gap:4px; border-radius:10px}
+.site .srow.on{background:var(--lime-wash)}
+.site .srow-open{
+  flex:1; min-width:0; display:flex; align-items:center; gap:11px;
+  padding:9px 10px; background:none; border:0; border-radius:10px;
+  font:inherit; text-align:left; color:var(--ink); cursor:pointer;
+}
+.site .srow-open:hover{background:var(--paper-2)}
+.site .srow.on .srow-open:hover{background:transparent}
+.site .srow-ico{
+  flex:none; display:grid; place-items:center; width:34px; height:34px;
+  border-radius:8px; background:var(--paper-3); border:1px solid var(--hair-2);
   font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-  font-size:11px; font-weight:700; letter-spacing:.04em; color:var(--ink);
+  font-size:9.5px; font-weight:700; color:var(--ink);
 }
-/* A recording is the thing somebody came back for, so it is the one that
-   carries the brand colour. Notes keep the quiet ground. */
-.site .shelf-row[data-kind='recording'] .shelf-ico{background:var(--tile-lime); border-color:transparent}
+.site .srow-ico.lg{width:56px; height:56px; font-size:13px}
+.site .srow-what{flex:1; min-width:0}
+.site .srow-what b{display:block; font-weight:600; font-size:13.5px; line-height:1.35; overflow-wrap:anywhere}
+.site .srow-what small{display:block; margin-top:2px; font-size:11.5px; color:var(--ink-faint)}
+/* Finished reads quieter, but never so quiet it stops being readable: 
+   --ink-faint is 6.19:1 and that is the floor, not the target. */
+.site .srow.done .srow-what b{color:var(--ink-faint); font-weight:500}
 
-.site .shelf-what{flex:1; min-width:0}
-.site .shelf-what b{display:block; font-weight:600; font-size:15.5px; overflow-wrap:anywhere}
-.site .shelf-what small{display:block; margin-top:3px; font-size:12.5px; color:var(--ink-faint)}
-.site .shelf-wrong{display:block; margin-top:4px; font-style:normal; font-size:12.5px; color:var(--alert)}
-.site .shelf-go{flex:none; color:var(--ink-faint); font-size:15px}
-.site .shelf-link:hover .shelf-go{color:var(--ink)}
-
-@media (max-width:560px){
-  /* The badge shrinks but never leaves: it is the only thing telling a
-     recording from a spreadsheet at a glance. */
-  .site .shelf-link{gap:var(--sp-3); padding:var(--sp-3)}
-  .site .shelf-ico{width:42px; height:42px; font-size:10px}
+/* The tick is the student's own. Nothing measures whether a recording was
+   really watched, and a bar that claimed to would be lying. */
+.site .srow-tick{flex:none; display:grid; place-items:center; width:38px; height:38px; cursor:pointer}
+.site .srow-tick input{position:absolute; opacity:0; width:0; height:0}
+.site .srow-tick span{
+  display:grid; place-items:center; width:21px; height:21px; border-radius:50%;
+  border:1.6px solid var(--control-line); color:transparent; transition:all .14s ease;
 }
+.site .srow-tick input:checked + span{background:var(--lime); border-color:var(--lime); color:var(--ink)}
+.site .srow-tick input:focus-visible + span{outline:3px solid var(--ink); outline-offset:2px}
+.site .srow-tick svg{width:13px; height:13px}
 
-/* A course on a student's own page. Deliberately NOT the poster card the
-   programmes pages use: a poster is mostly picture, and a course here has
-   no picture — only a name, its dates and the ticket it was claimed with.
-   Reusing the poster left an empty grey rectangle above every card and the
-   text running out past its own edge. */
+/* ── A course on a student's own page ──────────────────────────────────────
+   Deliberately NOT the poster card the programmes pages use: a poster is
+   mostly picture, and a course here has no picture — only a name, its dates
+   and how far through it somebody is. Reusing the poster left an empty grey
+   rectangle above every card and the text running out past its own edge. */
 .site .courses{display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:var(--sp-4)}
 .site .course{
   display:flex; align-items:center; gap:var(--sp-4);
@@ -1695,9 +1764,37 @@
 .site .course-what{flex:1; min-width:0}
 .site .course-what b{display:block; font-weight:600; font-size:16px; line-height:1.35; overflow-wrap:anywhere}
 .site .course-what em{display:block; font-style:normal; font-size:13px; color:var(--ink-faint); margin-top:3px}
-.site .course-what .mono-id{margin-top:6px; font-size:12px; display:block}
+.site .course-what .pbar{margin-top:9px; width:100%}
+.site .course-count{display:block; margin-top:5px; font-size:11.5px; color:var(--ink-faint)}
 .site .course-go{flex:none; color:var(--ink-faint)}
 .site .course:hover .course-go{color:var(--ink)}
+
+/* Carry on where you left off. The one question somebody arrives with is
+   "where was I", so it is answered above everything else and in the shape of
+   an answer — one thing, named, with one way forward — rather than as
+   another list to scan. */
+.site .resume{
+  display:flex; align-items:center; gap:var(--sp-4); flex-wrap:wrap;
+  padding:var(--sp-5); border-radius:16px; text-decoration:none;
+  background:var(--ink); color:#fff;
+  transition:box-shadow .16s ease, transform .16s ease;
+}
+.site .resume:hover{box-shadow:var(--sh-lift); transform:translateY(-2px)}
+.site .resume-tag{
+  flex:none; font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+  font-weight:700; color:var(--lime);
+}
+.site .resume-what{flex:1; min-width:0}
+.site .resume-what b{display:block; font-size:17px; font-weight:600; overflow-wrap:anywhere}
+/* --on-dark-soft is 11.71:1 on the near-black. The grey used on paper
+   elsewhere would be 3.4:1 here, which is why this token exists. */
+.site .resume-what em{display:block; font-style:normal; font-size:13px; color:var(--on-dark-soft); margin-top:3px}
+.site .resume .btn{flex:none; background:var(--lime); color:var(--ink)}
+@media (max-width:640px){
+  .site .resume{gap:var(--sp-3)}
+  .site .resume-tag{flex-basis:100%}
+  .site .resume .btn{width:100%; justify-content:center}
+}
 
 /* A button that has to read as a link, because the action is incidental —
    signing out is not what anybody came to this page to do. Underlined, not
@@ -1707,16 +1804,6 @@
   text-decoration:underline; text-underline-offset:2px; cursor:pointer;
 }
 .site .linkish:hover{color:var(--ink)}
-
-/* Notes typed during a class, read in place. `pre-wrap` because they were
-   written as lines — a presenter's numbered list collapses into a paragraph
-   under normal wrapping, and the numbering is the only structure it has. */
-.site .shelf-text{
-  margin:6px 0 0; padding:var(--sp-4) var(--sp-5);
-  border:1px solid var(--hair); border-top:0; border-radius:0 0 14px 14px;
-  background:var(--paper-2); color:var(--ink-soft);
-  font-size:14.5px; line-height:1.7; white-space:pre-wrap; overflow-wrap:anywhere;
-}
 
 /* ── The student's door ────────────────────────────────────────────────────
    Two panels side by side: the form, and what an account does and does not

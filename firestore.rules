@@ -403,6 +403,30 @@ service cloud.firestore {
     // The office can read and delete, because revoking has to clear the
     // student's list too or their dashboard keeps offering a course it can
     // no longer open.
+    // ---- What a student has watched -------------------------------------
+    //
+    // Theirs, and nobody else's — the office included. Progress is a reading
+    // habit, not attendance: attendance is a register somebody takes, and
+    // nothing in this app needs to know how far through a recording anybody
+    // got. So nothing in this app can see it.
+    //
+    // One document per course holding a map of item ID to true, so drawing a
+    // progress bar is one read rather than one per row. The map is capped
+    // because a shelf is a handful of items and anything larger did not come
+    // from this app.
+    // Read and write are separate clauses on purpose. A single one covering
+    // both reached for `request.resource` — which does not exist on a read —
+    // and refused every student their own record. The audit caught it; a
+    // reading of the rule would not have.
+    match /students/{uid}/progress/{workshopId} {
+      function mine() { return request.auth != null && request.auth.uid == uid; }
+      allow read, delete: if mine();
+      allow create, update: if mine()
+        && request.resource.data.keys().hasOnly(['done', 'last', 'at'])
+        && request.resource.data.get('done', {}).keys().size() <= 500
+        && sized(request.resource.data.get('last', ''), 200);
+    }
+
     match /students/{uid}/courses/{workshopId} {
       allow read, delete: if isAdmin() || (request.auth != null && request.auth.uid == uid);
       allow create, update: if request.auth != null

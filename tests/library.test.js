@@ -235,7 +235,7 @@ test('the page decides on the same field the rules do', () => {
   // database then refused to fill.
   const page = readFileSync(new URL('../src/pages/site/StudyCoursePage.jsx', import.meta.url), 'utf8');
   assert.match(page, /ws\?\.libraryOpen === true/);
-  assert.match(page, /if \(!member && !openToAll\) \{ setState\('denied'\); return; \}/);
+  assert.match(page, /if \(!member && !anyone\) \{ setState\('denied'\); return; \}/);
 });
 
 test('a student is not shown the same course twice', () => {

@@ -119,6 +119,8 @@ const LIME_GROUNDS = [
   { pattern: 'on-dark', token: '--ink' },        // text tones on that band
   { pattern: '\\.hdr\\.stuck', token: null },      // the floating capsule
   { pattern: '\\.bt\\.ink', token: '--tile-ink' }, // an ink bento tile
+  // "Carry on where you left off" — an ink panel on the student's dashboard.
+  { pattern: '\\.resume', token: '--ink' },
 ];
 
 test('lime is only ever text on a dark ground', () => {

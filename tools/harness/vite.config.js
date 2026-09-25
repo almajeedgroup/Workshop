@@ -22,6 +22,7 @@ export default defineConfig({
       { find: /^(?:\.\.\/)+lib\/certdb\.js$/, replacement: here('./certdb.js') },
       { find: /^(?:\.\.\/)+lib\/librarydb\.js$/, replacement: here('./librarydb.js') },
       { find: /^(?:\.\.\/)+lib\/studentdb\.js$/, replacement: here('./studentdb.js') },
+      { find: /^(?:\.\.\/)+lib\/progressdb\.js$/, replacement: here('./progressdb.js') },
       { find: /^(?:\.{1,2}\/)+AuthContext\.jsx$/, replacement: here('./AuthContext.jsx') },
       { find: /^(?:\.{1,2}\/)+firebase\.js$/, replacement: here('./firebase.js') },
     ],

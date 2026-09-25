@@ -981,6 +981,7 @@ src/
   lib/library.js           the course library: recordings, notes, formats
   lib/librarydb.js         the shelf, the bucket, and what a class leaves
   lib/studentdb.js         tickets, claims, memberships — who may read a shelf
+  lib/progressdb.js        what a student has watched, and theirs alone
   lib/speech.js            the browser's speech recogniser, wrapped
   lib/recorder.js          screen + microphone recording, wrapped
   lib/meetingdb.js         opening and closing a class, and moving its room
@@ -1018,8 +1019,8 @@ src/
 public/fonts, public/crests  certificate typefaces and crests
 tests/                     parser, tickets, dedupe, stats, xlsx,
                            certificates, imagefile, idcards, attendance,
-                           selfjoin, library, exporters, association,
-                           requests, overview, navigation
+                           selfjoin, library, study, exporters,
+                           association, requests, overview, navigation
 tools/harness/             the admin and the public task pages, mounted
                            against fabricated records (npm run harness)
 tools/contrast-audit.mjs   colour and focus, measured in a browser
@@ -1626,6 +1627,43 @@ when a class closes get it too, and the panel shows the rewritten address
 before saving so the office can object. Non-Google links are left completely
 alone: rewriting somebody else's URL on a guess is how a working link becomes
 a broken one.
+
+### The shape of the student's side
+
+Two pages, and both are built round the one question somebody arrives with —
+*where was I* — rather than round the filing.
+
+**`/study`** opens with **Carry on where you left off**: the most recently
+opened thing that is still unfinished, across every course, sorted by when
+rather than by course order. Below it the courses, each carrying its own
+progress bar.
+
+**`/study/:id`** is a course, not a list of links. The thing being watched
+fills the page and the course contents sit beside it, days as sections, a tick
+per item, and a button that goes to the first unfinished thing. On a phone the
+viewer goes on top and the contents below — never beside, once the sidebar
+would be too narrow to read a title in.
+
+**What is framed, and what is not.** Google's `/preview` addresses — which is
+why `tidyShareLink` makes them — and YouTube, through `youtube-nocookie` because
+a student watching a class recording has not asked to be followed around the
+web for it. Stored files get a real `<video>` or `<object>`; a `.pptx` gets a
+download, because a browser cannot show one and a blank rectangle is not an
+answer. **Everything else opens out**, and opening out stays available on every
+item regardless: most servers refuse to be framed, there is no way to ask from
+a browser, and the refusal arrives as a blank box with the reason in a console
+nobody is reading. A frame that shows nothing is worse than a link that works.
+
+**The tick is the student's own.** Nothing here measures whether a recording
+was really watched, and a bar that claimed to would be lying. Progress lives at
+`students/{uid}/progress/{workshopId}` and is **theirs alone — the office
+cannot read it**. Attendance is a register somebody takes; this is a reading
+habit, and nothing in the app needs it, so nothing in the app can see it.
+
+Progress is read *separately* from the shelf, and its failure is not a refusal.
+Bundling the two once meant a student whose place could not be read was told
+they were not on the course, which is both worse and untrue. Worst case they
+start from the beginning.
 
 ### Two kinds of course
 

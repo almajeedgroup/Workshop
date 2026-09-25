@@ -315,6 +315,34 @@ await allowed('a student may write their own course list',
 await refused('and forging a row in it still opens nothing',
   () => getDocs(libraryCol('OPEN26')));
 
+/* ---- what a student has watched ----------------------------------- */
+
+const progressDoc = (uid, w) => doc(db, 'students', uid, 'progress', w);
+
+await as('ana');
+await allowed('a student records their own progress',
+  () => setDoc(progressDoc(WHO.ana.uid, 'OPEN26'),
+    { done: { item1: true }, last: 'item1', at: serverTimestamp() }));
+await allowed('and reads it back',
+  () => getDoc(progressDoc(WHO.ana.uid, 'OPEN26')));
+await refused('but not with a field nobody named',
+  () => setDoc(progressDoc(WHO.ana.uid, 'OPEN26'),
+    { done: {}, last: '', at: serverTimestamp(), score: 99 }));
+
+await as('ben');
+await refused("a student cannot read another student's progress",
+  () => getDoc(progressDoc(WHO.ana.uid, 'OPEN26')));
+await refused('nor write into it',
+  () => setDoc(progressDoc(WHO.ana.uid, 'OPEN26'), { done: {}, last: 'x', at: serverTimestamp() }));
+await refused('nor list the whole of somebody else\u2019s reading',
+  () => getDocs(collection(db, 'students', WHO.ana.uid, 'progress')));
+
+/* Progress is a reading habit, not attendance. The office takes a register;
+   it has no business knowing how far through a recording anybody got. */
+await as('admin');
+await refused('and NEITHER CAN THE OFFICE, deliberately',
+  () => getDoc(progressDoc(WHO.ana.uid, 'OPEN26')));
+
 /* ---- a course the office has opened to everybody ------------------ */
 
 /* This is the one place a signed-in account with NO ticket may read

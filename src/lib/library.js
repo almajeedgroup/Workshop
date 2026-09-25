@@ -331,6 +331,112 @@ export function libraryFilePath(workshopId, fileName, at = new Date(), rand = Ma
 }
 
 /* ------------------------------------------------------------------ *
+ * Watching it in the page
+ * ------------------------------------------------------------------ */
+
+/**
+ * The address to put in a frame, or '' if this cannot be framed.
+ *
+ * Google's `/preview` URLs are made to be embedded, which is why
+ * `tidyShareLink` produces them — a recording that plays beside its own
+ * course contents is a different thing from a link that throws you into
+ * another tab and loses your place.
+ *
+ * EMPTY IS A REAL ANSWER and the caller must handle it. Two reasons it
+ * comes back empty, and neither is a fault:
+ *
+ *   - the host does not allow framing. Most do not, and there is no way to
+ *     ask from a browser: an X-Frame-Options refusal arrives as a blank box
+ *     with the error in a console nobody is reading. So only hosts known to
+ *     allow it are framed, and everything else opens out.
+ *   - it is a stored file. Those get a real <video> or <object>, not a
+ *     frame, because they are ours and we know what they are.
+ *
+ * Opening out stays available on every item either way. A frame that shows
+ * nothing is worse than a link that works.
+ */
+export function embeddableUrl(item) {
+  if (!item || item.source !== 'link') return '';
+  const raw = String(item.url || '');
+  let u = null;
+  try { u = new URL(raw); } catch { return ''; }
+
+  const host = u.hostname.toLowerCase();
+
+  // Drive and the Google editors, via the /preview form tidyShareLink makes.
+  if ((host === 'drive.google.com' || host === 'docs.google.com')
+      && /\/(preview|view)$/.test(u.pathname)) {
+    return `${u.origin}${u.pathname.replace(/\/view$/, '/preview')}`;
+  }
+
+  // YouTube, which is a normal way to publish a recording.
+  if (host.endsWith('youtube.com') && u.pathname === '/watch' && u.searchParams.get('v')) {
+    return `https://www.youtube-nocookie.com/embed/${u.searchParams.get('v')}`;
+  }
+  if (host === 'youtu.be' && u.pathname.length > 1) {
+    return `https://www.youtube-nocookie.com/embed/${u.pathname.slice(1)}`;
+  }
+
+  return '';
+}
+
+/** How an item should be shown: framed, played, or opened elsewhere. */
+export function viewerKind(item) {
+  if (!item) return 'none';
+  if (item.source === 'text') return 'text';
+  if (item.source === 'file') {
+    if (item.format === 'video') return 'video';
+    if (item.format === 'audio') return 'audio';
+    if (item.format === 'pdf' || item.format === 'image') return 'frame';
+    return 'download';          // a .pptx cannot be shown; it is fetched
+  }
+  return embeddableUrl(item) ? 'frame' : 'away';
+}
+
+/* ------------------------------------------------------------------ *
+ * Progress
+ * ------------------------------------------------------------------ */
+
+/**
+ * How far through a course somebody is.
+ *
+ * Counted against the shelf as it stands NOW, not against what was there
+ * when they started: a course that gains a recording makes everybody's bar
+ * go backwards, which is correct — there is more to watch than there was.
+ * Ticks for items since removed are ignored rather than counted, or a
+ * deleted item would leave somebody permanently past 100%.
+ */
+export function libraryProgress(items = [], done = {}) {
+  const total = items.length;
+  const finished = items.filter((i) => done[i.id]).length;
+  return {
+    total,
+    done: finished,
+    left: Math.max(0, total - finished),
+    percent: total === 0 ? 0 : Math.round((finished / total) * 100),
+    complete: total > 0 && finished >= total,
+  };
+}
+
+/**
+ * What "continue" should open.
+ *
+ * The last thing opened, IF it is still there and still unfinished —
+ * somebody who stopped halfway wants that one back, not the next. Failing
+ * that, the first thing not ticked off. Failing that, nothing: the course
+ * is finished and there is nothing to continue.
+ */
+export function nextUp(items = [], progress = {}) {
+  const ordered = sortLibrary(items);
+  const done = progress.done || {};
+
+  const last = ordered.find((i) => i.id === progress.last);
+  if (last && !done[last.id]) return last;
+
+  return ordered.find((i) => !done[i.id]) || null;
+}
+
+/* ------------------------------------------------------------------ *
  * Reading the shelf
  * ------------------------------------------------------------------ */
 

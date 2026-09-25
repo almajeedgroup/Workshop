@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../AuthContext.jsx';
 import { getPublicWorkshop } from '../../lib/publicdb.js';
 import { listMyCourses, claimTicket } from '../../lib/studentdb.js';
-import { listOpenLibraries } from '../../lib/librarydb.js';
+import { listOpenLibraries, listLibrary } from '../../lib/librarydb.js';
+import { getAllProgress } from '../../lib/progressdb.js';
+import { libraryProgress, nextUp, libraryFormat } from '../../lib/library.js';
 import { formatDateRange } from '../../lib/tickets.js';
 import { ISSUER } from '../../lib/schema.js';
 import { IconArrow, IconBook, IconShield } from '../../components/site/Icons.jsx';
@@ -38,6 +40,10 @@ export default function StudyPage() {
      registered has nothing in `courses` and would otherwise see an empty
      page with a form asking for a ticket they do not have. */
   const [open, setOpen] = useState([]);
+  /* What to carry on with, across every course. A dashboard that only
+     lists things is a filing cabinet; the one question somebody arrives
+     with is "where was I". */
+  const [resume, setResume] = useState(null);
   const [ticket, setTicket] = useState('');
   const [workshopId, setWorkshopId] = useState('');
   const [busy, setBusy] = useState(false);
@@ -71,6 +77,26 @@ export default function StudyPage() {
        things. */
     const claimed = new Set(withTitles.map((c) => c.workshopId));
     setOpen((await listOpenLibraries().catch(() => [])).filter((c) => !claimed.has(c.id)));
+
+    /* The shelves and the progress together, because a bar needs both: how
+       much there is, and how much of it is ticked. One read per course,
+       which is a handful — a student is on three courses, not three
+       hundred. A course whose shelf refuses simply shows no bar. */
+    const seen = await getAllProgress(uid).catch(() => ({}));
+    const shelves = await Promise.all(withTitles.map(async (c) => ({
+      ...c,
+      items: await listLibrary(c.workshopId).catch(() => []),
+      progress: seen[c.workshopId] || { done: {}, last: '', at: 0 },
+    })));
+    setCourses(shelves);
+
+    /* The most recently opened thing that is still unfinished. Sorted by
+       when, not by course order: "where was I" has one answer. */
+    const candidates = shelves
+      .map((c) => ({ course: c, item: nextUp(c.items, c.progress), at: c.progress.at || 0 }))
+      .filter((r) => r.item && r.at > 0)
+      .sort((a, b) => b.at - a.at);
+    setResume(candidates[0] || null);
   }, []);
 
   /* A redirect sign-in finishes on a LATER page load than the one that
@@ -330,6 +356,28 @@ export default function StudyPage() {
             <h2>What you can <em>open</em></h2>
           </div>
 
+          {resume && (
+            <Link
+              className="resume mt-5"
+              to={`/study/${resume.course.workshopId}`}
+              data-reveal
+            >
+              <span className="resume-tag">Carry on where you left off</span>
+              <span className="resume-what">
+                <b>{resume.item.title}</b>
+                <em>
+                  {resume.course.workshop?.title || resume.course.workshopId}
+                  {' · '}
+                  {resume.item.kind === 'recording' ? 'Recording' : 'Notes'}
+                  {libraryFormat(resume.item.format).key === 'link'
+                    ? ''
+                    : ` · ${libraryFormat(resume.item.format).label}`}
+                </em>
+              </span>
+              <span className="btn sm" aria-hidden="true">Continue <IconArrow /></span>
+            </Link>
+          )}
+
           {courses === null && <p className="lede mt-5">Looking…</p>}
 
           {courses?.length === 0 && (
@@ -344,21 +392,34 @@ export default function StudyPage() {
 
           {courses?.length > 0 && (
             <div className="courses mt-6">
-              {courses.map(({ workshopId: id, ticketId, workshop }) => (
-                <Link className="course" key={id} to={`/study/${id}`} data-reveal>
-                  <span className="course-ico" aria-hidden="true"><IconBook /></span>
-                  <span className="course-what">
-                    <b>{workshop?.title || id}</b>
-                    {/* A course with no public mirror has no title to show.
-                        Saying so beats an empty card: the shelf still
-                        opens, and the student can tell the office which
-                        one looks wrong. */}
-                    <em>{workshop ? formatDateRange(workshop) : `Course ${id}`}</em>
-                    <span className="mono-id">{ticketId}</span>
-                  </span>
-                  <span className="course-go" aria-hidden="true"><IconArrow /></span>
-                </Link>
-              ))}
+              {courses.map((c) => {
+                const bar = libraryProgress(c.items || [], c.progress?.done);
+                return (
+                  <Link className="course" key={c.workshopId} to={`/study/${c.workshopId}`} data-reveal>
+                    <span className="course-ico" aria-hidden="true"><IconBook /></span>
+                    <span className="course-what">
+                      <b>{c.workshop?.title || c.workshopId}</b>
+                      {/* A course with no public mirror has no title to show.
+                          Saying so beats an empty card: the shelf still
+                          opens, and the student can tell the office which
+                          one looks wrong. */}
+                      <em>{c.workshop ? formatDateRange(c.workshop) : `Course ${c.workshopId}`}</em>
+                      {bar.total > 0 && (
+                        <>
+                          <span className="pbar sm" role="img"
+                            aria-label={`${bar.done} of ${bar.total} finished`}>
+                            <i style={{ width: `${bar.percent}%` }} />
+                          </span>
+                          <span className="course-count">
+                            {bar.complete ? 'Finished' : `${bar.done} of ${bar.total} done`}
+                          </span>
+                        </>
+                      )}
+                    </span>
+                    <span className="course-go" aria-hidden="true"><IconArrow /></span>
+                  </Link>
+                );
+              })}
             </div>
           )}
 
