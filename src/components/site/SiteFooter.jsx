@@ -34,6 +34,7 @@ export default function SiteFooter() {
           <div>
             <h4>Certificates</h4>
             <Link to="/verify">Verify a certificate</Link>
+            <Link to="/study">Your courses</Link>
             <Link to="/certificates#awards">The four awards</Link>
             <Link to="/certificates#how">How verification works</Link>
           </div>

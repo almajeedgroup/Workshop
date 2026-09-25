@@ -1617,3 +1617,80 @@
   margin-top:var(--sp-2); font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
   letter-spacing:.04em; color:var(--ink-soft);
 }
+
+/* ── The course library, as a student reads it ─────────────────────────────
+   A list, not a grid. Every row is the same kind of thing — open this — and
+   a grid of identical tiles makes somebody scan for a difference that is not
+   there. The format badge does the telling apart, and it is set in words
+   (PDF, PPT) rather than colour alone, because "the green one" is no use to
+   a third of readers and no use at all in a phone's dark corridor. */
+.site .shelf{display:grid; gap:8px; list-style:none; padding:0; margin:0}
+.site .shelf-row{margin:0}
+.site .shelf-link{
+  display:flex; align-items:center; gap:var(--sp-4);
+  padding:var(--sp-4); border:1px solid var(--hair); border-radius:14px;
+  background:var(--paper); text-decoration:none; color:var(--ink);
+  transition:border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+.site .shelf-link:hover{border-color:var(--ink); box-shadow:var(--sh-lift); transform:translateY(-1px)}
+.site .shelf-link[aria-busy='true']{opacity:.6; pointer-events:none}
+
+/* The badge is a fixed width so the titles beside it line up down the page —
+   a ragged left edge on a list this uniform reads as a mistake. */
+.site .shelf-ico{
+  flex:none; display:grid; place-items:center;
+  width:52px; height:52px; border-radius:11px;
+  background:var(--paper-3); border:1px solid var(--hair-2);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:11px; font-weight:700; letter-spacing:.04em; color:var(--ink);
+}
+/* A recording is the thing somebody came back for, so it is the one that
+   carries the brand colour. Notes keep the quiet ground. */
+.site .shelf-row[data-kind='recording'] .shelf-ico{background:var(--tile-lime); border-color:transparent}
+
+.site .shelf-what{flex:1; min-width:0}
+.site .shelf-what b{display:block; font-weight:600; font-size:15.5px; overflow-wrap:anywhere}
+.site .shelf-what small{display:block; margin-top:3px; font-size:12.5px; color:var(--ink-faint)}
+.site .shelf-wrong{display:block; margin-top:4px; font-style:normal; font-size:12.5px; color:var(--alert)}
+.site .shelf-go{flex:none; color:var(--ink-faint); font-size:15px}
+.site .shelf-link:hover .shelf-go{color:var(--ink)}
+
+@media (max-width:560px){
+  /* The badge shrinks but never leaves: it is the only thing telling a
+     recording from a spreadsheet at a glance. */
+  .site .shelf-link{gap:var(--sp-3); padding:var(--sp-3)}
+  .site .shelf-ico{width:42px; height:42px; font-size:10px}
+}
+
+/* A course on a student's own page. Deliberately NOT the poster card the
+   programmes pages use: a poster is mostly picture, and a course here has
+   no picture — only a name, its dates and the ticket it was claimed with.
+   Reusing the poster left an empty grey rectangle above every card and the
+   text running out past its own edge. */
+.site .courses{display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:var(--sp-4)}
+.site .course{
+  display:flex; align-items:center; gap:var(--sp-4);
+  padding:var(--sp-5); border:1px solid var(--hair); border-radius:16px;
+  background:var(--paper); text-decoration:none; color:var(--ink);
+  transition:border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+.site .course:hover{border-color:var(--ink); box-shadow:var(--sh-lift); transform:translateY(-2px)}
+.site .course-ico{
+  flex:none; display:grid; place-items:center; width:48px; height:48px;
+  border-radius:12px; background:var(--tile-lime); color:var(--ink);
+}
+.site .course-what{flex:1; min-width:0}
+.site .course-what b{display:block; font-weight:600; font-size:16px; line-height:1.35; overflow-wrap:anywhere}
+.site .course-what em{display:block; font-style:normal; font-size:13px; color:var(--ink-faint); margin-top:3px}
+.site .course-what .mono-id{margin-top:6px; font-size:12px; display:block}
+.site .course-go{flex:none; color:var(--ink-faint)}
+.site .course:hover .course-go{color:var(--ink)}
+
+/* A button that has to read as a link, because the action is incidental —
+   signing out is not what anybody came to this page to do. Underlined, not
+   coloured: colour alone is not a signal every reader gets. */
+.site .linkish{
+  background:none; border:0; padding:0; font:inherit; color:var(--ink-soft);
+  text-decoration:underline; text-underline-offset:2px; cursor:pointer;
+}
+.site .linkish:hover{color:var(--ink)}

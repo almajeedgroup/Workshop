@@ -163,7 +163,12 @@ export default function SiteHeader() {
           </nav>
 
           <div className="nav-acts">
-            <Link className="btn sm ghost" to="/login">Sign in</Link>
+            {/* The STUDENT door, not the administrator one. There is exactly
+                one "sign in" a visitor of this site could want, and it is
+                this: there are hundreds of students and three
+                administrators, whose door stays in the footer where it has
+                always been. */}
+            <Link className="btn sm ghost" to="/study">Your courses</Link>
             <Link className="btn sm cta" to="/verify">Verify a certificate</Link>
           </div>
 
@@ -191,6 +196,7 @@ export default function SiteHeader() {
                 {l.label}
               </NavLink>
             ))}
+            <Link className="btn ghost" to="/study">Your courses</Link>
             <Link className="btn" to="/verify">Verify a certificate</Link>
           </nav>
         </div>

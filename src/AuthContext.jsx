@@ -75,6 +75,32 @@ export function AuthProvider({ children }) {
   };
 
   /**
+   * Sign a STUDENT in with Google.
+   *
+   * Separate from `loginWithGoogle` above, and it must stay separate: that
+   * one signs out anybody who is not the owner, which is right for the
+   * administrator door and would throw every student straight back out.
+   *
+   * This one accepts whoever arrives. That is safe because SIGNING IN IS
+   * NOT A PERMISSION anywhere in this app — `firestore.rules` grants an
+   * account nothing until it holds a membership, and a membership needs a
+   * claim on a ticket the course really issued. A student account can read
+   * one course's library and cannot read a workshop, a registration, a
+   * phone number or another student's anything. The rules audit proves
+   * that with a signed-in account that has claimed nothing.
+   *
+   * `prompt: select_account` because a shared family machine is the normal
+   * case here, and silently reusing whichever Google account happens to be
+   * signed in would claim a ticket against the wrong person — and a claim
+   * is exclusive, so it would take the office to undo.
+   */
+  const loginStudentWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    return signInWithPopup(auth, provider);
+  };
+
+  /**
    * Send a reset link.
    *
    * An administrator locked out of the app previously had to be reset from
@@ -86,7 +112,10 @@ export function AuthProvider({ children }) {
   const logout = () => signOut(auth);
 
   return (
-    <Ctx.Provider value={{ user, isAdmin, loading, login, loginWithGoogle, resetPassword, logout }}>
+    <Ctx.Provider value={{
+      user, isAdmin, loading, login, loginWithGoogle,
+      loginStudentWithGoogle, resetPassword, logout,
+    }}>
       {children}
     </Ctx.Provider>
   );

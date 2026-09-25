@@ -28,7 +28,23 @@ const WORKSHOP = {
   meetingRoom: 'workshop-demo-room',
   meetingUrl: 'https://meet.jit.si/workshop-demo-room',
 };
-export async function getPublicWorkshop() { return WORKSHOP; }
+/* Keyed by ID, because the dashboard lists SEVERAL courses and a stub that
+   answers the same one to every question showed two identical cards — which
+   hid whether the page was reading the ID it was given at all. `INNO25`
+   answers null on purpose: that is the course with no public mirror, where
+   the page has an ID and no title and still has to be readable. */
+const MIRRORS = {
+  AIHOW26: WORKSHOP,
+  RESM26: {
+    ...WORKSHOP,
+    id: 'RESM26',
+    title: 'Research methodology',
+    startDate: '2026-03-02',
+    endDate: '2026-03-07',
+    venue: 'Al-Majeed Campus',
+  },
+};
+export async function getPublicWorkshop(id) { return MIRRORS[id] || null; }
 export async function submitRegistrationRequest(id, form) {
   return { ref: 'AIHOW26-R-014', name: form.name || 'Fathima Zoha' };
 }

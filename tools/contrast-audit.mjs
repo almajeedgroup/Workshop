@@ -67,11 +67,19 @@ const ADMIN_ROUTES = [
   /* Public, but unreachable without a certificate in the database — so
      they are audited here rather than not at all. */
   '/verify/AIHOW26-COM-001', '/c/AIHOW26-COM-001',
+  /* Likewise the student's own pages: they need a signed-in account and a
+     claimed ticket, so the harness is the only place they render. `who=out`
+     is the sign-in door, which is a different page from the dashboard and
+     the one an unclaimed visitor actually lands on. */
+  '/study', '/study/AIHOW26',
 ];
 
 const ADMIN = process.env.ADMIN || '';
 const PATHS = ADMIN
-  ? ADMIN_ROUTES.map((r) => `/?at=${encodeURIComponent(r)}`)
+  ? ADMIN_ROUTES.map((r) => `/?at=${encodeURIComponent(r)}`
+      /* The student pages render nothing at all as an administrator, and a
+         page that renders nothing measures clean. */
+      + (r.startsWith('/study') ? '&who=student' : ''))
   : SITE_PATHS;
 
 /* The page-side pass. A template literal, so every backslash in a regex here

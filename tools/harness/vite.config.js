@@ -20,6 +20,8 @@ export default defineConfig({
       { find: /^(?:\.\.\/)+lib\/classroomdb\.js$/, replacement: here('./classroomdb.js') },
       { find: /^(?:\.\.\/)+lib\/photodb\.js$/, replacement: here('./photodb.js') },
       { find: /^(?:\.\.\/)+lib\/certdb\.js$/, replacement: here('./certdb.js') },
+      { find: /^(?:\.\.\/)+lib\/librarydb\.js$/, replacement: here('./librarydb.js') },
+      { find: /^(?:\.\.\/)+lib\/studentdb\.js$/, replacement: here('./studentdb.js') },
       { find: /^(?:\.{1,2}\/)+AuthContext\.jsx$/, replacement: here('./AuthContext.jsx') },
     ],
   },

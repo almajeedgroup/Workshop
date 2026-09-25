@@ -31,6 +31,8 @@ import AttendancePage from './pages/AttendancePage.jsx';
 import ClassPage from './pages/ClassPage.jsx';
 import CertificatePage from './pages/CertificatePage.jsx';
 import VerifyPage from './pages/VerifyPage.jsx';
+import StudyPage from './pages/site/StudyPage.jsx';
+import StudyCoursePage from './pages/site/StudyCoursePage.jsx';
 
 /**
  * What the browser tab says.
@@ -144,6 +146,12 @@ const PUBLIC = [
   ['/c/:certificateId', <CertificatePage />],
   ['/register/:workshopId', <RegisterPage />],
   ['/class/:workshopId', <JoinClassPage />],
+  /* A student's own courses. PUBLIC chrome deliberately: this is the site's
+     own door, not the admin tool's. The regex below must never grow to
+     match it, or a signed-in student lands in the administrator shell and
+     is told they are not authorised. */
+  ['/study', <StudyPage />],
+  ['/study/:workshopId', <StudyCoursePage />],
 ];
 
 export default function App() {
