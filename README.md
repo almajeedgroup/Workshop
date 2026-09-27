@@ -1008,7 +1008,7 @@ src/
                            Attendance, Class, People, Person
   pages/site/              the public site: Home, Programmes, Certificates,
                            About, Contact, Register, JoinClass,
-                           Study, StudyCourse
+                           Courses, Study, StudyCourse
   AuthContext.jsx          sign-in + admin allow-list check
   class.css                the online classroom, on both sides of it
   styles.css               the admin tool; near-black + the four colours
@@ -1664,6 +1664,34 @@ Progress is read *separately* from the shelf, and its failure is not a refusal.
 Bundling the two once meant a student whose place could not be read was told
 they were not on the course, which is both worse and untrue. Worst case they
 start from the beginning.
+
+### The course directory
+
+`/courses` lists every published course and **its code**, because the student
+dashboard asks for a course code and a student who has lost their ticket knows
+neither it nor their ticket ID. Nothing else lists courses publicly: the mirror
+is readable one document at a time **by ID**, which is no help when the ID is
+the thing you are missing.
+
+Opening `publicWorkshops` to `list` would have been the easy answer and the
+wrong one — every workshop gets a mirror the moment it is saved, so that would
+publish every half-finished draft with its working title. Instead the directory
+is one document, `publicIndex/courses`, under the rule that already exists:
+public `get`, admin write. It carries only poster facts — title, code, dates,
+mode, venue — and **what a reader can do with it**, so each row offers the door
+that course actually has: Register, Join the class, or Watch it.
+
+A course appears once it has **a title and a start date**. That is the line
+between a draft somebody is still typing and a course that exists, and it is
+deliberately one a person can predict without reading the source.
+
+The entry is rewritten wherever the mirror is, so the two cannot drift, and a
+directory failure is swallowed — losing an entry costs a lookup, losing the
+save costs the office their work. **Rebuild the directory** on Records covers
+the courses that existed before this did.
+
+The code is the loudest thing on the page and copies in one tap: a student
+knows what their course was called; what they cannot remember is `AIHOW26`.
 
 ### Finding your own certificate
 

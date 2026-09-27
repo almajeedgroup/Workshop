@@ -26,6 +26,7 @@ import TicketPage from '../../src/pages/TicketPage.jsx';
 import IdCardsPage from '../../src/pages/IdCardsPage.jsx';
 import CertificatePage from '../../src/pages/CertificatePage.jsx';
 import VerifyPage from '../../src/pages/VerifyPage.jsx';
+import CoursesPage from '../../src/pages/site/CoursesPage.jsx';
 import StudyPage from '../../src/pages/site/StudyPage.jsx';
 import StudyCoursePage from '../../src/pages/site/StudyCoursePage.jsx';
 /* The admin area's refusal. Mounted here because it is a screen real people
@@ -37,7 +38,8 @@ import '../../src/idcard.css';
 const at = new URLSearchParams(location.search).get('at') || '/';
 /* `/study` has no trailing segment when it is the dashboard itself, so the
    test cannot require one — it is `/study` or `/study/AIHOW26`. */
-const isPublic = /^\/(register|class|c|verify)\//.test(at) || /^\/study(\/|$)/.test(at);
+const isPublic = /^\/(register|class|c|verify)\//.test(at)
+  || /^\/(study|courses)(\/|$)/.test(at);
 
 /* The admin shell, copied from App.jsx: sidebar, main, footer. */
 function AdminShell({ children }) {
@@ -74,6 +76,7 @@ createRoot(document.getElementById('root')).render(
             <Route path="/w/:id/cards" element={<IdCardsPage />} />
           <Route path="/c/:certificateId" element={<CertificatePage />} />
           <Route path="/verify/:certificateId" element={<VerifyPage />} />
+            <Route path="/courses" element={<CoursesPage />} />
             <Route path="/study" element={<StudyPage />} />
             <Route path="/study/:workshopId" element={<StudyCoursePage />} />
             <Route path="/not-admin" element={<Protected><p>never reached</p></Protected>} />

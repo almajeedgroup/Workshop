@@ -459,6 +459,11 @@ export default function StudyPage() {
               Both are printed on your ticket. The course code is the short code at
               the top; the ticket ID is the longer one underneath it.
             </p>
+            {/* The one question this form cannot answer for itself. Without
+                this a student who has lost their ticket has nowhere to go. */}
+            <p className="t-sm mt-2" style={{ color: 'var(--ink-faint)' }}>
+              Lost the ticket? <Link to="/courses">Find your course code</Link>.
+            </p>
 
             <label htmlFor="claim-course" className="f-label mt-5">Course code *</label>
             <input

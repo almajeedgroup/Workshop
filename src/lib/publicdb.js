@@ -30,6 +30,123 @@ import { formatPhone } from './parser.js';
 
 const PUBLIC_WORKSHOPS = 'publicWorkshops';
 const REQUESTS = 'registrationRequests';
+const PUBLIC_INDEX = 'publicIndex';
+const DIRECTORY = 'courses';
+
+/* ------------------------------------------------------------------ *
+ * The course directory
+ * ------------------------------------------------------------------ */
+
+/**
+ * ONE PUBLIC DOCUMENT LISTING EVERY PUBLISHED COURSE, and its code.
+ *
+ * ── WHY THIS EXISTS ──────────────────────────────────────────────────────
+ *
+ * The student dashboard asks for a course code and a ticket ID, and a
+ * student who has lost their ticket knows neither. Until now there was no
+ * way to look one up: `publicWorkshops` is readable one document at a time,
+ * BY ID, which is no help at all when the ID is the thing you are missing.
+ *
+ * ── WHY NOT JUST ALLOW `list` ON THE MIRROR ──────────────────────────────
+ *
+ * Because every workshop gets a mirror the moment it is created — see
+ * `syncPublicWorkshop`, called from addWorkshop and updateWorkshop. Opening
+ * that collection to listing would publish every half-finished draft, with
+ * its working title and its guessed dates, the instant somebody saved it.
+ *
+ * So the directory is its own document and carries only what a poster would:
+ * a title, a code, dates, where and how. No fee, no contact numbers, no
+ * meeting room — those live on the mirror for the pages that need them.
+ *
+ * ── WHAT GETS IN ─────────────────────────────────────────────────────────
+ *
+ * A course with a title AND a start date. That is the line between a draft
+ * somebody is still typing and a course that exists, and it is deliberately
+ * one a person can predict without reading this file.
+ */
+export function courseDirectoryEntry(workshopId, workshop) {
+  const str = (v) => (v === undefined || v === null ? '' : String(v).trim());
+  return {
+    id: str(workshopId),
+    title: str(workshop.title).slice(0, 200),
+    code: str(workshop.code).slice(0, 40),
+    startDate: str(workshop.startDate),
+    endDate: str(workshop.endDate),
+    mode: str(workshop.mode),
+    venue: str(workshop.venue).slice(0, 200),
+    // What a reader can DO with it, so the directory can offer the right
+    // door rather than sending everybody to the same one.
+    registrationOpen: str(workshop.registrationOpen) === 'Open',
+    classOpen: classIsLive(workshop),
+    libraryOpen: str(workshop.libraryAccess) === 'Open',
+  };
+}
+
+/** Whether a course is finished enough to be worth listing. */
+export function belongsInDirectory(workshop) {
+  return Boolean(String(workshop?.title || '').trim()
+    && String(workshop?.startDate || '').trim());
+}
+
+const directoryRef = () => doc(db, PUBLIC_INDEX, DIRECTORY);
+
+/**
+ * Put this course in the directory, or take it out.
+ *
+ * Read-modify-write on one document rather than a rebuild from every
+ * mirror: this runs on EVERY workshop save, and reading the whole
+ * collection each time would turn a title edit into a hundred reads.
+ *
+ * Failure is swallowed. The directory is a convenience — losing an entry
+ * costs a lookup, and it comes back on the next save or the next rebuild.
+ * Taking a workshop save down with it would cost the office their work.
+ */
+export async function updateCourseDirectory(workshopId, workshop) {
+  try {
+    const snap = await getDoc(directoryRef());
+    const current = Array.isArray(snap.data()?.courses) ? snap.data().courses : [];
+    const without = current.filter((c) => c.id !== workshopId);
+    const courses = belongsInDirectory(workshop)
+      ? [...without, courseDirectoryEntry(workshopId, workshop)]
+      : without;
+    await setDoc(directoryRef(), { courses, updatedAt: serverTimestamp() });
+  } catch {
+    /* See above: a convenience, not a record. */
+  }
+}
+
+/** Public. Every published course, newest first. */
+export async function listCourseDirectory() {
+  const snap = await getDoc(directoryRef()).catch(() => null);
+  const courses = snap?.exists() ? snap.data().courses : [];
+  if (!Array.isArray(courses)) return [];
+  // Newest first: somebody looking up a code is far likelier to want the
+  // course that just ran than one from three years ago.
+  return [...courses].sort((a, b) => String(b.startDate || '').localeCompare(String(a.startDate || '')));
+}
+
+/**
+ * Rebuild the whole directory from the mirrors. Administrator only.
+ *
+ * For the courses that existed before this did, and for the day an entry
+ * goes missing. Idempotent, and it REMOVES entries whose course no longer
+ * qualifies — which is the one thing the incremental path cannot do for a
+ * course nobody has saved since.
+ */
+export async function rebuildCourseDirectory() {
+  const snap = await getDocs(collection(db, PUBLIC_WORKSHOPS));
+  const courses = [];
+  let skipped = 0;
+
+  snap.forEach((d) => {
+    const w = d.data();
+    if (!belongsInDirectory(w)) { skipped += 1; return; }
+    courses.push(courseDirectoryEntry(d.id, w));
+  });
+
+  await setDoc(directoryRef(), { courses, updatedAt: serverTimestamp() });
+  return { listed: courses.length, skipped };
+}
 
 /* ------------------------------------------------------------------ *
  * The public mirror
@@ -83,9 +200,13 @@ export async function syncPublicWorkshop(workshopId, workshop) {
     { ...publicWorkshopRecord(workshop), updatedAt: serverTimestamp() },
     { merge: false }
   );
+  // The directory is written here too, so the two cannot drift for the same
+  // reason the mirror is written on every save.
+  await updateCourseDirectory(workshopId, workshop);
 }
 
 export async function removePublicWorkshop(workshopId) {
+  await updateCourseDirectory(workshopId, {});   // drops it from the listing
   try {
     await deleteDoc(doc(db, PUBLIC_WORKSHOPS, workshopId));
   } catch {

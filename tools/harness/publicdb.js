@@ -73,3 +73,26 @@ export async function listPendingRequests() {
 }
 export async function acceptRequest() {}
 export async function rejectRequest() {}
+
+/* The public course directory. Three courses, one of each state, because
+   the page offers a different door for each and a stub with one row shows
+   none of that. `INNO25` has no open registration or class — only a library
+   somebody opened — which is the case that reaches the third branch. */
+export async function listCourseDirectory() {
+  return [
+    { id: 'AIHOW26', title: 'Artificial Intelligence, hands on', code: 'AIHOW26',
+      startDate: '2026-02-09', endDate: '2026-02-14', mode: 'Hybrid',
+      venue: 'Kabir IND PU College for Women',
+      registrationOpen: true, classOpen: true, libraryOpen: false },
+    { id: 'RESM26', title: 'Research methodology', code: 'RESM26',
+      startDate: '2026-03-02', endDate: '2026-03-07', mode: 'Offline',
+      venue: 'Al-Majeed Campus',
+      registrationOpen: false, classOpen: false, libraryOpen: false },
+    { id: 'INNO25', title: 'Innovation practice', code: 'INNO25',
+      startDate: '2025-11-10', endDate: '2025-11-15', mode: 'Offline',
+      venue: 'Kabir IND PU College for Women',
+      registrationOpen: false, classOpen: false, libraryOpen: true },
+  ];
+}
+export async function rebuildCourseDirectory() { return { listed: 3, skipped: 1 }; }
+export async function updateCourseDirectory() {}

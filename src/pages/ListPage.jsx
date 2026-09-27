@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { listWorkshops, withRegistrations, deleteWorkshop } from '../lib/db.js';
-import { listPendingRequests } from '../lib/publicdb.js';
+import { listPendingRequests, rebuildCourseDirectory } from '../lib/publicdb.js';
 import { WORKSHOP_FIELDS, ISSUER } from '../lib/schema.js';
 import { formatDateRange } from '../lib/tickets.js';
 import { brandLockup } from '../lib/brand.js';
@@ -35,6 +35,8 @@ export default function ListPage() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [dirBusy, setDirBusy] = useState(false);
+  const [dirNote, setDirNote] = useState('');
   const [q, setQ] = useState('');
   const [mode, setMode] = useState('');
   const [year, setYear] = useState('');
@@ -73,6 +75,19 @@ export default function ListPage() {
       .catch((e) => live && setError(e.message));
     return () => { live = false; };
   }, [view, loading, boardLoaded, rows]);
+
+  const republishDirectory = async () => {
+    setDirBusy(true); setDirNote('');
+    try {
+      const { listed, skipped } = await rebuildCourseDirectory();
+      setDirNote(`${listed} course${listed === 1 ? '' : 's'} listed publicly`
+        + (skipped ? `; ${skipped} left out for having no title or start date.` : '.'));
+    } catch (e) {
+      setDirNote(e?.message || 'That did not work.');
+    } finally {
+      setDirBusy(false);
+    }
+  };
 
   const chooseView = (next) => {
     setView(next);
@@ -162,6 +177,27 @@ export default function ListPage() {
 
       {error && <div className="notice warn">{error}</div>}
       {notice && <div className="notice no-print">{notice}</div>}
+
+      {/* The public directory. Every save already updates one course's entry;
+          this is for the courses that existed before the directory did, and
+          for the day an entry goes missing. */}
+      <div className="notice no-print">
+        <b>Course directory.</b>{' '}
+        <a href="/courses" target="_blank" rel="noopener noreferrer">/courses</a>{' '}
+        lists every published course and its code, so a student who has lost
+        their ticket can look one up. A course appears once it has a title and
+        a start date.
+        <div className="btn-row mt-3">
+          <button type="button" disabled={dirBusy} onClick={republishDirectory}>
+            {dirBusy ? 'Publishing…' : 'Rebuild the directory'}
+          </button>
+          <span className="hint" style={{ marginLeft: 4 }}>
+            Only needed once, or if something is missing. Saving a workshop
+            keeps its own entry in step.
+          </span>
+        </div>
+        {dirNote && <div className="mt-2"><b>{dirNote}</b></div>}
+      </div>
 
       <div className="toolbar no-print">
         <div className="btn-row" role="group" aria-label="View">

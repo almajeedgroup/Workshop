@@ -32,6 +32,7 @@ import AttendancePage from './pages/AttendancePage.jsx';
 import ClassPage from './pages/ClassPage.jsx';
 import CertificatePage from './pages/CertificatePage.jsx';
 import VerifyPage from './pages/VerifyPage.jsx';
+import CoursesPage from './pages/site/CoursesPage.jsx';
 import StudyPage from './pages/site/StudyPage.jsx';
 import StudyCoursePage from './pages/site/StudyCoursePage.jsx';
 
@@ -185,6 +186,9 @@ const PUBLIC = [
      own door, not the admin tool's. The regex below must never grow to
      match it, or a signed-in student lands in the administrator shell and
      is told they are not authorised. */
+  /* Every course and its code. The one page that answers "what was my
+     course called in the box" — nothing else lists courses publicly. */
+  ['/courses', <CoursesPage />],
   ['/study', <StudyPage />],
   ['/study/:workshopId', <StudyCoursePage />],
 ];

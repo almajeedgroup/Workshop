@@ -25,6 +25,7 @@ export default function SiteFooter() {
             <h4>Explore</h4>
             <Link to="/">Home</Link>
             <Link to="/programmes">Programmes</Link>
+            <Link to="/courses">All courses &amp; codes</Link>
             <Link to="/features">Features</Link>
             <Link to="/certificates">Certificates</Link>
             <Link to="/about">About</Link>
