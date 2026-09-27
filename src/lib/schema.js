@@ -62,8 +62,8 @@ export const ISSUER = {
    */
   operator: 'Al-Majeed School of Research Methodology and Innovation',
   /** The public site. Used in the footer, on certificates and in share links. */
-  site: 'school.almajeedgroup.in',
-  siteUrl: 'https://school.almajeedgroup.in',
+  site: 'workshop.almajeedgroup.in',
+  siteUrl: 'https://workshop.almajeedgroup.in',
   email: 'almajeed.work@gmail.com',
   city: 'Bengaluru, Karnataka',
   /**

@@ -1,5 +1,5 @@
 /* =====================================================================
-   Public site — school.almajeedgroup.in
+   Public site — workshop.almajeedgroup.in
    =====================================================================
    Everything is scoped under `.site`. styles.css is the admin tool and
    styles bare `a`, `button`, `input`, `table` globally, so anything that
@@ -81,7 +81,7 @@
 }
 .site *{box-sizing:border-box}
 /* Long unbreakable tokens — a domain, an email, a certificate ID — must wrap
-   rather than widen the page. school.almajeedgroup.in in a heading was giving
+   rather than widen the page. workshop.almajeedgroup.in in a heading was giving
    the contact page a horizontal scrollbar on a phone. */
 .site h1,.site h2,.site h3,.site h4,.site p,.site a,.site li,.site dd,.site td{overflow-wrap:break-word}
 /* Grid and flex children default to min-width:auto, which lets wide content
@@ -867,11 +867,18 @@
   color:var(--ink);
   text-shadow:0 0 28px rgba(255,255,255,.9), 0 0 60px rgba(255,255,255,.55);
 }
-/* A panel whose heading is one long unbreakable token — a domain — takes
-   a size that fits it on one line instead of the display size that suits
-   two or three short words. At 92px "school.almajeedgroup.in" wrapped and
-   left the "n" alone on the second line. */
-.site .cta-panel.one-line h2{font-size:clamp(24px,4.2vw,54px); line-height:1.1}
+/* A panel whose heading is one long unbreakable token — a domain — takes a
+   size that FITS IT ON ONE LINE rather than the display size that suits two
+   or three short words. At 92px the domain wrapped and left its last letter
+   alone on a second line, which is what `nowrap` and this clamp are for.
+   
+   The minimum is the part that matters and it is measured, not chosen: with
+   `nowrap`, a floor that is too high stops wrapping and starts OVERFLOWING
+   the panel instead, which is worse because nothing shows you it happened.
+   Renaming the site from school. to workshop. — two characters — broke it at
+   360px and below. 5.2vw with a 17px floor fits the string inside the panel
+   at every width from 320px up, with room to spare at each. */
+.site .cta-panel.one-line h2{font-size:clamp(17px,5.2vw,54px); line-height:1.1}
 .site .cta-panel.one-line h2 .bloom{white-space:nowrap}
 .site .cta-panel .capture{margin-top:clamp(28px,4vw,44px)}
 .site .cta-panel .capture form{background:var(--paper)}

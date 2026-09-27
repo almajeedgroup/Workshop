@@ -13,7 +13,7 @@ your team collects — and it is parsed into structured records, reviewed on
 screen, stored in Firestore, and turned into tickets, receipts and spreadsheets.
 
 - **Hosting / database:** Firebase Hosting + Cloud Firestore
-- **Target domain:** `school.almajeedgroup.in` — the value in `ISSUER.site`,
+- **Target domain:** `workshop.almajeedgroup.in` — the value in `ISSUER.site`,
   which is what every printed QR code and document points at
 - **Access:** email + password, administrators only. No self sign-up.
 - **Parsing:** rule-based — no AI, no network calls, nothing leaves the browser
@@ -366,7 +366,7 @@ Other administrators sign in with an email and password, because their
 To enable it: **Authentication → Sign-in method → Google → Enable.**
 
 > **Custom domains need adding by hand.** `*.web.app` and `*.firebaseapp.com`
-> are authorised automatically, but `school.almajeedgroup.in` is not — until
+> are authorised automatically, but `workshop.almajeedgroup.in` is not — until
 > you add it under **Authentication → Settings → Authorized domains**, Google
 > sign-in there fails with `auth/unauthorized-domain`. The sign-in page names
 > that error and where to fix it.
@@ -418,9 +418,9 @@ npm run deploy
 That runs `vite build` and deploys both the Firestore rules and the site.
 First time only, run `firebase login` before it.
 
-### Connect `school.almajeedgroup.in`
+### Connect `workshop.almajeedgroup.in`
 
-1. **Hosting → Add custom domain** → `school.almajeedgroup.in`.
+1. **Hosting → Add custom domain** → `workshop.almajeedgroup.in`.
 2. Add the **TXT** record Firebase shows, at your DNS provider for
    `almajeedgroup.in`.
 3. Once verified, add the two **A** records it gives you, on the host
