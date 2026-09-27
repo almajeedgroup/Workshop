@@ -75,6 +75,7 @@ const ADMIN_ROUTES = [
      door is a different page from the dashboard — different panels,
      different controls — and auditing only the signed-in one measured the
      half nobody who is locked out ever sees. */
+  '/courses',
   '/study#out', '/study', '/study#new', '/study/AIHOW26', '/study/INNO25#new',
   /* The admin area's two refusals. Real people land on these — a browser
      holds one account, so signing in as a student puts you on the first —

@@ -1873,3 +1873,86 @@
   font-size:11.5px; font-weight:700; color:var(--lime-ink);
 }
 .site .course-award svg{width:14px; height:14px}
+
+/* ── The course directory ──────────────────────────────────────────────────
+   The CODE is the reason anybody is on this page. A student knows what
+   their course was called; what they cannot remember is `AIHOW26` — so the
+   code gets the weight, the monospace and the tap target, and the title
+   plays the supporting part it actually plays here. */
+.site .cdir{display:grid; gap:10px; list-style:none; margin:0; padding:0}
+.site .cdir-row{
+  display:flex; align-items:center; gap:var(--sp-4); flex-wrap:wrap;
+  padding:var(--sp-4) var(--sp-5); border:1px solid var(--hair);
+  border-radius:16px; background:var(--paper);
+}
+.site .cdir-ico{
+  flex:none; display:grid; place-items:center; width:44px; height:44px;
+  border-radius:12px; background:var(--tile-lime); color:var(--ink);
+}
+.site .cdir-what{flex:1 1 240px; min-width:0}
+.site .cdir-what b{display:block; font-size:16px; font-weight:600; line-height:1.35; overflow-wrap:anywhere}
+.site .cdir-what em{display:block; font-style:normal; font-size:13px; color:var(--ink-faint); margin-top:3px}
+
+/* A button, not a label: the next thing a reader does with a code is paste
+   it, so it copies. It still READS as a code when the clipboard refuses,
+   which is the state a good half of browsers are in. */
+.site .cdir-code{
+  flex:none; display:grid; gap:1px; justify-items:center;
+  /* A floor, so every code box is the same width and the codes line up
+     down the page. Without it the box shrinks to its string and a six-
+     letter code sits 11px left of a seven-letter one — which is exactly
+     the kind of raggedness you notice while scanning for one. */
+  min-width:156px;
+  padding:8px var(--sp-4); border-radius:12px; cursor:pointer;
+  background:var(--paper-2); border:1.5px solid var(--control-line);
+  font:inherit; color:var(--ink); transition:background .14s ease;
+}
+.site .cdir-code:hover{background:var(--ink); color:#fff; border-color:var(--ink)}
+.site .cdir-code-label{font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; font-weight:700; opacity:.75}
+.site .cdir-code-id{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:17px; font-weight:700; letter-spacing:.06em;
+}
+.site .cdir-code-hint{font-size:10px; opacity:.75}
+/* A fixed width, so the CODES line up down the page. Without it the
+   column floats left and right with however many doors each course has,
+   and a list you are scanning for one string reads as a ragged mess. */
+/* A FIXED width, not a minimum. A minimum still lets the group grow past
+   it — the row with two doors came out 11px wider than the rows with one,
+   and pushed its code box 11px left of the others. Fixed, the codes line
+   up, and a wider set of doors wraps inside its own column. */
+.site .cdir-go{flex:0 0 248px; display:flex; gap:8px; flex-wrap:wrap;
+  justify-content:flex-end}
+
+@media (max-width:720px){
+  /* The code goes full width rather than shrinking: it is the one thing
+     that must stay readable, and a 17px monospace string has no give. */
+  .site .cdir-row{gap:var(--sp-3)}
+  .site .cdir-code{flex:1 1 100%; min-width:0; grid-auto-flow:column; justify-items:start;
+    align-items:baseline; gap:10px; justify-content:start}
+  .site .cdir-go{flex:1 1 100%}
+  .site .cdir-go .btn{flex:1; justify-content:center}
+}
+
+/* A search field with its icon inside it. */
+.site .finder{
+  display:flex; align-items:center; gap:10px; max-width:480px;
+  padding:0 var(--sp-4); border-radius:12px;
+  border:1.6px solid var(--control-line); background:var(--paper);
+  color:var(--ink-faint);
+}
+.site .finder:focus-within{border-color:var(--ink)}
+.site .finder svg{flex:none; width:17px; height:17px}
+.site .finder input{
+  flex:1; min-width:0; border:0; background:none;
+  font:inherit; font-size:var(--tx-md); color:var(--ink);
+  padding:var(--sp-3) 0;
+}
+/* THE RING GOES ON THE INPUT, not on the wrapper. It was on `.finder`
+   via :focus-within, which looks identical and is not the same thing: the
+   focused element itself then has `outline:0` and no indicator of its own,
+   which is what the contrast audit measures and what a checker — or a
+   browser's own high-contrast mode — has to go on. */
+.site .finder input:focus-visible{
+  outline:3px solid var(--ink); outline-offset:3px; border-radius:6px;
+}
