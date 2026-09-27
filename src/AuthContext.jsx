@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import {
   onAuthStateChanged, signInWithEmailAndPassword, signOut,
-  GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail,
+  GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
+  createUserWithEmailAndPassword, updateProfile, sendPasswordResetEmail,
 } from 'firebase/auth';
 import { auth, isConfigured } from './firebase.js';
 import { BOOTSTRAP_ADMIN_EMAIL } from './lib/schema.js';
@@ -10,15 +11,34 @@ import { isListedAdmin, registerOwner } from './lib/db.js';
 const Ctx = createContext(null);
 export const useAuth = () => useContext(Ctx);
 
+/**
+ * What the app keeps about who is signed in.
+ *
+ * A snapshot, not the Firebase user object. Three fields is everything this
+ * app reads, and a plain object is a NEW reference every time — which is
+ * what makes a name set just after sign-up actually appear. Firebase mutates
+ * its user in place, so re-rendering on it never happens.
+ */
+const snapshot = (u) => (u
+  ? { uid: u.uid, email: u.email || '', displayName: u.displayName || '' }
+  : null);
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(isConfigured);
+  const [redirectError, setRedirectError] = useState(null);
 
   useEffect(() => {
     if (!isConfigured) return;
+    /* A redirect sign-in finishes on THIS load, not the one that started it.
+       Asking for the result is what surfaces its error — without this a
+       student sent round to Google and refused comes back to a page that
+       simply looks signed out, with nothing said. */
+    getRedirectResult(auth).catch((e) => setRedirectError(e));
+
     return onAuthStateChanged(auth, async (u) => {
-      setUser(u);
+      setUser(snapshot(u));
 
       if (!u) {
         setIsAdmin(false);
@@ -75,6 +95,81 @@ export function AuthProvider({ children }) {
   };
 
   /**
+   * Sign a STUDENT in with Google.
+   *
+   * Separate from `loginWithGoogle` above, and it must stay separate: that
+   * one signs out anybody who is not the owner, which is right for the
+   * administrator door and would throw every student straight back out.
+   *
+   * This one accepts whoever arrives. That is safe because SIGNING IN IS
+   * NOT A PERMISSION anywhere in this app — `firestore.rules` grants an
+   * account nothing until it holds a membership, and a membership needs a
+   * claim on a ticket the course really issued. A student account can read
+   * one course's library and cannot read a workshop, a registration, a
+   * phone number or another student's anything. The rules audit proves
+   * that with a signed-in account that has claimed nothing.
+   *
+   * `prompt: select_account` because a shared family machine is the normal
+   * case here, and silently reusing whichever Google account happens to be
+   * signed in would claim a ticket against the wrong person — and a claim
+   * is exclusive, so it would take the office to undo.
+   */
+  const loginStudentWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+
+    try {
+      return await signInWithPopup(auth, provider);
+    } catch (e) {
+      /* A POPUP IS THE WRONG DEFAULT FOR THIS AUDIENCE and it took a
+         complaint to see it. Links to this site get sent on WhatsApp, and a
+         WhatsApp link opens in WhatsApp's own in-app browser, where Google
+         refuses OAuth in a popup outright. Same for Instagram, and for any
+         phone browser with pop-ups blocked. The whole page goes to Google
+         instead, which works everywhere — see getRedirectResult above for
+         the other half. */
+      const popupUnavailable = [
+        'auth/popup-blocked',
+        'auth/operation-not-supported-in-this-environment',
+        'auth/web-storage-unsupported',
+        'auth/cancelled-popup-request',
+      ].includes(e?.code);
+      if (!popupUnavailable) throw e;
+
+      await signInWithRedirect(auth, provider);
+      return null;                       // the page is leaving; nothing follows
+    }
+  };
+
+  /**
+   * A student account with an email and a password.
+   *
+   * Here because Google is not universal: a student on a school machine, or
+   * one whose only account is their parent's, cannot use it — and on this
+   * audience's phones the popup is refused often enough that a second way in
+   * is not a luxury.
+   *
+   * It grants nothing on its own. Like the Google path, an account holds no
+   * access until it claims a ticket a course really issued.
+   */
+  const signUpStudent = async (email, password, name = '') => {
+    const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+    const clean = String(name || '').trim().slice(0, 120);
+    if (clean) {
+      await updateProfile(credential.user, { displayName: clean });
+      // onAuthStateChanged has already fired, with no name on it. The
+      // snapshot is re-taken so the office sees who claimed the ticket
+      // rather than a blank in the members list.
+      setUser(snapshot(credential.user));
+    }
+    return credential;
+  };
+
+  /** The same account, on the next visit. */
+  const signInStudent = (email, password) =>
+    signInWithEmailAndPassword(auth, email.trim(), password);
+
+  /**
    * Send a reset link.
    *
    * An administrator locked out of the app previously had to be reset from
@@ -86,7 +181,11 @@ export function AuthProvider({ children }) {
   const logout = () => signOut(auth);
 
   return (
-    <Ctx.Provider value={{ user, isAdmin, loading, login, loginWithGoogle, resetPassword, logout }}>
+    <Ctx.Provider value={{
+      user, isAdmin, loading, login, loginWithGoogle,
+      loginStudentWithGoogle, signUpStudent, signInStudent,
+      redirectError, resetPassword, logout,
+    }}>
       {children}
     </Ctx.Provider>
   );

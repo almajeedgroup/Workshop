@@ -108,7 +108,7 @@ export function certificateDesign(cert) {
 export const SIGNATORIES = [
   { name: 'Dr. Zoheb Javeed Khan', role: 'President', org: 'Islamic Information Centre' },
   { name: 'Ms. Sayeeda Arshiya', role: 'Principal', org: 'Kabir IND PU College for Women' },
-  { name: 'Mr. Sulaimaan', role: 'Trainer', org: ISSUER.operator },
+  { name: 'Mr. Sulaimaan', role: 'Founder', org: ISSUER.operator },
 ];
 
 /** The crests across the head of the certificate. */

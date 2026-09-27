@@ -159,6 +159,22 @@ export function upcoming(bundles, today = new Date().toISOString().slice(0, 10),
  * `tone` is the colour of the group's rail. It comes from the same reasons
  * the console shows, so a workshop that is red there is red here.
  */
+/**
+ * Has the course finished?
+ *
+ * Its LAST day, not its first — a three-day course is still running on day
+ * two — and the last day itself counts, so a course does not read as
+ * completed while people are still in the room.
+ *
+ * A course with no dates recorded is never called finished: nothing is known
+ * about when it ran, and guessing would put a Completed badge on something
+ * that may not have started.
+ */
+export function isFinished(workshop, today = new Date().toISOString().slice(0, 10)) {
+  const end = workshop?.endDate || workshop?.startDate || '';
+  return Boolean(end) && end < today;
+}
+
 export function boardGroups(bundles, requests = [], today = new Date().toISOString().slice(0, 10)) {
   const attentionBy = new Map(
     needsAttention(bundles, requests).map((row) => [row.workshop.id, row]),
@@ -166,8 +182,7 @@ export function boardGroups(bundles, requests = [], today = new Date().toISOStri
 
   return bundles.map(({ workshop, registrations }) => {
     const attention = attentionBy.get(workshop.id);
-    const end = workshop.endDate || workshop.startDate || '';
-    const finished = Boolean(end) && end < today;
+    const finished = isFinished(workshop, today);
 
     return {
       workshop,
@@ -176,7 +191,7 @@ export function boardGroups(bundles, requests = [], today = new Date().toISOStri
       // A settled course is grey, not blue. Blue is already "a request is
       // waiting" — giving a finished, paid-up course the same rail makes the
       // two indistinguishable at exactly the glance the board is for.
-      tone: attention ? attention.reasons[0].tone : (finished ? 'quiet' : 'jade'),
+      tone: attention ? attention.reasons[0].tone : (finished ? 'quiet' : 'lime'),
       finished,
       seats: seatPressure(workshop, registrations.length),
       payments: paymentCounts(registrations),
@@ -210,4 +225,22 @@ export function groupSummary(group) {
     if (group.owing) out.push(['Owing', String(group.owing)]);
   }
   return out;
+}
+
+/**
+ * Whether the board still needs its data.
+ *
+ * A function rather than a condition written inline, because the inline one
+ * was wrong in a way that reads as correct: it guarded on the fetched array
+ * itself, and an empty array is TRUTHY. The board fetched on mount — before
+ * the workshops had arrived, so with nothing to fetch for — stored `[]`, and
+ * then skipped every later attempt because `[]` looked like "already have
+ * it". The board rendered permanently empty.
+ *
+ *   `ready`  the workshops have loaded, so there is something to fetch for
+ *   `loaded` this fetch has actually completed — tracked on its own, never
+ *            inferred from whether the result happens to be empty
+ */
+export function shouldFetchBoard({ view, ready, loaded }) {
+  return view === 'board' && Boolean(ready) && !loaded;
 }

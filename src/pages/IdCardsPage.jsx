@@ -63,7 +63,7 @@ export default function IdCardsPage() {
       <div className="page-head no-print">
         <div>
           <h1>ID cards</h1>
-          <div className="count" style={{ marginTop: 4 }}>
+          <div className="count mt-1">
             {chosen.length} card{chosen.length === 1 ? '' : 's'} · {pages.length * 2} sheet
             {pages.length * 2 === 1 ? '' : 's'} · {theme.label}
           </div>
@@ -79,7 +79,7 @@ export default function IdCardsPage() {
 
       <div className="panel no-print">
         <h2>Before you print</h2>
-        <ul style={{ margin: '8px 0 0 18px', fontSize: 14, lineHeight: 1.75 }}>
+        <ul className="t-base" style={{ margin: '8px 0 0 18px', lineHeight: 1.75 }}>
           <li>
             Fronts and backs come out on <strong>separate sheets, in the same order</strong>.
             Print single-sided, cut both, then pair them into the pouches.
@@ -98,7 +98,7 @@ export default function IdCardsPage() {
         </ul>
 
         {missing > 0 && (
-          <label className="check" style={{ marginTop: 12 }}>
+          <label className="check mt-3">
             <input
               type="checkbox"
               checked={withPhotosOnly}

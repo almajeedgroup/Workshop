@@ -22,11 +22,40 @@
  */
 
 import {
-  collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteField,
+  collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteField, serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase.js';
 
 export const ATTENDANCE = 'attendance';
+
+/**
+ * Where a student's own "I am here" goes.
+ *
+ *   workshops/{workshopId}/attendance/{YYYY-MM-DD}/joins/{ticketId}
+ *     { at: <server timestamp> }
+ *
+ * ── WHY A SUBCOLLECTION AND NOT ANOTHER MAP ──────────────────────────────
+ * The office's marks are a map keyed by REGISTRATION id. A student does not
+ * know their registration id — it is a Firestore auto-id — and cannot look
+ * one up, because registrations are administrator-only and always will be.
+ * What they have is the ticket number printed on their ticket.
+ *
+ * So the student's entry is keyed by TICKET, in a place of its own. That is
+ * not a workaround; it is what makes the write safe to allow. A document
+ * whose id IS the ticket can be secured by a create-only rule on the path:
+ * one document per ticket per day, no update, no delete, and no way to
+ * reach the office's marks or anybody else's entry. A shared map could not
+ * be constrained like that.
+ *
+ * The register resolves ticket to registration when it reads, because the
+ * office has both. An explicit mark always wins over a join — they live in
+ * different places, so the office can never be overwritten by a student.
+ */
+export const JOINS = 'joins';
+
+function joinsRef(workshopId, date) {
+  return collection(db, 'workshops', workshopId, ATTENDANCE, date, JOINS);
+}
 
 function dayRef(workshopId, date) {
   return doc(db, 'workshops', workshopId, ATTENDANCE, date);
@@ -103,4 +132,50 @@ export async function removeMarks(workshopId, registrationId) {
   } catch {
     /* A stale mark must not stop somebody being removed from the course. */
   }
+}
+
+
+/**
+ * A student says they are here, from the class link.
+ *
+ * Create-only by rule, so joining twice is not an error and a second call
+ * cannot change the first — it simply fails and there is nothing to do
+ * about it, which is why the failure is swallowed. Being in the class
+ * matters more than recording that you are, so this never blocks the join.
+ */
+export async function recordSelfJoin(workshopId, date, ticketId) {
+  const ticket = String(ticketId || '').trim().toUpperCase();
+  if (!workshopId || !date || !ticket) return false;
+  try {
+    await setDoc(doc(joinsRef(workshopId, date), ticket), { at: serverTimestamp() });
+    return true;
+  } catch {
+    // Already joined today, or the class closed between opening the page
+    // and pressing the button. Neither is worth a message.
+    return false;
+  }
+}
+
+/** Who let themselves in on one day, as a map of ticket ID to when. */
+export async function getDayJoins(workshopId, date) {
+  if (!workshopId || !date) return {};
+  const snap = await getDocs(joinsRef(workshopId, date));
+  const out = {};
+  snap.forEach((d) => { out[d.id] = d.data().at?.toMillis?.() ?? null; });
+  return out;
+}
+
+/**
+ * Every day's joins, as a map of date to that day's tickets.
+ *
+ * One read per day rather than a collection group: a course runs for days,
+ * not months, and a collection group query would need its own index and its
+ * own rule for a handful of documents.
+ */
+export async function getAllJoins(workshopId, dates = []) {
+  if (!workshopId || !dates.length) return {};
+  const pairs = await Promise.all(
+    dates.map(async (d) => [d, await getDayJoins(workshopId, d)]),
+  );
+  return Object.fromEntries(pairs);
 }

@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PAYMENT_STATUSES } from '../lib/schema.js';
+import { ATTEND_MODES, attendMode, attendModeLabel, workshopAsksMode } from '../lib/attendmode.js';
 import {
   telLink, whatsappLink, mailtoLink, ticketMessage, ticketMessagePlain,
   ticketSubject, paymentReminderMessage, formatDate,
 } from '../lib/tickets.js';
+import { classIsLive, classJoinUrl } from '../lib/meeting.js';
 
 /**
  * Operational view of a workshop's registrations: contact each candidate
@@ -15,9 +17,19 @@ import {
  * they were issued is retired with them rather than passed to anyone else.
  */
 export default function RegistrationList({
-  workshop, rows, onPaymentChange, onDelete, busyId,
+  workshop, rows, onPaymentChange, onAttendModeChange, onDelete, busyId,
 }) {
   const [pendingId, setPendingId] = useState('');
+
+  // Built once for the whole table rather than per row: it is the same link
+  // for everyone on the course. Empty unless the class is actually open, so
+  // a message kept for weeks never carries a link that does nothing.
+  const classUrl = classIsLive(workshop) ? classJoinUrl(workshop.id) : '';
+
+  // A column only where there is something to vary. On an Offline or Online
+  // course every row would read the same word, which is a column that costs
+  // width and says nothing.
+  const showMode = workshopAsksMode(workshop);
 
   if (rows.length === 0) {
     return <div className="empty">No registrations yet.</div>;
@@ -35,6 +47,7 @@ export default function RegistrationList({
             <th>Qualification</th>
             <th>Area</th>
             <th>Contact</th>
+            {showMode && <th>Attending</th>}
             <th>Payment</th>
             <th className="no-print">Ticket</th>
             <th className="no-print">ID Card</th>
@@ -43,8 +56,8 @@ export default function RegistrationList({
         </thead>
         <tbody>
           {rows.map((r, i) => {
-            const msg = ticketMessage(workshop, r);
-            const plain = ticketMessagePlain(workshop, r);
+            const msg = ticketMessage(workshop, r, { classUrl });
+            const plain = ticketMessagePlain(workshop, r, { classUrl });
             const reminder = paymentReminderMessage(workshop, r);
             const unpaid = r.paymentStatus !== 'Paid' && r.paymentStatus !== 'Waived';
 
@@ -84,10 +97,31 @@ export default function RegistrationList({
                     )}
                     {!r.whatsapp && !r.email && <span className="count">—</span>}
                   </div>
-                  <div className="count" style={{ marginTop: 3 }}>
+                  <div className="count mt-1">
                     {r.whatsapp}{r.whatsapp && r.email ? ' · ' : ''}{r.email}
                   </div>
                 </td>
+
+                {showMode && (
+                  <td>
+                    <select
+                      className="status"
+                      data-mode={attendMode(workshop, r) || 'unset'}
+                      value={attendMode(workshop, r)}
+                      disabled={busyId === r.id || !onAttendModeChange}
+                      aria-label={`How ${r.name} is attending`}
+                      onChange={(e) => onAttendModeChange?.(r, e.target.value)}
+                    >
+                      {/* Not said is a real state and stays selectable, so a
+                          wrong answer can be taken back rather than only
+                          swapped for the other wrong one. */}
+                      <option value="">Not said</option>
+                      {ATTEND_MODES.map((m) => (
+                        <option key={m} value={m}>{attendModeLabel(m)}</option>
+                      ))}
+                    </select>
+                  </td>
+                )}
 
                 <td>
                   <select

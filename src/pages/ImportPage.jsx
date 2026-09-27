@@ -156,7 +156,7 @@ export default function ImportPage() {
               </li>
               <li>Several workshops in one paste — separate with <code>---</code> or repeat the <code>Title:</code> line.</li>
             </ul>
-            <div className="hint" style={{ marginTop: 12 }}>
+            <div className="hint mt-3">
               Nothing is saved until you review it on the next screen. Ticket IDs are
               allocated on save.
             </div>
@@ -205,7 +205,7 @@ export default function ImportPage() {
                     {duplicates.length === 1 ? 's' : ''} more than once:
                   </strong>
                   <ul>{duplicates.map((d, k) => <li key={k}>{describeDuplicate(d)}</li>)}</ul>
-                  <div className="btn-row" style={{ marginTop: 10 }}>
+                  <div className="btn-row mt-3">
                     <button
                       className="small"
                       disabled={saving}

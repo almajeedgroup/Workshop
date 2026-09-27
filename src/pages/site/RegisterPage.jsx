@@ -6,6 +6,7 @@ import {
 import { formatDateRange } from '../../lib/tickets.js';
 import { normalizePhone } from '../../lib/parser.js';
 import { ISSUER, CURRENCY, isFreeWorkshop } from '../../lib/schema.js';
+import { ATTEND_MODES, attendModeLabel, workshopAsksMode } from '../../lib/attendmode.js';
 import QrCode from '../../components/QrCode.jsx';
 import {
   IconCheckCircle, IconAlert, IconArrow, IconPin, IconUsers, IconShield,
@@ -29,7 +30,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [form, setForm] = useState(() =>
-    Object.fromEntries([...FIELDS.map((f) => [f.key, '']), ['paymentRef', ''], ['hp', '']])
+    Object.fromEntries([...FIELDS.map((f) => [f.key, '']), ['attendMode', ''], ['paymentRef', ''], ['hp', '']])
   );
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState('');
@@ -66,7 +67,12 @@ export default function RegisterPage() {
   }) : ''), [workshop, fee]);
 
   const phoneOk = normalizePhone(form.whatsapp).length >= 10;
-  const canSend = form.name.trim().length > 1 && phoneOk && !sending;
+  // Only a hybrid course has anything to ask. On an Offline or Online course
+  // the course itself is the answer, and offering a choice that does not
+  // exist can only collect a wrong one.
+  const asksMode = workshopAsksMode(workshop);
+  const canSend = form.name.trim().length > 1 && phoneOk
+    && (!asksMode || form.attendMode) && !sending;
 
   const submit = async (e) => {
     e.preventDefault();
@@ -89,12 +95,12 @@ export default function RegisterPage() {
   };
 
   if (loading) {
-    return <section className="tight"><div className="wrap"><p>Loading…</p></div></section>;
+    return <section className="band light tight" data-tone="light"><div className="wrap"><p>Loading…</p></div></section>;
   }
 
   if (loadError || !workshop) {
     return (
-      <section className="tight">
+      <section className="band light tight" data-tone="light">
         <div className="wrap">
           <div className="verdict bad">
             <span className="vico"><IconAlert /></span>
@@ -103,10 +109,10 @@ export default function RegisterPage() {
               <p>{loadError || 'That workshop could not be found.'}</p>
             </div>
           </div>
-          <p style={{ marginTop: 18 }}>
+          <p className="mt-5">
             Check the QR code or link on the poster, or call {ISSUER.phones.join(' or ')}.
           </p>
-          <div style={{ marginTop: 20 }}><Link className="btn" to="/">Go to the school site</Link></div>
+          <div className="mt-5"><Link className="btn" to="/">Go to the school site</Link></div>
         </div>
       </section>
     );
@@ -132,7 +138,7 @@ export default function RegisterPage() {
     const toOffice = `https://wa.me/${normalizePhone(ISSUER.phones[0])}?text=${encodeURIComponent(receipt)}`;
 
     return (
-      <section className="tight">
+      <section className="band light tight" data-tone="light">
         <div className="wrap">
           <div className="verdict good" data-reveal>
             <span className="vico"><IconCheckCircle /></span>
@@ -142,15 +148,12 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <div className="card" style={{ marginTop: 'var(--gap)', maxWidth: 620 }}>
-            <span className="eyebrow" style={{ marginBottom: 10 }}>Your reference</span>
-            <p style={{
-              fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace',
-              fontSize: 26, fontWeight: 700, color: 'var(--ink)', letterSpacing: '.04em',
-            }}>
+          <div className="panel" style={{ marginTop: 'var(--gap)', maxWidth: 620 }}>
+            <span className="kick">Your reference</span>
+            <p className="t-2xl" style={{ fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace', fontWeight: 700, color: 'var(--ink)', letterSpacing: '.04em' }}>
               {done.ref}
             </p>
-            <dl className="dl" style={{ marginTop: 18 }}>
+            <dl className="dl mt-5">
               <dt>Name</dt><dd>{done.name}</dd>
               <dt>Workshop</dt><dd>{workshop.title}</dd>
               {formatDateRange(workshop) && <><dt>Dates</dt><dd>{formatDateRange(workshop)}</dd></>}
@@ -161,7 +164,7 @@ export default function RegisterPage() {
               )}
             </dl>
 
-            <p style={{ marginTop: 18, fontSize: 14.5 }}>
+            <p className="t-base" style={{ marginTop: 18 }}>
               {free
                 ? 'Your seat is confirmed once the office has reviewed your entry. The ticket comes to your WhatsApp number.'
                 : 'Your seat is confirmed once the office has checked the payment. The ticket comes to your WhatsApp number.'}
@@ -175,7 +178,7 @@ export default function RegisterPage() {
                 Save this receipt
               </button>
             </div>
-            <p style={{ marginTop: 14, fontSize: 12.5, color: 'var(--ink-faint)' }}>
+            <p className="t-xs" style={{ marginTop: 14, color: 'var(--ink-faint)' }}>
               Sending a copy on WhatsApp helps the office match your payment to your
               registration faster. It is not required.
             </p>
@@ -190,34 +193,31 @@ export default function RegisterPage() {
 
   return (
     <>
-      <section className="hero tight">
+      <section className="band hero quiet tight" data-tone="light">
         <div className="wrap">
-          <div style={{ maxWidth: 760 }} data-reveal>
-            <span className="eyebrow">Registration</span>
-            <h1 className="display" style={{ fontSize: 'clamp(28px,4.4vw,46px)' }}>
-              {workshop.title}
-            </h1>
-            <div className="tri" style={{ marginTop: 20 }}><i /><i /><i /></div>
+          <div style={{ maxWidth: 820 }} data-reveal>
+            <span className="ann flat"><b>Registration</b> {ISSUER.operator}</span>
+            <h1 className="display-lead sm">{workshop.title}</h1>
 
             <div style={{ display: 'flex', gap: 22, flexWrap: 'wrap', marginTop: 22 }}>
               {formatDateRange(workshop) && (
-                <span style={{ fontSize: 15, fontWeight: 600 }}>{formatDateRange(workshop)}</span>
+                <span className="t-md" style={{ fontWeight: 600 }}>{formatDateRange(workshop)}</span>
               )}
-              {workshop.time && <span style={{ fontSize: 15, color: 'var(--ink-soft)' }}>{workshop.time}</span>}
+              {workshop.time && <span className="t-md" style={{ color: 'var(--ink-soft)' }}>{workshop.time}</span>}
               {workshop.venue && (
-                <span style={{ display: 'flex', gap: 7, alignItems: 'center', fontSize: 15, color: 'var(--ink-soft)' }}>
+                <span className="t-md" style={{ display: 'flex', gap: 7, alignItems: 'center', color: 'var(--ink-soft)' }}>
                   <IconPin width="17" height="17" />{workshop.venue}
                 </span>
               )}
               {workshop.audience && (
-                <span style={{ display: 'flex', gap: 7, alignItems: 'center', fontSize: 15, color: 'var(--ink-soft)' }}>
+                <span className="t-md" style={{ display: 'flex', gap: 7, alignItems: 'center', color: 'var(--ink-soft)' }}>
                   <IconUsers width="17" height="17" />{workshop.audience}
                 </span>
               )}
             </div>
 
             {workshop.collaborators && (
-              <p style={{ marginTop: 18, fontSize: 14.5, color: 'var(--ink-soft)' }}>
+              <p className="t-base" style={{ marginTop: 18, color: 'var(--ink-soft)' }}>
                 In association with <strong style={{ color: 'var(--ink)' }}>{workshop.collaborators}</strong>
               </p>
             )}
@@ -225,7 +225,7 @@ export default function RegisterPage() {
         </div>
       </section>
 
-      <section style={{ paddingTop: 0 }}>
+      <section className="band paper" data-tone="light" style={{ paddingTop: 0 }}>
         <div className="wrap">
           {closed ? (
             <div className="verdict bad">
@@ -241,18 +241,15 @@ export default function RegisterPage() {
           ) : (
             <form onSubmit={submit} className="grid g2" style={{ alignItems: 'start' }}>
               {/* details */}
-              <div className="card" data-reveal>
+              <div className="panel" data-reveal>
                 <h3>Your details</h3>
-                <p style={{ marginTop: 6, marginBottom: 18, fontSize: 14 }}>
+                <p className="t-base" style={{ marginTop: 6, marginBottom: 18 }}>
                   Everything except name and WhatsApp number is optional.
                 </p>
 
                 {FIELDS.map((f) => (
-                  <label key={f.key} style={{ display: 'block', marginBottom: 16 }}>
-                    <span style={{
-                      display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: '.1em',
-                      textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: 6,
-                    }}>
+                  <label key={f.key} className="mb-4" style={{ display: 'block' }}>
+                    <span className="f-label">
                       {f.label}{f.required && ' *'}
                     </span>
                     <input
@@ -261,18 +258,41 @@ export default function RegisterPage() {
                       required={f.required}
                       autoComplete={f.autoComplete}
                       onChange={(e) => set(f.key, e.target.value)}
-                      style={{
-                        font: 'inherit', fontSize: 16, width: '100%', padding: '12px 14px',
-                        borderRadius: 11, border: '1.6px solid var(--hair-2)', background: '#fff',
-                      }}
+                      className="f-input"
                     />
                     {f.hint && (
-                      <span style={{ display: 'block', marginTop: 5, fontSize: 12.5, color: 'var(--ink-faint)' }}>
+                      <span className="f-hint">
                         {f.hint}
                       </span>
                     )}
                   </label>
                 ))}
+
+                {asksMode && (
+                  <fieldset className="plain-set" style={{ padding: 0, margin: 0 }}>
+                    <legend className="f-label" style={{ padding: 0 }}>
+                      How will you attend? *
+                    </legend>
+                    <div className="pickmode">
+                      {ATTEND_MODES.map((m) => (
+                        <label key={m} className={form.attendMode === m ? 'on' : undefined}>
+                          <input
+                            type="radio"
+                            name="attendMode"
+                            value={m}
+                            checked={form.attendMode === m}
+                            onChange={() => set('attendMode', m)}
+                          />
+                          <span>{attendModeLabel(m)}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <span className="t-xs" style={{ display: 'block', marginTop: 6, color: 'var(--ink-faint)' }}>
+                      This course runs both ways. Tell us which you are coming for — you can
+                      change it later by calling us.
+                    </span>
+                  </fieldset>
+                )}
 
                 {/* Hidden from people; bots fill it and the server refuses the write. */}
                 <input
@@ -283,24 +303,24 @@ export default function RegisterPage() {
               </div>
 
               {/* payment — a free course shows none of this */}
-              <div className="card" data-reveal>
+              <div className="panel" data-reveal>
                 <h3>{free ? 'Fee' : 'Payment'}</h3>
                 {free ? (
-                  <p style={{ marginTop: 6, fontSize: 15 }}>
+                  <p className="t-md" style={{ marginTop: 6 }}>
                     This is a <strong style={{ color: 'var(--ink)' }}>free</strong> programme.
                     Nothing is payable — just send the form.
                   </p>
                 ) : fee ? (
-                  <p style={{ marginTop: 6, fontSize: 15 }}>
+                  <p className="t-md" style={{ marginTop: 6 }}>
                     Registration fee <strong style={{ color: 'var(--ink)' }}>{CURRENCY}{fee}</strong>.
                   </p>
                 ) : (
-                  <p style={{ marginTop: 6, fontSize: 15 }}>No fee is payable for this workshop.</p>
+                  <p className="t-md" style={{ marginTop: 6 }}>No fee is payable for this workshop.</p>
                 )}
 
                 {free ? null : qrImage ? (
                   <div style={{
-                    marginTop: 18, padding: 14, borderRadius: 14, background: '#fff',
+                    marginTop: 18, padding: 14, borderRadius: 14, background: 'var(--paper)',
                     border: '1px solid var(--hair)', textAlign: 'center',
                   }}>
                     <img
@@ -309,17 +329,17 @@ export default function RegisterPage() {
                       onError={() => setQrBroken(true)}
                       style={{ width: '100%', maxWidth: 320, height: 'auto', display: 'block', margin: '0 auto' }}
                     />
-                    <p style={{ marginTop: 12, fontSize: 13.5, color: 'var(--ink-soft)' }}>
+                    <p className="t-sm" style={{ marginTop: 12, color: 'var(--ink-soft)' }}>
                       Scan with any UPI or banking app{fee ? <> and pay <strong style={{ color: 'var(--ink)' }}>{CURRENCY}{fee}</strong></> : null}.
                     </p>
-                    <p style={{ marginTop: 6, fontSize: 12.5, color: 'var(--ink-faint)' }}>
+                    <p className="t-xs" style={{ marginTop: 6, color: 'var(--ink-faint)' }}>
                       The amount is not filled in automatically — please enter it yourself.
                     </p>
                   </div>
                 ) : pay ? (
                   <>
                     <div style={{
-                      marginTop: 18, padding: 18, borderRadius: 14, background: '#fff',
+                      marginTop: 18, padding: 18, borderRadius: 14, background: 'var(--paper)',
                       border: '1px solid var(--hair)', textAlign: 'center',
                     }}>
                       <QrCode
@@ -327,13 +347,11 @@ export default function RegisterPage() {
                         title="UPI payment QR code"
                         style={{ width: 190, height: 190, maxWidth: '100%', color: 'var(--ink)' }}
                       />
-                      <p style={{ marginTop: 12, fontSize: 13, color: 'var(--ink-faint)' }}>
+                      <p className="t-sm" style={{ marginTop: 12, color: 'var(--ink-faint)' }}>
                         Scan with any UPI app — the amount is already filled in
                       </p>
-                      <p style={{
-                        marginTop: 4, fontSize: 13.5, fontWeight: 600, color: 'var(--ink)',
-                        fontFamily: 'ui-monospace,Menlo,monospace', wordBreak: 'break-all',
-                      }}>
+                      <p className="t-sm" style={{ marginTop: 4, fontWeight: 600, color: 'var(--ink)',
+                        fontFamily: 'ui-monospace,Menlo,monospace', wordBreak: 'break-all' }}>
                         {workshop.paymentUpi}
                       </p>
                     </div>
@@ -344,7 +362,7 @@ export default function RegisterPage() {
                 ) : (
                   <div className="verdict" style={{ marginTop: 16, padding: 16 }}>
                     <div>
-                      <p style={{ fontSize: 14.5 }}>
+                      <p className="t-base" >
                         Payment details will be sent to you. Call {ISSUER.phones.join(' or ')} if
                         you would like to pay now.
                       </p>
@@ -352,23 +370,17 @@ export default function RegisterPage() {
                   </div>
                 )}
 
-                <label style={{ display: free ? 'none' : 'block', marginTop: 20 }}>
-                  <span style={{
-                    display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: '.1em',
-                    textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: 6,
-                  }}>
+                <label className="mt-5" style={{ display: free ? 'none' : 'block' }}>
+                  <span className="f-label">
                     Payment reference
                   </span>
                   <input
                     value={form.paymentRef}
                     onChange={(e) => set('paymentRef', e.target.value)}
                     placeholder="UTR or transaction ID"
-                    style={{
-                      font: 'inherit', fontSize: 16, width: '100%', padding: '12px 14px',
-                      borderRadius: 11, border: '1.6px solid var(--hair-2)', background: '#fff',
-                    }}
+                    className="f-input"
                   />
-                  <span style={{ display: 'block', marginTop: 5, fontSize: 12.5, color: 'var(--ink-faint)' }}>
+                  <span className="f-hint">
                     Optional, but it helps the office match your payment straight away.
                   </span>
                 </label>
@@ -384,14 +396,14 @@ export default function RegisterPage() {
                   {sending ? 'Sending…' : 'Complete registration'} <IconArrow />
                 </button>
                 {!phoneOk && form.whatsapp && (
-                  <p style={{ marginTop: 10, fontSize: 13, color: 'var(--saffron-2)' }}>
+                  <p className="t-sm" style={{ marginTop: 10, color: 'var(--alert)' }}>
                     That does not look like a complete mobile number.
                   </p>
                 )}
 
                 <div style={{ display: 'flex', gap: 9, alignItems: 'flex-start', marginTop: 18 }}>
                   <IconShield width="16" height="16" style={{ color: 'var(--ink-faint)', flex: 'none', marginTop: 2 }} />
-                  <span style={{ fontSize: 12.5, color: 'var(--ink-faint)', lineHeight: 1.6 }}>
+                  <span className="t-xs" style={{ color: 'var(--ink-faint)', lineHeight: 1.6 }}>
                     Your details go only to the office. Nobody else can read what you submit,
                     and it never appears on the public site.
                   </span>

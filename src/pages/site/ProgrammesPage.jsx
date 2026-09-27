@@ -1,12 +1,13 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ISSUER } from '../../lib/schema.js';
-import { IconSpark, IconBook, IconBulb, IconCheck, IconArrow, IconPin, IconUsers } from '../../components/site/Icons.jsx';
+import { BRAND_NAME } from '../../lib/brand.js';
+import Stack from '../../components/site/Stack.jsx';
+import { IconCheck, IconArrow, IconPin, IconUsers, IconAward } from '../../components/site/Icons.jsx';
 
 const PROGRAMMES = [
   {
     id: 'ai',
     n: '01',
-    icon: <IconSpark />,
     title: 'Artificial Intelligence, hands on',
     lede: 'Six days building working AI assistants — not studying them from a distance.',
     body: [
@@ -20,7 +21,6 @@ const PROGRAMMES = [
   {
     id: 'research',
     n: '02',
-    icon: <IconBook />,
     title: 'Research methodology',
     lede: 'The habits that outlast any one tool: ask well, gather honestly, write clearly.',
     body: [
@@ -34,7 +34,6 @@ const PROGRAMMES = [
   {
     id: 'innovation',
     n: '03',
-    icon: <IconBulb />,
     title: 'Innovation practice',
     lede: 'Ideas are cheap. This is about the part where something actually gets finished.',
     body: [
@@ -47,81 +46,139 @@ const PROGRAMMES = [
   },
 ];
 
+/**
+ * What we teach.
+ *
+ * Three programmes is too few for a grid and too much for one page of
+ * prose — laid out flat, the third one is a screen and a half below the
+ * fold and nobody reads it. So they are a stack: all three titles visible
+ * at once, one of them open.
+ */
 export default function ProgrammesPage() {
+  const { hash } = useLocation();
+  const items = PROGRAMMES.map((p) => ({
+    key: p.id,
+    n: p.n,
+    title: p.title,
+    sub: p.lede,
+    body: (
+      <>
+        <div>
+          {p.body.map((b, k) => <p key={k}>{b}</p>)}
+          <div className="keep">
+            <b>You leave with</b>
+            <span>{p.outcome}</span>
+          </div>
+        </div>
+        <div>
+          <h4 className="t-sm" style={{ letterSpacing: '.13em', textTransform: 'uppercase', color: 'var(--ink-faint)' }}>
+            What it covers
+          </h4>
+          <ul className="ticks">
+            {p.covers.map((c) => <li key={c}><IconCheck width="16" height="16" />{c}</li>)}
+          </ul>
+        </div>
+      </>
+    ),
+  }));
+
   return (
     <>
-      <section className="hero tight">
+      {/* ---------------- hero ---------------- */}
+      <section className="band hero quiet tight" data-tone="light">
         <div className="wrap">
-          <div style={{ maxWidth: 760 }} data-reveal>
-            <span className="eyebrow">Programmes</span>
-            <h1 className="display" style={{ fontSize: 'clamp(32px,5vw,56px)' }}>What we teach</h1>
-            <div className="tri" style={{ marginTop: 22 }}><i /><i /><i /></div>
-            <p className="lede" style={{ marginTop: 22 }}>
-              Short and intensive — typically six days, held in person with partner institutions.
-              Every programme ends with something you made, and a certificate that can be checked.
+          <div className="hero-mid" data-reveal>
+            <span className="ann flat"><b>Programmes</b> Three, taught in person</span>
+
+            <h1 className="display-lead">
+              Six days, and you leave<br />with <em>something you built</em>
+            </h1>
+
+            <p className="lede">
+              Short and intensive, held with partner institutions across {ISSUER.city}.
+              Every programme ends with your own work and a certificate anyone can check.
             </p>
+
+            <div className="acts">
+              <Link className="btn" to="/contact">Ask about the next intake <IconArrow /></Link>
+              <Link className="btn ghost" to="/certificates">About the certificates</Link>
+            </div>
           </div>
         </div>
       </section>
 
-      {PROGRAMMES.map((p, i) => (
-        <section key={p.id} id={p.id} className={i % 2 ? 'band-soft' : undefined}>
-          <div className="wrap">
-            <div className="grid g2" style={{ alignItems: 'start' }}>
-              <div data-reveal>
-                <span className="idx" style={{ fontFamily: 'var(--display)', fontSize: 13, letterSpacing: '.14em', color: 'var(--saffron)' }}>
-                  {p.n}
-                </span>
-                <div className="ico" style={{ marginTop: 14 }}>{p.icon}</div>
-                <h2 style={{ marginTop: 4 }}>{p.title}</h2>
-                <p className="lede" style={{ marginTop: 14 }}>{p.lede}</p>
-                {p.body.map((b, k) => (
-                  <p key={k} style={{ marginTop: 16, fontSize: 15.5, lineHeight: 1.75 }}>{b}</p>
-                ))}
-                <div className="card" style={{ marginTop: 24, background: 'var(--green-wash)', borderColor: 'rgba(10,122,44,.2)' }}>
-                  <h3 style={{ fontSize: 13, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--green-2)' }}>
-                    You leave with
-                  </h3>
-                  <p style={{ marginTop: 8, color: 'var(--ink)', fontSize: 15.5 }}>{p.outcome}</p>
-                </div>
-              </div>
+      {/* ---------------- the three ---------------- */}
+      <section className="band paper" data-tone="light">
+        <div className="wrap">
+          <div className="head" data-reveal>
+            <h2>What we <em>teach</em></h2>
+            <p>Open one to see what its days are made of.</p>
+          </div>
+          <div className="mt-7" data-reveal><Stack items={items} openKey={hash.replace('#', '')} /></div>
+        </div>
+      </section>
 
-              <div className="card" data-reveal>
-                <h3>What it covers</h3>
-                <ul className="ticks">
-                  {p.covers.map((c) => (
-                    <li key={c}><IconCheck width="16" height="16" />{c}</li>
-                  ))}
-                </ul>
-                <div style={{ marginTop: 26, paddingTop: 22, borderTop: '1px solid var(--hair)', display: 'grid', gap: 14 }}>
-                  <div style={{ display: 'flex', gap: 11, alignItems: 'flex-start' }}>
-                    <IconUsers width="18" height="18" style={{ color: 'var(--ink-faint)', flex: 'none', marginTop: 2 }} />
-                    <span style={{ fontSize: 14.5, color: 'var(--ink-soft)' }}>Limited seats, taught in person</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 11, alignItems: 'flex-start' }}>
-                    <IconPin width="18" height="18" style={{ color: 'var(--ink-faint)', flex: 'none', marginTop: 2 }} />
-                    <span style={{ fontSize: 14.5, color: 'var(--ink-soft)' }}>{ISSUER.city}, at partner campuses</span>
-                  </div>
-                </div>
-              </div>
+      {/* ---------------- what they share ---------------- */}
+      <section className="band light" data-tone="light">
+        <div className="wrap">
+          <div className="head" data-reveal>
+            <h2>The same shape, <em>whichever</em> one you take</h2>
+          </div>
+          <div className="bento mt-7">
+            <div className="bt lime" data-reveal>
+              <span className="bt-fig">6</span>
+              <span className="tile-note">days, taught in person at a partner campus</span>
+              <span className="tile-foot"><span className="logo">Length</span></span>
+            </div>
+            <div className="bt soft" data-reveal>
+              <span className="bt-fig">1</span>
+              <span className="tile-note">thing you made, presented on the final day</span>
+              <span className="tile-foot"><span className="logo">Outcome</span></span>
+            </div>
+            <div className="bt stone" data-reveal>
+              <span className="bt-fig">QR</span>
+              <span className="tile-note">on the certificate, so it can be checked by anyone</span>
+              <span className="tile-foot"><span className="logo">Award</span></span>
+            </div>
+
+            <div className="bt wide" data-reveal>
+              <span className="bt-fig">In the room</span>
+              <span className="tile-note">
+                Seats are limited and taught in person. {BRAND_NAME} keeps the register, the
+                attendance sheet and the ID cards, so the office is not running three lists
+                against each other while a course is on.
+              </span>
+              <span className="tile-foot">
+                <span className="tile-by"><span><b>{ISSUER.city}</b><small>At partner campuses</small></span></span>
+              </span>
+            </div>
+            <div className="bt ink" data-reveal>
+              <span className="bt-fig">4</span>
+              <span className="tile-note">kinds of award: completion, merit, participation, appreciation</span>
+              <span className="tile-foot"><span className="logo">Certificates</span></span>
             </div>
           </div>
-        </section>
-      ))}
 
-      <section className="tight">
+          <ul className="ticks mt-7" style={{ gridTemplateColumns: 'repeat(auto-fit,minmax(min(280px,100%),1fr))', display: 'grid' }} data-reveal>
+            <li><IconUsers width="16" height="16" />Limited seats, in order of registration</li>
+            <li><IconPin width="16" height="16" />{ISSUER.city}, at partner campuses</li>
+            <li><IconAward width="16" height="16" />A certificate with an ID that can be verified</li>
+          </ul>
+        </div>
+      </section>
+
+      {/* ---------------- closing ---------------- */}
+      <section className="band paper tight" data-tone="light">
         <div className="wrap">
-          <div className="cta-band" data-reveal>
-            <h2>Want to join the next intake?</h2>
-            <p>
-              Dates are announced before each programme and seats fill in order of registration.
-              Get in touch and we will tell you what is coming up.
+          <div className="cta-panel" data-reveal>
+            <h2>Join the<br /><span className="bloom">next intake</span></h2>
+            <p className="t-lg" style={{ maxWidth: '46ch', margin: 'var(--sp-5) auto 0', color: 'var(--ink)' }}>
+              Dates are announced before each programme and seats fill in order of
+              registration. Tell us which one you want and we will say what is coming up.
             </p>
-            <div className="actions">
+            <div className="acts">
               <Link className="btn light" to="/contact">Contact us <IconArrow /></Link>
-              <Link className="btn ghost" to="/certificates" style={{ color: '#fff', boxShadow: 'inset 0 0 0 1.6px rgba(255,255,255,.45)' }}>
-                About the certificates
-              </Link>
+              <Link className="btn ghost" to="/features">See how a course runs</Link>
             </div>
           </div>
         </div>

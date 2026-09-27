@@ -27,11 +27,11 @@ import { ISSUER } from './schema.js';
  * an unfinished job into an accusation.
  *
  * The tone is the palette colour the mark is shown in, matching the payment
- * pills: jade for good, tangerine for a caveat, red for a problem.
+ * pills: lime for good, tangerine for a caveat, red for a problem.
  */
 export const ATTENDANCE_MARKS = [
   { key: '', label: 'Unmarked', short: '—', tone: 'none' },
-  { key: 'present', label: 'Present', short: 'P', tone: 'jade' },
+  { key: 'present', label: 'Present', short: 'P', tone: 'lime' },
   { key: 'late', label: 'Late', short: 'L', tone: 'tangerine' },
   { key: 'absent', label: 'Absent', short: 'A', tone: 'red' },
 ];
@@ -60,6 +60,57 @@ export function nextMark(current) {
   // it had done nothing.
   const at = Math.max(0, keys.indexOf(attendanceMark(current).key));
   return keys[(at + 1) % keys.length];
+}
+
+/**
+ * Which of the register let themselves in, as a set of registration IDs.
+ *
+ * The student's entry is keyed by the ticket they typed; the register is
+ * keyed by registration ID. This is the join between them, and the office
+ * is the only side that holds both.
+ *
+ * Matched case-insensitively and without spaces, because the ticket is
+ * copied off a printed slip by somebody on a phone — `aihow26 001` and
+ * `AIHOW26-001` are the same person, and refusing the first would mean a
+ * student sitting in the class recorded as absent.
+ *
+ * EXPORTED, because the library claims a ticket too. A student who typed
+ * `aihow26 014` to get into the class and `AIHOW26-014` to claim their
+ * recordings must land in the same place both times, and two functions that
+ * agree today will not agree forever.
+ */
+export const ticketKey = (v) => String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+export function joinedRegistrationIds(joins = {}, rows = []) {
+  const byTicket = new Map();
+  for (const t of Object.keys(joins)) byTicket.set(ticketKey(t), true);
+
+  const out = new Set();
+  for (const r of rows) {
+    if (r?.ticketId && byTicket.has(ticketKey(r.ticketId))) out.add(r.id);
+  }
+  return out;
+}
+
+/**
+ * The day's marks with self-joins folded in.
+ *
+ * THE OFFICE ALWAYS WINS. A join fills an UNMARKED row only; it never
+ * overwrites a mark somebody made. If the register says absent, absent is
+ * what it stays — the student having opened the link is not an argument
+ * against the person who was in the room.
+ *
+ * Returning a plain marks map means every reader downstream — the totals,
+ * the rate, the printed sheet — keeps working without knowing any of this
+ * happened.
+ */
+export function withSelfJoins(marks = {}, joins = {}, rows = []) {
+  const joined = joinedRegistrationIds(joins, rows);
+  if (joined.size === 0) return marks;
+
+  const out = { ...marks };
+  for (const id of joined) if (!out[id]) out[id] = 'present';
+  return out;
 }
 
 /**
@@ -111,6 +162,29 @@ export function attendanceRate(byDay = {}, registrationId) {
  * would leave 13mm, which is an initial at best.
  */
 export const MAX_DAY_COLUMNS = 6;
+
+/**
+ * How many signature columns can be on the sheet before a mobile number
+ * stops fitting as a column of its own.
+ *
+ * Measured on a rendered A4 sheet rather than guessed. The table is 186mm
+ * across; the row number takes 9mm and the ticket ID 26mm, so 151mm is left
+ * for the name, the number and the signatures. A number needs 26mm, and a
+ * name needs about 34mm before it starts wrapping mid-word.
+ *
+ *   4 columns  151 - 26 - (4 x 22) = 37mm of name. Fits.
+ *   5 columns  151 - 26 - (5 x 22) = 15mm of name. Does not.
+ *
+ * Past four, the number moves into the name cell instead of squeezing the
+ * one thing every row must be able to show. It is on the sheet either way —
+ * only the shape changes.
+ */
+export const MAX_COLUMNS_WITH_PHONE = 4;
+
+/** Has the signing taken so much width that the number needs to move? */
+export function phoneFitsAColumn(columns = []) {
+  return columns.length <= MAX_COLUMNS_WITH_PHONE;
+}
 
 /** A runaway range must not generate a thousand columns. */
 const MAX_DAYS = 60;

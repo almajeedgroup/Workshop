@@ -119,6 +119,7 @@
    left as content-box the padding is ADDED to the 210mm, the sheet comes out
    250mm x 329mm, and the printer quietly scales every card off size. */
 .idc-sheet{
+  page:card-sheet;
   box-sizing:border-box; position:relative;
   width:210mm; height:297mm; background:#fff; padding:14mm 18mm;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -140,7 +141,7 @@
 .idc-grid .idc{box-shadow:none; outline:.2mm dashed rgba(0,0,0,.28); outline-offset:.8mm}
 
 @media print{
-  @page{size:A4 portrait; margin:0}
+  @page card-sheet{size:A4 portrait; margin:0}
   html,body{background:#fff}
   .idc-sheet{box-shadow:none; margin:0; break-after:page; page-break-after:always}
   .idc-sheet:last-child{break-after:auto; page-break-after:auto}

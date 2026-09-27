@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   getWorkshop, getRegistrations, deleteWorkshop, updateRegistration, addRegistrations,
+  listAllWithRegistrations,
   deleteRegistration,
 } from '../lib/db.js';
 import RegistrationList from '../components/RegistrationList.jsx';
@@ -12,13 +13,25 @@ import {
   setRegistrationOpen, restoreRequest,
 } from '../lib/publicdb.js';
 import RequestsPanel from '../components/RequestsPanel.jsx';
+import LibraryPanel from '../components/LibraryPanel.jsx';
+import StudentAccessPanel from '../components/StudentAccessPanel.jsx';
+import { listLibrary } from '../lib/librarydb.js';
+import { listMembers, ticketIndexSize } from '../lib/studentdb.js';
 import RegistrationCards from '../components/RegistrationCards.jsx';
 import { getPhotos } from '../lib/photodb.js';
 import { amountCollected, paymentCounts, seatsLeft as seatsLeftFor } from '../lib/stats.js';
 import {
-  visibleWorkshopFields, ISSUER, CURRENCY, workshopFee,
+  visibleWorkshopFields, ISSUER, CURRENCY, workshopFee, isOnlineWorkshop,
 } from '../lib/schema.js';
+import { normalizeAttendMode, attendModeCounts, workshopAsksMode } from '../lib/attendmode.js';
 import { formatDateRange } from '../lib/tickets.js';
+import { brandLockup } from '../lib/brand.js';
+import { isFinished } from '../lib/overview.js';
+import { classIsLive } from '../lib/meeting.js';
+import {
+  carryPlan, carryRows, describePlan, describeMatch, carrySources,
+  pickAll, pickEveryone, togglePick, chosenFrom, filterOffered,
+} from '../lib/carryover.js';
 
 function shown(field, w) {
   const v = w[field.key];
@@ -50,25 +63,49 @@ export default function WorkshopPage() {
   const [adding, setAdding] = useState(false);
   const [notice, setNotice] = useState('');
   const [pendingPaste, setPendingPaste] = useState(null);
+  // Bringing a previous course's students across. The other courses are
+  // fetched only when this is opened — most visits never use it, and it is a
+  // read of every workshop with its registrations.
+  const [carryOpen, setCarryOpen] = useState(false);
+  const [sources, setSources] = useState(null);
+  const [carryFrom, setCarryFrom] = useState('');
+  const [carrying, setCarrying] = useState(false);
+  // Who, of the ones who could come, is actually coming. `null` means the
+  // selection has not been made for the course now chosen, and everybody is
+  // ticked — which is where it starts and where it returns on every change
+  // of course.
+  const [picked, setPicked] = useState(null);
+  const [carryQ, setCarryQ] = useState('');
   const [requests, setRequests] = useState([]);
+  /* The library and who may read it. Loaded beside the rest rather than on
+     a tab: they are part of what this course IS, and a panel nobody opens
+     is a ticket list nobody publishes — which silently refuses every
+     student's claim. */
+  const [library, setLibrary] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [ticketCount, setTicketCount] = useState(0);
   const [reqBusy, setReqBusy] = useState('');
   const [toggling, setToggling] = useState(false);
   // Both belong to the requests panel, and are shown inside it.
   const [reqError, setReqError] = useState('');
   const [duplicate, setDuplicate] = useState(null);
   const [regView, setRegView] = useState('list');
-  const [photos, setPhotos] = useState(null);
+  const [photos, setPhotos] = useState({});
+  // Tracked on its own rather than inferred from `photos`. A course where
+  // nobody has a photograph loads an empty map, and an empty map is truthy —
+  // which is exactly how the board came up blank before it was fixed.
+  const [photosLoaded, setPhotosLoaded] = useState(false);
 
   // Photographs are heavy and only the cards view wants them, so they are
   // fetched when that view is first opened and not before.
   useEffect(() => {
-    if (regView !== 'cards' || photos) return undefined;
+    if (regView !== 'cards' || photosLoaded) return undefined;
     let live = true;
     getPhotos(id)
-      .then((p) => live && setPhotos(p))
+      .then((p) => { if (!live) return; setPhotos(p); setPhotosLoaded(true); })
       .catch((e) => live && setError(e.message));
     return () => { live = false; };
-  }, [regView, photos, id]);
+  }, [regView, photosLoaded, id]);
 
   const reload = async () => {
     const [w, r, q] = await Promise.all([getWorkshop(id), getRegistrations(id), listRequests(id)]);
@@ -76,6 +113,24 @@ export default function WorkshopPage() {
     setRegs(r);
     setRequests(q);
   };
+
+  /* Separate from `reload`, and tolerant of failure. These three are the
+     newest collections in the database, so they are the ones most likely to
+     be missing their rules on a deployment that is behind — and a workshop
+     page that will not render because the library refused to load would
+     take the whole course's administration down with it. */
+  const reloadLibrary = async () => {
+    const [items, who, tickets] = await Promise.all([
+      listLibrary(id).catch(() => []),
+      listMembers(id).catch(() => []),
+      ticketIndexSize(id).catch(() => 0),
+    ]);
+    setLibrary(items);
+    setMembers(who);
+    setTicketCount(tickets);
+  };
+
+  useEffect(() => { reloadLibrary(); /* eslint-disable-next-line */ }, [id]);
 
   useEffect(() => {
     let live = true;
@@ -91,6 +146,8 @@ export default function WorkshopPage() {
     [regs, workshop]
   );
 
+  const modeCounts = useMemo(() => attendModeCounts(workshop, regs), [workshop, regs]);
+
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return regs.filter((r) => {
@@ -100,6 +157,27 @@ export default function WorkshopPage() {
         .includes(needle);
     });
   }, [regs, q, payFilter]);
+
+  /**
+   * Change how one student attends.
+   *
+   * Only reachable on a hybrid course — the list does not offer the control
+   * otherwise, because on an Offline or Online course the course is the
+   * answer and a stored value would be ignored anyway.
+   */
+  const changeAttendMode = async (reg, value) => {
+    setBusyId(reg.id);
+    setError('');
+    try {
+      const attendMode = normalizeAttendMode(value);
+      await updateRegistration(id, reg.id, { ...reg, attendMode });
+      setRegs((prev) => prev.map((r) => (r.id === reg.id ? { ...r, attendMode } : r)));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusyId('');
+    }
+  };
 
   const changePayment = async (reg, status) => {
     setBusyId(reg.id);
@@ -135,6 +213,55 @@ export default function WorkshopPage() {
       setError(e.message);
     } finally {
       setAdding(false);
+    }
+  };
+
+  /**
+   * Open the panel and load the other courses.
+   *
+   * The newest is chosen for you, because it is nearly always the one meant:
+   * this course follows the last one. That makes the whole thing open,
+   * look, press.
+   */
+  const openCarry = async () => {
+    setCarryOpen(true);
+    setError('');
+    if (sources) return;
+    try {
+      const all = carrySources(await listAllWithRegistrations(), id);
+      setSources(all);
+      setCarryFrom(all[0]?.workshop.id || '');
+      setPicked(null);
+      setCarryQ('');
+    } catch (e) {
+      setError(e.message);
+      setSources([]);
+    }
+  };
+
+  /** Bring the chosen ones across. */
+  const bringForward = async (plan, source, chosen) => {
+    setCarrying(true);
+    setError('');
+    try {
+      const rows = carryRows(chosen, source);
+      await addRegistrations(id, rows);
+      await reload();
+      setCarryOpen(false);
+      setPicked(null);
+      // Everybody offered, not just the clean ones — "skipped N already
+      // here" was left over from when matches were withheld, and said people
+      // had been skipped when they had simply not been ticked.
+      const left = plan.bring.length + plan.already.length - rows.length;
+      setNotice(
+        `Brought ${rows.length} student${rows.length === 1 ? '' : 's'} from `
+        + `“${source.title || 'that course'}”`
+        + (left ? `, left ${left} behind.` : '.')
+      );
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setCarrying(false);
     }
   };
 
@@ -328,7 +455,8 @@ export default function WorkshopPage() {
   return (
     <main>
       <div className="print-only print-head">
-        <div className="org">{ISSUER.name} — {ISSUER.unitLine}</div>
+        <div className="org">{brandLockup()}</div>
+        <div className="org assoc">{ISSUER.association}</div>
         <div className="rule" />
         <h1>{workshop.title}</h1>
       </div>
@@ -336,9 +464,11 @@ export default function WorkshopPage() {
       <div className="page-head no-print">
         <div>
           <h1>{workshop.title || '(untitled)'}</h1>
-          <div className="count" style={{ marginTop: 4 }}>
+          <div className="count mt-1">
             {workshop.code && <span className="tag">{workshop.code}</span>}
             {workshop.mode && <span className="tag solid">{workshop.mode}</span>}
+            {isFinished(workshop) && <span className="badge done">Completed</span>}
+            {classIsLive(workshop) && <span className="badge on-air">Class open</span>}
             {formatDateRange(workshop)}
           </div>
         </div>
@@ -346,6 +476,9 @@ export default function WorkshopPage() {
         <div className="btn-row">
           <Link className="btn" to="/records">← Records</Link>
           <Link className="btn" to={`/w/${id}/edit`}>Edit</Link>
+          {isOnlineWorkshop(workshop) && (
+            <Link className="btn" to={`/w/${id}/class`}>Class</Link>
+          )}
           <Link className="btn" to={`/w/${id}/attendance`}>Attendance</Link>
           <Link className="btn" to={`/w/${id}/cards`}>ID Cards</Link>
           <Link className="btn" to={`/w/${id}/certificates`}>Certificates</Link>
@@ -369,7 +502,24 @@ export default function WorkshopPage() {
             <span className="l">{seatsLeft < 0 ? 'Over limit' : 'Seats left'}</span>
           </div>
         )}
+        {/* Only on a hybrid course. Anywhere else this is the Mode field
+            restated as a number, which is the same fact taking more room. */}
+        {workshopAsksMode(workshop) && (
+          <div className="stat">
+            <span className="n">{modeCounts.Offline}<span style={{ opacity: 0.35 }}> / </span>{modeCounts.Online}</span>
+            <span className="l">In person / online</span>
+          </div>
+        )}
       </div>
+
+      {modeCounts.unset > 0 && (
+        <div className="notice warn no-print">
+          {modeCounts.unset === 1
+            ? 'One student has not said whether they are attending in person or online.'
+            : `${modeCounts.unset} students have not said whether they are attending in person or online.`}
+          {' '}Set it in the Attending column — an unanswered row cannot be counted for either.
+        </div>
+      )}
 
       {seatsLeft !== null && seatsLeft <= 0 && (
         <div className="notice warn no-print">
@@ -411,6 +561,21 @@ export default function WorkshopPage() {
         toggling={toggling}
       />
 
+      <LibraryPanel
+        workshop={workshop}
+        items={library}
+        onChanged={reloadLibrary}
+        onWorkshop={setWorkshop}
+      />
+
+      <StudentAccessPanel
+        workshop={workshop}
+        registrations={regs}
+        members={members}
+        ticketCount={ticketCount}
+        onChanged={reloadLibrary}
+      />
+
       <div className="panel">
         <div className="page-head" style={{ border: 0, paddingBottom: 0, marginBottom: 12 }}>
           <h2>Registrations</h2>
@@ -436,6 +601,12 @@ export default function WorkshopPage() {
               {pasteOpen ? 'Close' : '+ Paste registrations'}
             </button>
             <button
+              onClick={() => (carryOpen ? setCarryOpen(false) : openCarry())}
+              title="Bring the students from a previous course onto this one"
+            >
+              {carryOpen ? 'Close' : '+ From a previous course'}
+            </button>
+            <button
               className="primary"
               onClick={() => runExport('exportStudentListXlsx')}
               disabled={!filtered.length || exporting}
@@ -455,8 +626,147 @@ export default function WorkshopPage() {
           </div>
         </div>
 
+        {carryOpen && (() => {
+          if (!sources) return <p className="count no-print">Loading your other courses…</p>;
+          if (sources.length === 0) {
+            return (
+              <div className="empty no-print">
+                No other course has anybody on it yet. Once one does, its
+                students can be brought here in one press.
+              </div>
+            );
+          }
+          const from = sources.find((b) => b.workshop.id === carryFrom) || sources[0];
+          const plan = carryPlan(from.registrations, regs);
+          // Everybody, until somebody says otherwise. Bringing a whole course
+          // forward is the common case; unticking two is less work than
+          // ticking eighteen.
+          const marks = picked ?? pickAll(plan);
+          const chosen = chosenFrom(plan, marks);
+          const shown = filterOffered(plan, carryQ);
+          const everyone = pickEveryone(plan);
+          const setMarks = (next) => setPicked(next);
+
+          return (
+            <div className="no-print carry mb-4">
+              <div className="pick-row">
+                <label htmlFor="carry-from"><strong>Bring students from</strong></label>
+                <select
+                  id="carry-from"
+                  value={from.workshop.id}
+                  onChange={(e) => {
+                    setCarryFrom(e.target.value);
+                    // A different course is a different list of people; the
+                    // old ticks mean nothing on it.
+                    setPicked(null);
+                    setCarryQ('');
+                  }}
+                >
+                  {sources.map(({ workshop, registrations }) => (
+                    <option key={workshop.id} value={workshop.id}>
+                      {workshop.title || '(untitled)'} — {registrations.length} student
+                      {registrations.length === 1 ? '' : 's'}
+                      {workshop.startDate ? ` · ${workshop.startDate}` : ''}
+                    </option>
+                  ))}
+                </select>
+                <span className="spacer" />
+                <button
+                  className="primary"
+                  disabled={carrying || chosen.length === 0}
+                  onClick={() => bringForward(plan, from.workshop, chosen)}
+                >
+                  {carrying
+                    ? 'Bringing…'
+                    : chosen.length
+                      ? `Bring ${chosen.length} student${chosen.length === 1 ? '' : 's'}`
+                      : 'Nobody chosen'}
+                </button>
+              </div>
+
+              <p className="count mt-2">
+                {describePlan(plan, seatsLeft, marks)}
+              </p>
+
+              {(plan.bring.length > 0 || plan.already.length > 0) && (
+                <>
+                  <div className="carry-tools">
+                    <button
+                      type="button"
+                      className="small"
+                      disabled={chosen.length === everyone.size}
+                      onClick={() => setMarks(everyone)}
+                    >
+                      Select all {everyone.size}
+                    </button>
+                    <button
+                      type="button"
+                      className="small"
+                      disabled={chosen.length === 0}
+                      onClick={() => setMarks(new Set())}
+                    >
+                      Clear
+                    </button>
+                    {(plan.bring.length + plan.already.length) > 8 && (
+                      <input
+                        type="search"
+                        className="small"
+                        placeholder="Find a name…"
+                        aria-label="Filter the students on that course"
+                        value={carryQ}
+                        onChange={(e) => setCarryQ(e.target.value)}
+                      />
+                    )}
+                    <span className="spacer" />
+                    <span className="hint">
+                      {chosen.length} of {everyone.size} ticked
+                    </span>
+                  </div>
+
+                  <ul className="carry-list">
+                    {shown.map(({ reg, match }) => (
+                      <li key={reg.id} className={match ? 'is-flagged' : undefined}>
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={marks.has(reg.id)}
+                            onChange={() => setMarks(togglePick(marks, reg.id))}
+                          />
+                          <span className="carry-name">
+                            {reg.name || '(no name)'}
+                            {match && <em className="carry-why">{describeMatch(match)}</em>}
+                          </span>
+                          <span className="f-sub">{reg.whatsapp || reg.email || 'no contact'}</span>
+                        </label>
+                      </li>
+                    ))}
+                    {shown.length === 0 && (
+                      <li className="hint">Nobody on that course matches “{carryQ.trim()}”.</li>
+                    )}
+                  </ul>
+                </>
+              )}
+
+              {plan.already.length > 0 && (
+                <p className="hint">
+                  The unticked ones match somebody already registered — often
+                  because a shared office or family number was typed into both.
+                  They are listed, not withheld: tick anybody who is genuinely
+                  a different person.
+                </p>
+              )}
+
+              <p className="hint">
+                Names and contact details come across. Ticket numbers, fees and
+                last term’s notes do not — each person is issued a new ticket
+                here and starts unpaid.
+              </p>
+            </div>
+          );
+        })()}
+
         {pasteOpen && (
-          <div className="no-print" style={{ marginBottom: 14 }}>
+          <div className="no-print mb-4">
             <textarea
               rows={8}
               className="mono-area"
@@ -466,7 +776,7 @@ export default function WorkshopPage() {
               onChange={(e) => { setPasteText(e.target.value); setPendingPaste(null); }}
               placeholder={'*Name:* …\n*DoB:* …\n*Qualification:* …\n*Course Name:* …\n*WhatsApp #:* …\n*Area:* …\n*Email ID:* …\n\n(paste as many replies as you like, one after another)'}
             />
-            <div className="btn-row" style={{ marginTop: 8 }}>
+            <div className="btn-row mt-2">
               <button className="primary" onClick={addPasted} disabled={!pasteText.trim() || adding}>
                 {adding ? 'Adding…' : 'Add registrations'}
               </button>
@@ -474,7 +784,7 @@ export default function WorkshopPage() {
             </div>
 
             {pendingPaste && (
-              <div className="notice warn" style={{ marginTop: 12 }}>
+              <div className="notice warn mt-3">
                 {pendingPaste.duplicates.length > 0 && (
                   <>
                     <strong>
@@ -497,7 +807,7 @@ export default function WorkshopPage() {
                     Adding them is allowed — confirm below if that is intended.
                   </p>
                 )}
-                <div className="btn-row" style={{ marginTop: 10 }}>
+                <div className="btn-row mt-3">
                   <button
                     className="primary"
                     disabled={adding || !pendingPaste.unique.length}
@@ -544,7 +854,7 @@ export default function WorkshopPage() {
         </div>
 
         {regView === 'cards' ? (
-          photos === null
+          !photosLoaded
             ? <p className="count">Loading photographs…</p>
             : <RegistrationCards workshop={workshop} rows={filtered} photos={photos} />
         ) : (
@@ -552,6 +862,7 @@ export default function WorkshopPage() {
             workshop={workshop}
             rows={filtered}
             onPaymentChange={changePayment}
+            onAttendModeChange={changeAttendMode}
             onDelete={deleteOne}
             busyId={busyId}
           />

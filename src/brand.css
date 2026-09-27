@@ -1,0 +1,95 @@
+/* The WORKSHOP wordmark.
+
+   Deliberately NOT scoped under `.site` or the admin shell. The mark has to
+   look identical wherever it appears — a sidebar, a landing page, a printed
+   ticket — and scoping it to one of them would let the two drift.
+
+   Anton is the display face, the same one the certificate and the public
+   site already use, so the mark and the document a student receives look as
+   though they come from the same place. */
+
+@font-face {
+  font-family: 'Anton';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(/fonts/Anton-400.woff2) format('woff2');
+}
+
+.wm-wrap {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.28em;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.wm {
+  font-family: 'Anton', Impact, 'Arial Narrow', sans-serif;
+  font-weight: 400;
+  /* Anton is already condensed; a little tracking stops WORKSH•P from
+     setting as one solid block at large sizes. */
+  letter-spacing: 0.015em;
+  line-height: 1;
+  white-space: nowrap;
+  /* The mark prints. A masthead that comes out of the printer as the word
+     WORK followed by nothing is not the mark. */
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.wm-head { color: var(--wm-ink, #0A0A0A); }
+.wm-tail { color: var(--wm-lime, #32CD32); }
+
+/* The dot that stands in for the second O.
+
+   Sized and raised in `em`, so it tracks the type at every size without a
+   second rule. The rise is MEASURED against Anton's real capital O — see
+   DOT_RISE_EM in src/lib/brand.js, and the test that checks it against a
+   rendered O rather than trusting the number. */
+.wm-dot {
+  display: inline-block;
+  width: 0.30em;
+  height: 0.30em;
+  margin: 0 0.055em;
+  border-radius: 50%;
+  background: currentColor;
+  vertical-align: baseline;
+  transform: translateY(calc(-1 * var(--wm-dot-rise, 0.272em)));
+}
+
+/* ---- tones ---- */
+
+/* One colour throughout, taking whatever it inherits: for a printed
+   masthead, a watermark, or anywhere the two-colour mark would fight the
+   thing it sits on. */
+.wm-mono .wm-head,
+.wm-mono .wm-tail { color: inherit; }
+
+/* On a dark ground the ink half would disappear, so it takes the paper. */
+.wm-invert .wm-head { color: var(--wm-paper, #FFFFFF); }
+.wm-invert .wm-tail { color: var(--wm-lime, #32CD32); }
+/* And the second line lightens with it. The default grey is 5.74:1 on white
+   and 2.80:1 on near-black — the caller should not have to know that. */
+.wm-invert .wm-by { color: var(--wm-by-ink, #B9C0C8); }
+
+/* ---- the second line ---- */
+
+.wm-by {
+  font-family: 'Poppins', 'Segoe UI', Helvetica, Arial, sans-serif;
+  font-weight: 500;
+  /* A fraction of the mark so the lockup holds its proportions in a hero,
+     with a floor so it stays readable in a sidebar. At 0.235em alone a 17px
+     mark set this line at four pixels — present, and unreadable. Proportion
+     gives way to legibility below about 40px, which is the right way round. */
+  font-size: max(9.5px, 0.235em);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.35;
+  color: var(--wm-by-ink, #666666);
+  white-space: normal;
+}
+
+/* The school's name is long. Below this it wraps rather than pushing the
+   page sideways, which is what it did in a 208px sidebar. */
+.wm-lockup { max-width: 12em; }

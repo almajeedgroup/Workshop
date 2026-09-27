@@ -113,15 +113,15 @@ export default function RequestsPanel({
 
       {showQr && (
         <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
-          <div style={{ border: 'var(--hair)', padding: 14, background: '#fff' }}>
+          <div style={{ border: 'var(--hair)', padding: 14, background: 'var(--paper)' }}>
             <QrCode value={registerLink} title="Registration QR code" style={{ width: 190, height: 190, display: 'block' }} />
           </div>
           <div>
-            <p className="hint" style={{ marginTop: 0 }}>
+            <p className="hint mt-0">
               Print this on the poster. Scanning it opens the registration form for this
               workshop, with the details already filled in.
             </p>
-            <p style={{ fontFamily: 'var(--mono)', fontSize: 12, marginTop: 8, wordBreak: 'break-all' }}>
+            <p className="t-xs" style={{ fontFamily: 'var(--mono)', marginTop: 8, wordBreak: 'break-all' }}>
               {registerLink}
             </p>
           </div>
@@ -158,14 +158,14 @@ export default function RequestsPanel({
                     {r.qualification || '—'}
                     {r.courseName && <div className="count">{r.courseName}</div>}
                   </td>
-                  <td style={{ fontFamily: 'var(--mono)', fontSize: 12 }}>{r.paymentRef || '—'}</td>
+                  <td className="t-xs" style={{ fontFamily: 'var(--mono)' }}>{r.paymentRef || '—'}</td>
                   <td className="no-print">
                     {duplicate?.id === r.id ? (
                       /* A match is a warning, not a refusal — families share a
                          phone and an email, and a sibling should not need
                          retyping. The operator decides, as everywhere else. */
                       <div>
-                        <div style={{ fontSize: 12, marginBottom: 6 }}>
+                        <div className="t-xs" style={{ marginBottom: 6 }}>
                           Looks already registered — {duplicate.message}.
                         </div>
                         <div className="actions">
@@ -203,19 +203,19 @@ export default function RequestsPanel({
         </div>
       )}
 
-      <div className="hint" style={{ marginTop: 10 }}>
+      <div className="hint mt-3">
         Accepting adds the person to the registration list below and issues their ticket
         number. Payment stays <strong>Pending</strong> until you mark it on that list.
       </div>
 
       {handled.length > 0 && (
-        <details style={{ marginTop: 16 }}>
-          <summary style={{ cursor: 'pointer', fontSize: 12, textTransform: 'uppercase', letterSpacing: '.06em' }}>
+        <details className="mt-4">
+          <summary className="t-xs" style={{ cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '.06em' }}>
             {handled.length} already handled
             {rejected.length > 0 ? ` · ${rejected.length} rejected, restorable` : ''}
           </summary>
 
-          <div className="hint" style={{ marginTop: 10 }}>
+          <div className="hint mt-3">
             Rejecting never threw anything away — everything these people typed is still
             here. <strong>Restore</strong> puts a rejected request back in the queue above,
             to be accepted or rejected again. <strong>Remove</strong> is the one action on
@@ -224,7 +224,7 @@ export default function RequestsPanel({
 
           {/* The same columns as the queue above: restoring somebody is a
               decision, and it cannot be made from a name and a status. */}
-          <div className="table-wrap" style={{ marginTop: 10 }}>
+          <div className="table-wrap mt-3">
             <table>
               <thead>
                 <tr>
@@ -250,14 +250,14 @@ export default function RequestsPanel({
                       {r.qualification || '—'}
                       {r.courseName && <div className="count">{r.courseName}</div>}
                     </td>
-                    <td style={{ fontFamily: 'var(--mono)', fontSize: 12 }}>
+                    <td className="t-xs" style={{ fontFamily: 'var(--mono)' }}>
                       {r.paymentRef || '—'}
                       {r.paymentMode && <div className="count">{r.paymentMode}</div>}
                     </td>
                     <td>
                       <span className={`tag${r.status === 'accepted' ? ' solid' : ''}`}>{r.status}</span>
                       {r.ticketId && (
-                        <div className="count" style={{ marginTop: 3 }}>{r.ticketId}</div>
+                        <div className="count mt-1">{r.ticketId}</div>
                       )}
                       {r.whatsapp && r.status === 'accepted' && (
                         <a

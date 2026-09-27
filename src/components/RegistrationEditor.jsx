@@ -71,7 +71,7 @@ export default function RegistrationEditor({ rows, onChange }) {
         </table>
       </div>
 
-      <div className="btn-row no-print" style={{ marginTop: 10 }}>
+      <div className="btn-row no-print mt-3">
         <button type="button" onClick={addRow}>+ Add row</button>
         <span className="count">
           {rows.length} registration{rows.length === 1 ? '' : 's'}

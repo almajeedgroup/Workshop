@@ -1,0 +1,435 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { getWorkshop, getRegistrations } from '../lib/db.js';
+import { setClassOpen, replaceRoom } from '../lib/meetingdb.js';
+import { keepClassMaterial } from '../lib/librarydb.js';
+import { courseDays } from '../lib/attendance.js';
+import { setMarks } from '../lib/attendancedb.js';
+import { watchQuestions } from '../lib/classroomdb.js';
+import { attendanceRows } from '../lib/attendance.js';
+import { openCount } from '../lib/questions.js';
+import {
+  classIsLive, classJoinUrl, matchRoom, marksFromRoom, roomIsGuessable, roomUrl,
+  canEmbedMeeting,
+} from '../lib/meeting.js';
+import { ISSUER, isOnlineWorkshop } from '../lib/schema.js';
+import { formatDateRange } from '../lib/tickets.js';
+import JitsiRoom from '../components/JitsiRoom.jsx';
+import RoomLauncher from '../components/RoomLauncher.jsx';
+import ClassBoard from '../components/ClassBoard.jsx';
+import ClassConsole from '../components/ClassConsole.jsx';
+import '../class.css';
+
+/**
+ * The presenter's screen for an online class.
+ *
+ * It is deliberately not just a video call. A call on its own is Zoom; what
+ * makes this worth building into the school's own system is that the class
+ * and the REGISTER are on one screen — the presenter can see, live, who is
+ * in the room, who is on the course but has not turned up, and who is in the
+ * room without being on the course at all, and can take the day's attendance
+ * from that in one press instead of reading forty names aloud.
+ */
+export default function ClassPage() {
+  const { id } = useParams();
+  const [workshop, setWorkshop] = useState(null);
+  const [regs, setRegs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [busy, setBusy] = useState('');
+  const [inRoom, setInRoom] = useState([]);
+  const [joined, setJoined] = useState(false);
+  const [confirmRoom, setConfirmRoom] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [questions, setQuestions] = useState([]);
+
+  useEffect(() => {
+    let live = true;
+    Promise.all([getWorkshop(id), getRegistrations(id)])
+      .then(([w, r]) => {
+        if (!live) return;
+        if (!w) { setLoadError('That workshop does not exist.'); return; }
+        setWorkshop(w);
+        setRegs(r);
+      })
+      .catch((e) => live && setLoadError(e.message))
+      .finally(() => live && setLoading(false));
+    return () => { live = false; };
+  }, [id]);
+
+  // Stable, so a participant arriving does not rebuild the meeting.
+  // The console shows how many are waiting, so this page watches the queue
+  // too. Two listeners on one collection is one socket in Firestore's client
+  // and no extra reads; a count passed down from the board would mean the bar
+  // could not exist without the board being open.
+  useEffect(() => {
+    if (!id) return undefined;
+    return watchQuestions(id, setQuestions, () => {});
+  }, [id]);
+
+  const handleParticipants = useCallback((list) => setInRoom(list), []);
+  const handleJoined = useCallback(() => setJoined(true), []);
+  const handleLeft = useCallback(() => { setJoined(false); setInRoom([]); }, []);
+
+  const rows = useMemo(() => attendanceRows(regs), [regs]);
+  const { present, strangers, missing } = useMemo(
+    () => matchRoom(inRoom, rows), [inRoom, rows]
+  );
+
+  // The register is kept per day, and a class is attended on the day it is
+  // held. A session outside the recorded dates — a catch-up, or a course
+  // whose dates were never filled in — is still filed under today, which is
+  // when those people were actually there.
+  const day = new Date().toISOString().slice(0, 10);
+
+  if (loading) return <main><p className="count">Loading…</p></main>;
+  if (loadError) {
+    return (
+      <main>
+        <div className="notice warn">{loadError}</div>
+        <Link className="btn" to="/records">← Back to Records</Link>
+      </main>
+    );
+  }
+
+  if (!isOnlineWorkshop(workshop)) {
+    return (
+      <main>
+        <div className="page-head no-print">
+          <h1>{workshop.title || 'Untitled'}</h1>
+        </div>
+        <div className="panel">
+          <h2>This course is held in person</h2>
+          <p>
+            An online classroom is set up for courses whose <strong>Mode</strong>{' '}
+            is Online or Hybrid. Change the mode on the workshop and the class
+            appears here.
+          </p>
+          <div className="btn-row">
+            <Link className="btn" to={`/w/${id}/edit`}>Edit the workshop</Link>
+            <Link className="btn" to={`/w/${id}`}>← Back to the workshop</Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  const live = classIsLive(workshop);
+  const joinLink = classJoinUrl(id);
+  // meet.jit.si disconnects an embedded call after five minutes; used
+  // directly it does not. So on that server the class is launched, not
+  // embedded, and the register below says what that costs.
+  const embed = canEmbedMeeting();
+
+  const toggle = async () => {
+    setBusy('toggle'); setError(''); setNotice('');
+    try {
+      const next = await setClassOpen(id, workshop, !live);
+      setWorkshop(next);
+
+      if (next.classOpen === 'Open') {
+        setNotice('The class is open. The join link now works.');
+        return;
+      }
+
+      /* Closing takes the notes and handouts away with the room — right for
+         a stranger, wrong for the people who were in it ten minutes ago. So
+         they move onto the course library on the way out, where the same
+         students keep them for good.
+
+         After the close, not before: a failure here must not leave a class
+         that is still open because its filing failed. */
+      let kept = null;
+      try {
+        const days = new Set([...courseDays(next), new Date().toISOString().slice(0, 10)]);
+        kept = await keepClassMaterial(id, [...days]);
+      } catch {
+        /* Reported below as not-kept. The class is closed either way. */
+      }
+
+      setNotice('The class is closed. The join link no longer lets anyone in.'
+        + (kept
+          ? ` ${describeKept(kept)}`
+          : ' Its notes and handouts could NOT be copied to the library — '
+            + 'add them there by hand.'));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy('');
+    }
+  };
+
+  const newRoom = async () => {
+    setBusy('room'); setError(''); setNotice('');
+    try {
+      setWorkshop(await replaceRoom(id, workshop));
+      setNotice('Moved to a new room. Any link sent out before now is dead.');
+      setConfirmRoom(false);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy('');
+    }
+  };
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(joinLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard access refused, or an insecure origin. The link is on
+      // screen and selectable, so this is a convenience, not the only way.
+      setError('Could not copy. Select the link and copy it by hand.');
+    }
+  };
+
+  const takeAttendance = async () => {
+    setBusy('marks'); setError(''); setNotice('');
+    try {
+      const marks = marksFromRoom(present);
+      const n = Object.keys(marks).length;
+      if (!n) { setNotice('Nobody in the room is on the register yet.'); return; }
+      await setMarks(id, day, marks);
+      setNotice(`Marked ${n} ${n === 1 ? 'person' : 'people'} present for ${day}.`);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy('');
+    }
+  };
+
+  return (
+    <main className="class-page">
+      <div className="page-head no-print">
+        <h1>{workshop.title || 'Untitled'}</h1>
+        <span className="count">{formatDateRange(workshop) || 'no dates'} · {workshop.mode}</span>
+        <span className="spacer" />
+        <div className="btn-row">
+          <Link className="btn" to={`/w/${id}/attendance`}>Attendance</Link>
+          <Link className="btn" to={`/w/${id}`}>← Workshop</Link>
+        </div>
+      </div>
+
+      {/* Everything a presenter might need mid-sentence, on one line: whether
+          it is live, how long it has been, who is in, who is waiting. The
+          close button lives here too — it is the one control that has to be
+          reachable without hunting for a panel. */}
+      <ClassConsole
+        live={live}
+        openedAt={workshop.classOpenedAt}
+        inRoom={inRoom.length}
+        waiting={openCount(questions)}
+        embedded={embed && joined}
+      >
+        {live && (
+          <button type="button" className="danger" onClick={toggle} disabled={Boolean(busy)}>
+            {busy === 'toggle' ? 'Closing…' : 'Close the class'}
+          </button>
+        )}
+      </ClassConsole>
+
+      {error && <div className="notice warn">{error}</div>}
+      {notice && <div className="notice">{notice}</div>}
+
+      <div className="class-grid">
+        <section className="class-stage" aria-label="The class">
+          {live && embed ? (
+            <JitsiRoom
+              room={workshop.meetingRoom}
+              moderator
+              subject={workshop.title || 'Class'}
+              displayName={workshop.presentedBy || 'Presenter'}
+              onParticipants={handleParticipants}
+              onJoined={handleJoined}
+              onLeft={handleLeft}
+            />
+          ) : live ? (
+            <RoomLauncher
+              room={workshop.meetingRoom}
+              subject={workshop.title || 'The class is ready'}
+              label="Open the class"
+            />
+          ) : (
+            <div className="room-idle">
+              <h2>The class is closed</h2>
+              <p>
+                Opening it publishes the join link and lets students into the
+                room. Closing it again takes the room off the public page.
+              </p>
+              <button
+                type="button"
+                className="primary big"
+                onClick={toggle}
+                disabled={Boolean(busy)}
+              >
+                {busy === 'toggle' ? 'Opening…' : 'Open the class'}
+              </button>
+              <p className="hint">
+                {ISSUER.meetingHost} asks whoever opens a room to sign in once,
+                with Google, GitHub or Facebook. Students are never asked to.
+              </p>
+            </div>
+          )}
+        </section>
+
+        <aside className="class-side" aria-label="The class register">
+          {/* Notes, transcript and handouts — written while the class runs,
+              because afterwards nobody remembers to. */}
+          <ClassBoard workshopId={id} workshop={workshop} day={day} host />
+
+          <div className="panel">
+            <h2>Join link</h2>
+            <p className="hint">
+              Send this to the class. It opens the school&rsquo;s own page, not a
+              meeting link — so it keeps working when you move the room.
+            </p>
+            <p className="joinlink"><code>{joinLink}</code></p>
+            <div className="btn-row">
+              <button type="button" onClick={copy}>{copied ? 'Copied' : 'Copy link'}</button>
+              <a className="btn" href={joinLink} target="_blank" rel="noreferrer">Open as a student</a>
+            </div>
+
+          </div>
+
+          <div className="panel">
+            <div className="pick-row">
+              <h2>In the room</h2>
+              <span className="spacer" />
+              <span className="count">{inRoom.length}</span>
+            </div>
+
+            {!live ? (
+              <p className="hint">Open the class to see who arrives.</p>
+            ) : !embed ? (
+              <>
+                <p className="hint">
+                  Who is in the room cannot be read from another window, so
+                  attendance is taken on the register screen rather than here.
+                </p>
+                <div className="btn-row">
+                  <Link className="btn primary" to={`/w/${id}/attendance`}>
+                    Take the register
+                  </Link>
+                </div>
+              </>
+            ) : !joined ? (
+              <p className="hint">
+                Join the room yourself and the list fills in as students arrive.
+              </p>
+            ) : (
+              <>
+                <ul className="who">
+                  {present.map(({ registration, participant }) => (
+                    <li key={registration.id} className="is-present">
+                      <span className="who-name">{registration.name}</span>
+                      <span className="who-note">{registration.ticketId || participant.displayName}</span>
+                    </li>
+                  ))}
+                  {strangers.map((p, i) => (
+                    <li key={`s${p.participantId || i}`} className="is-stranger">
+                      <span className="who-name">{p.displayName || 'Unnamed'}</span>
+                      <span className="who-note">not on the register</span>
+                    </li>
+                  ))}
+                </ul>
+                {missing.length > 0 && (
+                  <details className="who-missing">
+                    <summary>{missing.length} not here yet</summary>
+                    <ul className="who">
+                      {missing.map((r) => (
+                        <li key={r.id} className="is-missing">
+                          <span className="who-name">{r.name}</span>
+                          <span className="who-note">{r.ticketId}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+                <div className="btn-row mt-3">
+                  <button
+                    type="button"
+                    className="primary"
+                    onClick={takeAttendance}
+                    disabled={Boolean(busy) || present.length === 0}
+                  >
+                    {busy === 'marks'
+                      ? 'Marking…'
+                      : present.length
+                        ? `Mark ${present.length} present`
+                        : 'Mark present'}
+                  </button>
+                </div>
+                <p className="hint">
+                  Marks today&rsquo;s register as present. Nobody is marked absent —
+                  students join late, and a register should not say otherwise.
+                </p>
+              </>
+            )}
+          </div>
+
+          <div className="panel">
+            <h2>Room</h2>
+            <p className="joinlink"><code>{workshop.meetingRoom || 'not created yet'}</code></p>
+            {workshop.meetingRoom && roomIsGuessable(workshop.meetingRoom) && (
+              <div className="notice warn">
+                This room name is short enough to guess. On a public server that
+                means strangers can walk into the class. Replace it.
+              </div>
+            )}
+            {workshop.meetingRoom && (
+              <p className="hint">
+                Direct address:{' '}
+                <a href={roomUrl(workshop.meetingRoom)} target="_blank" rel="noreferrer">
+                  {roomUrl(workshop.meetingRoom)}
+                </a>
+              </p>
+            )}
+            {confirmRoom ? (
+              <div className="btn-row">
+                <button type="button" className="danger" onClick={newRoom} disabled={Boolean(busy)}>
+                  {busy === 'room' ? 'Moving…' : 'Yes, move the class'}
+                </button>
+                <button type="button" onClick={() => setConfirmRoom(false)}>Keep this room</button>
+              </div>
+            ) : (
+              <div className="btn-row">
+                <button type="button" onClick={() => setConfirmRoom(true)} disabled={Boolean(busy)}>
+                  New room
+                </button>
+              </div>
+            )}
+            <p className="hint">
+              A new room is the only way to shut out a link that has been
+              forwarded. Everyone has to be sent the join link again.
+            </p>
+          </div>
+        </aside>
+      </div>
+    </main>
+  );
+}
+
+/**
+ * What survived the close, in a sentence.
+ *
+ * Says nothing rather than "0 notes and 0 handouts" when a class produced
+ * neither: a count of nothing reads as a failure, and this is the normal
+ * case for a class where the presenter typed no notes.
+ */
+function describeKept({ notes = 0, handouts = 0, stuck = 0 }) {
+  const parts = [];
+  if (notes) parts.push(`${notes} day${notes === 1 ? '' : 's'} of notes`);
+  if (handouts) parts.push(`${handouts} handout${handouts === 1 ? '' : 's'}`);
+
+  const carried = parts.length
+    ? `${parts.join(' and ')} moved to the library, where students keep them.`
+    : '';
+  const left = stuck
+    ? ` ${stuck} handout${stuck === 1 ? ' was' : 's were'} uploaded before this app had a `
+      + 'file store and could not be moved — add them to the library by hand.'
+    : '';
+  return (carried + left).trim();
+}

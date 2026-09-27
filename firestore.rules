@@ -45,6 +45,23 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
+    /**
+     * A student who has claimed a ticket for THIS course.
+     *
+     * The one thing in this file that grants a signed-in account who is not
+     * an administrator the right to read something. It grants exactly one
+     * collection on one course — the library — and it is a path lookup, not
+     * a query, because rules cannot run queries.
+     *
+     * Note what it deliberately is NOT: `request.auth != null`. Anybody
+     * holding the public API key can create an account, so "signed in" is
+     * not a permission anywhere in this file and must never become one.
+     */
+    function isMember(workshopId) {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/workshops/$(workshopId)/members/$(request.auth.uid));
+    }
+
     // Holder of the permanent owner address. Grants no data access on its
     // own — only the right to join the allow-list above.
     function isBootstrapOwner() {
@@ -99,6 +116,36 @@ service cloud.firestore {
           && request.resource.data.keys().hasOnly(['marks'])
           && request.resource.data.marks is map
           && request.resource.data.marks.keys().size() <= 2000;
+
+        // A student marking themselves present, from the class link.
+        //
+        // The document's ID is their TICKET NUMBER, which is the whole
+        // reason this can be allowed at all: one document per ticket per
+        // day, addressed by path, so the rule can say exactly what may
+        // happen to it. CREATE ONLY — no update and no delete — so a
+        // student cannot change their own entry, cannot remove anybody
+        // else's, and cannot touch the `marks` map above, which stays the
+        // office's alone. An explicit mark therefore always wins.
+        //
+        // Joining twice is not an error: the second create simply fails,
+        // and the client ignores it.
+        //
+        // WHAT THIS DOES NOT PROVE. It does not prove the person holding
+        // the link is the ticket-holder. Ticket numbers run in sequence,
+        // so somebody with the class link who knows one can record it as
+        // present. Without a server there is no way to do better: the
+        // browser cannot be trusted and registrations are, correctly,
+        // unreadable to it. What the shape does give is provenance — a
+        // join is never mistaken for a mark the office made — so the
+        // register shows where each came from and can be corrected.
+        match /joins/{ticketId} {
+          allow read, update, delete: if isAdmin();
+          allow create: if classIsOpen(workshopId)
+            && day.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+            && ticketId.size() >= 3 && ticketId.size() <= 40
+            && request.resource.data.keys().hasOnly(['at'])
+            && request.resource.data.at == request.time;
+        }
       }
 
       // Participant photographs for ID cards, kept apart from the
@@ -120,6 +167,204 @@ service cloud.firestore {
           && request.resource.data.keys().hasOnly(['photo'])
           && request.resource.data.photo is string
           && request.resource.data.photo.size() <= 400000;
+      }
+
+      // ---- What an online class leaves behind ------------------------
+      //
+      // Notes, a transcript and handouts, all written by the presenter and
+      // READ BY STUDENTS WHO HAVE NO ACCOUNT. That is the only reason these
+      // are not simply administrator-only like everything else under a
+      // workshop, and it is why the read is conditional rather than open:
+      // `classIsOpen` asks the public mirror, which is the same switch that
+      // publishes the meeting room. Closing a class closes its notes with
+      // it, and a course that never met online exposes nothing at all.
+      //
+      // None of these hold anything personal. They are what was said and
+      // shown in a class the reader was invited to.
+      match /classNotes/{day} {
+        allow read: if isAdmin() || classIsOpen(workshopId);
+        allow delete: if isAdmin();
+        allow create, update: if isAdmin()
+          && request.resource.data.keys().hasOnly(['text', 'updatedAt'])
+          && request.resource.data.text is string
+          && request.resource.data.text.size() <= 100000;
+      }
+
+      // One document per day rather than one per line: a class produces a
+      // line every few seconds, and a document each would be thousands of
+      // writes and thousands of reads for anybody following along.
+      match /classTranscript/{day} {
+        allow read: if isAdmin() || classIsOpen(workshopId);
+        allow delete: if isAdmin();
+        allow create, update: if isAdmin()
+          && request.resource.data.keys().hasOnly(['lines', 'updatedAt'])
+          && request.resource.data.lines is list
+          && request.resource.data.lines.size() <= 5000;
+      }
+
+      // A link, or a PDF small enough to live in the record. There is no
+      // file store behind this app, so `data` is capped well under the 1 MiB
+      // document ceiling and anything bigger is shared as a link.
+      // ---- Questions, the one thing a STUDENT writes -----------------
+      //
+      // Everything else under a class is written by the presenter and read by
+      // the room. This goes the other way, so it is shaped like the
+      // registration form — the only other place a stranger can write here.
+      //
+      // The class has to be OPEN. That is the same switch that publishes the
+      // room, so a closed class takes the queue with it and a course that
+      // never met online can never be posted to at all.
+      //
+      // `hasOnly` freezes the shape because there is no schema to grow here,
+      // and an unexpected key is a good reason to refuse. The state is
+      // checked by value, not measured: a stranger writes it, and only the
+      // presenter may say something has been answered.
+      match /classQuestions/{questionId} {
+        allow read: if isAdmin() || classIsOpen(workshopId);
+        allow delete: if isAdmin();
+        // Marking one answered is the presenter's job, and theirs alone.
+        allow update: if isAdmin();
+        allow create: if classIsOpen(workshopId)
+          && request.resource.data.keys().hasOnly(['name', 'text', 'state', 'hp', 'askedAt', 'at'])
+          && request.resource.data.keys().hasAll(['name', 'text', 'state', 'hp'])
+          && request.resource.data.state == 'open'
+          && request.resource.data.hp == ''
+          && sized(request.resource.data.name, 80)
+          && request.resource.data.name.size() > 0
+          && sized(request.resource.data.text, 300)
+          && request.resource.data.text.size() > 0
+          && sized(request.resource.data.get('askedAt', ''), 40);
+      }
+
+      // ---- The course library, and who may open it ------------------
+      //
+      // Everything under a class is live and then gone: the room closes and
+      // the notes and transcript close with it. The library is the opposite
+      // — a permanent shelf of recordings and handouts, put there by the
+      // office and readable after the course by the people who took it.
+      //
+      // It holds NOTHING PERSONAL. What is on the shelf is what was said
+      // and shown in a class, which is the same category as the transcript.
+      // That is what makes it safe to hand to a student at all.
+      //
+      // `source` decides which of `url` and `path` is meaningful, and both
+      // keys are always present so this list can be fixed. `addedAt` is the
+      // server's, never the client's.
+      match /library/{itemId} {
+        // Three ways in, and the third is a decision the office makes per
+        // course: an open library is readable by anybody signed in, ticket
+        // or no ticket. A course left on the default is unchanged — only
+        // its own students can read it.
+        allow read: if isAdmin()
+          || isMember(workshopId)
+          || (request.auth != null && libraryIsOpen(workshopId));
+        allow delete: if isAdmin();
+        allow create, update: if isAdmin()
+          && request.resource.data.keys().hasOnly(
+               ['title', 'kind', 'source', 'url', 'path', 'text',
+                'format', 'bytes', 'day', 'addedAt'])
+          && request.resource.data.kind in ['recording', 'notes']
+          // `text` is the third source: the notes a presenter typed during a
+          // class, kept as words rather than made into a file nobody asked
+          // to download or a link back to a class that has closed.
+          && request.resource.data.source in ['link', 'file', 'text']
+          && sized(request.resource.data.title, 200)
+          && request.resource.data.title.size() > 0
+          && sized(request.resource.data.url, 2000)
+          && sized(request.resource.data.path, 500)
+          && sized(request.resource.data.text, 100000)
+          && sized(request.resource.data.format, 20)
+          && sized(request.resource.data.day, 10)
+          && request.resource.data.bytes is int
+          && request.resource.data.bytes >= 0;
+      }
+
+      // Which tickets this course issued. The document IS its ticket, and
+      // holds nothing else — the name and number that ticket belongs to
+      // stay in `registrations`, which no student can read.
+      //
+      // Written by the office, read by NOBODY. A rule's `exists()` does not
+      // need the caller to hold read permission, so this can answer "was
+      // this ticket ever issued?" while staying shut to every client.
+      match /tickets/{ticketId} {
+        allow read, write: if isAdmin();
+      }
+
+      // ---- Where a student finds their own certificate ---------------
+      //
+      // A certificate is readable by its ID and always has been — that is
+      // what lets an employer check one. This solves a different problem: a
+      // student does not KNOW their ID. It is printed on a sheet they may
+      // never have been handed, and `certificates` cannot be queried by
+      // anybody but the office.
+      //
+      // So the pointer is keyed by the one thing they do know, their ticket,
+      // and read by EXACTLY ONE ACCOUNT: the one whose membership names that
+      // ticket. Not every member of the course — that would hand the whole
+      // cohort each other's certificate IDs, and with them each other's
+      // names and awards. The `get` below is what makes it the holder.
+      match /awards/{ticketId} {
+        allow read: if isAdmin()
+          || (request.auth != null
+              && exists(/databases/$(database)/documents/workshops/$(workshopId)/members/$(request.auth.uid))
+              && get(/databases/$(database)/documents/workshops/$(workshopId)/members/$(request.auth.uid))
+                   .data.ticketId == ticketId);
+        allow write: if isAdmin();
+      }
+
+      // The lock. One document per ticket, holding the account that claimed
+      // it, and CREATE ONLY — so the first claim wins and every later one is
+      // refused. That is what makes a ticket exclusive: a student whose
+      // ticket has been taken finds out, rather than quietly sharing it.
+      //
+      // The claimant must name THEMSELVES. Without that, one account could
+      // burn every ticket on a course by claiming them all for somebody
+      // else and lock the whole cohort out.
+      match /claims/{ticketId} {
+        allow read, update, delete: if isAdmin();
+        allow create: if request.auth != null
+          && exists(/databases/$(database)/documents/workshops/$(workshopId)/tickets/$(ticketId))
+          && request.resource.data.keys().hasOnly(['uid', 'at'])
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.at == request.time;
+      }
+
+      // The membership the library rule above reads.
+      //
+      // Allowed ONLY once the lock exists and names this account. That is
+      // why claiming is three sequential writes and not one batch: rules see
+      // a batch against the state before it, so a `members` write in the
+      // same batch as its own claim could never satisfy this line.
+      //
+      // A student may re-write their own membership — the claim still has
+      // to be theirs — so a claim that failed halfway can be finished by
+      // trying again. They may read their own and nobody else's; the office
+      // reads them all, because it is the office that revokes one.
+      match /members/{uid} {
+        allow read: if isAdmin() || (request.auth != null && request.auth.uid == uid);
+        allow delete: if isAdmin();
+        allow create, update: if request.auth != null
+          && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['ticketId', 'name', 'email', 'at'])
+          && exists(/databases/$(database)/documents/workshops/$(workshopId)/claims/$(request.resource.data.ticketId))
+          && get(/databases/$(database)/documents/workshops/$(workshopId)/claims/$(request.resource.data.ticketId)).data.uid == request.auth.uid
+          && sized(request.resource.data.ticketId, 40)
+          && sized(request.resource.data.name, 120)
+          && sized(request.resource.data.email, 200)
+          && request.resource.data.at == request.time;
+      }
+
+      match /classHandouts/{handoutId} {
+        allow read: if isAdmin() || classIsOpen(workshopId);
+        allow delete: if isAdmin();
+        allow create, update: if isAdmin()
+          && request.resource.data.keys().hasOnly(['title', 'kind', 'url', 'data', 'bytes', 'addedAt'])
+          && request.resource.data.title is string
+          && request.resource.data.title.size() <= 200
+          && request.resource.data.url is string
+          && request.resource.data.url.size() <= 2000
+          && request.resource.data.data is string
+          && request.resource.data.data.size() <= 900000;
       }
     }
 
@@ -165,6 +410,70 @@ service cloud.firestore {
     // nothing else. The workshop document itself carries internal notes and
     // counters, and Firestore rules cannot expose half a document — hence a
     // separate one. src/lib/publicdb.js builds it from a whitelist.
+    // ---- A student's own list of courses --------------------------------
+    //
+    // "Which courses am I in" is a question no rule can answer and no
+    // reasonable query can either: membership lives under each workshop, and
+    // a collection-group search would need its own index and its own rule
+    // for a handful of documents. So the student keeps their own list.
+    //
+    // THIS GRANTS NOTHING. Writing a row here does not open a library — the
+    // library is gated by `members`, which is gated by the claim, which is
+    // gated by the ticket index. A student who forged a row here would get
+    // a dashboard entry that refuses to open, which is the correct failure.
+    //
+    // The office can read and delete, because revoking has to clear the
+    // student's list too or their dashboard keeps offering a course it can
+    // no longer open.
+    // ---- What a student has watched -------------------------------------
+    //
+    // Theirs, and nobody else's — the office included. Progress is a reading
+    // habit, not attendance: attendance is a register somebody takes, and
+    // nothing in this app needs to know how far through a recording anybody
+    // got. So nothing in this app can see it.
+    //
+    // One document per course holding a map of item ID to true, so drawing a
+    // progress bar is one read rather than one per row. The map is capped
+    // because a shelf is a handful of items and anything larger did not come
+    // from this app.
+    // Read and write are separate clauses on purpose. A single one covering
+    // both reached for `request.resource` — which does not exist on a read —
+    // and refused every student their own record. The audit caught it; a
+    // reading of the rule would not have.
+    match /students/{uid}/progress/{workshopId} {
+      function mine() { return request.auth != null && request.auth.uid == uid; }
+      allow read, delete: if mine();
+      allow create, update: if mine()
+        && request.resource.data.keys().hasOnly(['done', 'last', 'at'])
+        && request.resource.data.get('done', {}).keys().size() <= 500
+        && sized(request.resource.data.get('last', ''), 200);
+    }
+
+    match /students/{uid}/courses/{workshopId} {
+      allow read, delete: if isAdmin() || (request.auth != null && request.auth.uid == uid);
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['ticketId', 'at'])
+        && sized(request.resource.data.ticketId, 40)
+        && request.resource.data.at == request.time;
+    }
+
+    // ---- The list of open libraries -------------------------------------
+    //
+    // One document, so a student who never registered can FIND the courses
+    // that are open to them. Nothing else lists workshops publicly: the
+    // mirror above is readable one document at a time by ID, and opening it
+    // to `list` would expose every course, including ones not announced
+    // yet. This holds only what has been deliberately opened.
+    //
+    // IT GRANTS NOTHING. Access is decided by `libraryOpen` on the mirror,
+    // which the library rule reads. A stale entry here names a course whose
+    // shelf still refuses to open.
+    match /publicIndex/{docId} {
+      allow get: if true;
+      allow list, write: if isAdmin();
+    }
+
     match /publicWorkshops/{workshopId} {
       allow get: if true;
       allow list: if isAdmin();
@@ -189,8 +498,8 @@ service cloud.firestore {
     // on the workshop and the writes stop at the door.
     function requestFields() {
       return ['workshopId', 'name', 'dob', 'qualification', 'courseName',
-              'whatsapp', 'area', 'email', 'paymentMode', 'paymentRef',
-              'notes', 'ref', 'status', 'hp', 'createdAt'];
+              'whatsapp', 'area', 'email', 'attendMode', 'paymentMode',
+              'paymentRef', 'notes', 'ref', 'status', 'hp', 'createdAt'];
     }
 
     // `get` on a path that does not exist raises an evaluation error rather
@@ -201,6 +510,34 @@ service cloud.firestore {
       return exists(/databases/$(database)/documents/publicWorkshops/$(workshopId))
         && get(/databases/$(database)/documents/publicWorkshops/$(workshopId))
              .data.get('registrationOpen', false) == true;
+    }
+
+    // The same switch that publishes the meeting room. Written like
+    // `openForRegistration` above and for the same reason: `get` on a path
+    // that does not exist raises rather than returning nothing, and a mirror
+    // written before this field existed has no `classOpen` at all.
+    /**
+     * A course whose library the office has opened to everybody.
+     *
+     * Written like `classIsOpen` and for the same reason: `get` on a path
+     * that does not exist raises rather than returning nothing, and a
+     * mirror written before this field existed has no `libraryOpen` at all.
+     *
+     * It still requires an ACCOUNT. That is not security — anybody can make
+     * one — it is accountability: a recording opened by a named account can
+     * be traced, and the office can see who has been in. What it is not is
+     * a claim on a ticket, which is the point.
+     */
+    function libraryIsOpen(workshopId) {
+      return exists(/databases/$(database)/documents/publicWorkshops/$(workshopId))
+        && get(/databases/$(database)/documents/publicWorkshops/$(workshopId))
+             .data.get('libraryOpen', false) == true;
+    }
+
+    function classIsOpen(workshopId) {
+      return exists(/databases/$(database)/documents/publicWorkshops/$(workshopId))
+        && get(/databases/$(database)/documents/publicWorkshops/$(workshopId))
+             .data.get('classOpen', false) == true;
     }
 
     function validRequest(d) {
@@ -219,6 +556,10 @@ service cloud.firestore {
         && sized(d.get('paymentRef', ''), 200)
         && sized(d.get('paymentMode', ''), 200)
         && sized(d.get('dob', ''), 40)
+        // An enum, not free text: a stranger writes this, so the value is
+        // checked rather than merely measured. Empty is allowed — an Offline
+        // or Online course never asks, and the course settles it.
+        && d.get('attendMode', '') in ['', 'Offline', 'Online']
         && sized(d.get('ref', ''), 40);
     }
 

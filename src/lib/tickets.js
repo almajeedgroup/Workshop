@@ -11,6 +11,7 @@
 import {
   ISSUER, CURRENCY, isFreeWorkshop, workshopFee, associationLine,
 } from './schema.js';
+import { attendMode, attendModeLabel, workshopAsksMode } from './attendmode.js';
 import { normalizePhone } from './parser.js';
 
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -138,7 +139,7 @@ export function ticketSubject(workshop, reg) {
  * The message sent over WhatsApp or email. Uses WhatsApp's *bold* markers,
  * which render as bold in WhatsApp and read fine as plain text in email.
  */
-export function ticketMessage(workshop, reg, { ticketUrl = '' } = {}) {
+export function ticketMessage(workshop, reg, { ticketUrl = '', classUrl = '' } = {}) {
   const paid = reg.paymentStatus === 'Paid';
   const free = isFreeWorkshop(workshop);
   const amount = reg.amountPaid || workshopFee(workshop) || '';
@@ -159,7 +160,18 @@ export function ticketMessage(workshop, reg, { ticketUrl = '' } = {}) {
   const dates = formatDateRange(workshop);
   if (dates) lines.push(`*Date:* ${dates}`);
   if (workshop.time) lines.push(`*Time:* ${workshop.time}`);
+  // On a hybrid course this is the line that decides whether somebody gets on
+  // a bus. It is only printed where there was a choice: on a course that is
+  // wholly one or the other, the venue or the class link already says it.
+  if (workshopAsksMode(workshop)) {
+    const mine = attendMode(workshop, reg);
+    lines.push(`*Attending:* ${mine ? attendModeLabel(mine) : 'not yet confirmed — please tell us'}`);
+  }
   if (workshop.venue) lines.push(`*Venue:* ${workshop.venue}`);
+  // An online course whose ticket says nothing about how to attend it is a
+  // ticket to nowhere. The link is to the school's own class page, so it
+  // survives the room being replaced.
+  if (classUrl) lines.push(`*Join the online class:* ${classUrl}`);
   lines.push('');
 
   // A free course has nothing to receipt. Printing "Status: Pending" under a

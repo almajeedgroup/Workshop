@@ -63,3 +63,40 @@ test('no public route is caught by the admin-area test', () => {
     assert.ok(!re.test(path), `${path} would render inside the admin shell`);
   }
 });
+
+/* ------------------------------------------------------------------ *
+ * Every screen names its own tab
+ * ------------------------------------------------------------------ */
+
+/**
+ * A route with no title shows the brand alone. Nine tabs all reading
+ * WORKSHOP is the state this exists to prevent, and a route added later
+ * falls into it silently.
+ */
+const titlePatterns = [...app.matchAll(/\[\s*(\/\^[^,]+?\/)\s*,\s*'([^']*)'\s*\]/g)]
+  .map(([, pattern, label]) => ({ source: pattern, label }));
+
+test('the title table is read, not empty', () => {
+  assert.ok(titlePatterns.length >= 15, `found ${titlePatterns.length} title patterns`);
+});
+
+test('every route the app declares has a name for its tab', () => {
+  // Route params are filled with something a pattern can match.
+  const sample = (path) => path.replace(/:[^/]+/g, 'x').replace(/\/\*$/, '');
+  const missing = [];
+  for (const path of routes) {
+    if (path === '*') continue;
+    const url = sample(path);
+    const hit = titlePatterns.find((t) => new RegExp(t.source.slice(1, -1)).test(url));
+    if (!hit || !hit.label) {
+      // `/` is the site home and deliberately carries the brand alone.
+      if (url === '/') continue;
+      missing.push(path);
+    }
+  }
+  assert.deepEqual(missing, [], `these routes would show the brand and nothing else: ${missing.join(', ')}`);
+});
+
+test('the tab says the page before it says the brand', () => {
+  assert.match(app, /\$\{label\}\s*·\s*\$\{BRAND_NAME\}|brandTitle/);
+});
